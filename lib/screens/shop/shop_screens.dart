@@ -651,137 +651,141 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       appBar: AppBar(title: const Text('Paiement')),
       body: Form(
         key: _formKey,
-        child: ListView(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(Gap.m),
-          children: [
-            Text('Récapitulatif', style: AppText.title(size: 18)),
-            const SizedBox(height: Gap.s),
-            GfCard(
-              child: Column(
-                children: [
-                  for (final l in lines)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              '${l.quantity} × ${l.product.name}',
-                              style: AppText.body(size: 14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text('Récapitulatif', style: AppText.title(size: 18)),
+              const SizedBox(height: Gap.s),
+              GfCard(
+                child: Column(
+                  children: [
+                    for (final l in lines)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                '${l.quantity} × ${l.product.name}',
+                                style: AppText.body(size: 14),
+                              ),
                             ),
-                          ),
-                          Text(
-                            Fmt.money(l.total),
-                            style: AppText.subtitle(size: 14),
-                          ),
-                        ],
+                            Text(
+                              Fmt.money(l.total),
+                              style: AppText.subtitle(size: 14),
+                            ),
+                          ],
+                        ),
                       ),
+                    const Divider(),
+                    Row(
+                      children: [
+                        Text('Total', style: AppText.subtitle()),
+                        const Spacer(),
+                        Text(
+                          Fmt.money(total),
+                          style: AppText.stat(color: AppColors.red),
+                        ),
+                      ],
                     ),
-                  const Divider(),
-                  Row(
-                    children: [
-                      Text('Total', style: AppText.subtitle()),
-                      const Spacer(),
-                      Text(
-                        Fmt.money(total),
-                        style: AppText.stat(color: AppColors.red),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: Gap.l),
-            Row(
-              children: [
-                const Icon(Icons.lock, color: AppColors.success, size: 18),
-                const SizedBox(width: Gap.xs),
-                Expanded(
-                  child: Text(
-                    b.payment.label,
-                    style: AppText.subtitle(size: 14),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: Gap.s),
-            if (simulated) ...[
-              const GfCard(
-                color: AppColors.cream,
-                child: InfoRow(
-                  Icons.science_outlined,
-                  'Mode test : carte 4242 4242 4242 4242 acceptée ; 4000 0000 0000 0002 refusée. Aucune donnée de carte n\'est enregistrée.',
+                  ],
                 ),
               ),
-              const SizedBox(height: Gap.m),
-              TextFormField(
-                controller: _holder,
-                decoration: const InputDecoration(
-                  labelText: 'Titulaire de la carte',
-                  prefixIcon: Icon(Icons.person_outline),
-                ),
-                validator: (v) => (v ?? '').trim().length < 3
-                    ? 'Nom du titulaire requis.'
-                    : null,
-              ),
-              const SizedBox(height: Gap.m),
-              TextFormField(
-                key: const Key('card_number'),
-                controller: _number,
-                keyboardType: TextInputType.number,
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'[\d ]')),
-                  LengthLimitingTextInputFormatter(23),
-                ],
-                decoration: const InputDecoration(
-                  labelText: 'Numéro de carte',
-                  prefixIcon: Icon(Icons.credit_card),
-                ),
-                validator: (v) => SimulatedPaymentGateway.luhnValid(v ?? '')
-                    ? null
-                    : 'Numéro de carte invalide.',
-              ),
-              const SizedBox(height: Gap.m),
+              const SizedBox(height: Gap.l),
               Row(
                 children: [
+                  const Icon(Icons.lock, color: AppColors.success, size: 18),
+                  const SizedBox(width: Gap.xs),
                   Expanded(
-                    child: TextFormField(
-                      controller: _expiry,
-                      keyboardType: TextInputType.datetime,
-                      decoration: const InputDecoration(
-                        labelText: 'Expiration (MM/AA)',
-                      ),
-                      validator: (v) => SimulatedPaymentGateway.validateExpiry(
-                        v ?? '',
-                        b.now(),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: Gap.s),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _cvc,
-                      keyboardType: TextInputType.number,
-                      obscureText: true,
-                      decoration: const InputDecoration(labelText: 'CVC'),
-                      validator: (v) =>
-                          RegExp(r'^\d{3,4}$').hasMatch(v?.trim() ?? '')
-                          ? null
-                          : 'CVC invalide.',
+                    child: Text(
+                      b.payment.label,
+                      style: AppText.subtitle(size: 14),
                     ),
                   ),
                 ],
               ),
-            ] else
-              const GfCard(
-                color: AppColors.cream,
-                child: InfoRow(
-                  Icons.open_in_browser,
-                  'Vous allez être redirigé vers la page sécurisée Stripe (mode test). Montant converti en euros pour Stripe.',
+              const SizedBox(height: Gap.s),
+              if (simulated) ...[
+                const GfCard(
+                  color: AppColors.cream,
+                  child: InfoRow(
+                    Icons.science_outlined,
+                    'Mode test : carte 4242 4242 4242 4242 acceptée ; 4000 0000 0000 0002 refusée. Aucune donnée de carte n\'est enregistrée.',
+                  ),
                 ),
-              ),
-            const SizedBox(height: 120),
-          ],
+                const SizedBox(height: Gap.m),
+                TextFormField(
+                  controller: _holder,
+                  decoration: const InputDecoration(
+                    labelText: 'Titulaire de la carte',
+                    prefixIcon: Icon(Icons.person_outline),
+                  ),
+                  validator: (v) => (v ?? '').trim().length < 3
+                      ? 'Nom du titulaire requis.'
+                      : null,
+                ),
+                const SizedBox(height: Gap.m),
+                TextFormField(
+                  key: const Key('card_number'),
+                  controller: _number,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'[\d ]')),
+                    LengthLimitingTextInputFormatter(23),
+                  ],
+                  decoration: const InputDecoration(
+                    labelText: 'Numéro de carte',
+                    prefixIcon: Icon(Icons.credit_card),
+                  ),
+                  validator: (v) => SimulatedPaymentGateway.luhnValid(v ?? '')
+                      ? null
+                      : 'Numéro de carte invalide.',
+                ),
+                const SizedBox(height: Gap.m),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _expiry,
+                        keyboardType: TextInputType.datetime,
+                        decoration: const InputDecoration(
+                          labelText: 'Expiration (MM/AA)',
+                        ),
+                        validator: (v) =>
+                            SimulatedPaymentGateway.validateExpiry(
+                              v ?? '',
+                              b.now(),
+                            ),
+                      ),
+                    ),
+                    const SizedBox(width: Gap.s),
+                    Expanded(
+                      child: TextFormField(
+                        controller: _cvc,
+                        keyboardType: TextInputType.number,
+                        obscureText: true,
+                        decoration: const InputDecoration(labelText: 'CVC'),
+                        validator: (v) =>
+                            RegExp(r'^\d{3,4}$').hasMatch(v?.trim() ?? '')
+                            ? null
+                            : 'CVC invalide.',
+                      ),
+                    ),
+                  ],
+                ),
+              ] else
+                const GfCard(
+                  color: AppColors.cream,
+                  child: InfoRow(
+                    Icons.open_in_browser,
+                    'Vous allez être redirigé vers la page sécurisée Stripe (mode test). Montant converti en euros pour Stripe.',
+                  ),
+                ),
+              const SizedBox(height: 120),
+            ],
+          ),
         ),
       ),
       bottomNavigationBar: _TotalBar(

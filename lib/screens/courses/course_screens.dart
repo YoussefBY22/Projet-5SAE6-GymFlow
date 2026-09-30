@@ -787,189 +787,194 @@ class _CourseFormScreenState extends State<CourseFormScreen> {
       ),
       body: Form(
         key: _formKey,
-        child: ListView(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(Gap.m),
-          children: [
-            TextFormField(
-              controller: _title,
-              decoration: const InputDecoration(labelText: 'Titre du cours'),
-              validator: Validators.text(field: 'Le titre', min: 3, max: 60),
-            ),
-            const SizedBox(height: Gap.m),
-            TextFormField(
-              controller: _description,
-              maxLines: 3,
-              decoration: const InputDecoration(labelText: 'Description'),
-              validator: Validators.text(
-                field: 'La description',
-                min: 10,
-                max: 500,
-              ),
-            ),
-            const SizedBox(height: Gap.m),
-            Row(
-              children: [
-                Expanded(
-                  child: EnumDropdown<CourseCategory>(
-                    label: 'Catégorie',
-                    value: _category,
-                    values: CourseCategory.values,
-                    labelOf: (c) => c.label,
-                    onChanged: (c) => setState(() => _category = c),
-                  ),
-                ),
-                const SizedBox(width: Gap.s),
-                Expanded(
-                  child: EnumDropdown<Level>(
-                    label: 'Niveau',
-                    value: _level,
-                    values: Level.values,
-                    labelOf: (l) => l.label,
-                    onChanged: (l) => setState(() => _level = l),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: Gap.m),
-            if (me.isAdmin)
-              DropdownButtonFormField<String>(
-                initialValue: _coachId,
-                isExpanded: true,
-                decoration: const InputDecoration(labelText: 'Coach affecté'),
-                items: [
-                  for (final c in b.userService.coaches())
-                    DropdownMenuItem(
-                      value: c.id,
-                      child: Text('${c.fullName} — ${c.specialty ?? ''}'),
-                    ),
-                ],
-                onChanged: (v) => setState(() => _coachId = v),
-                validator: (v) => v == null ? 'Affectez un coach.' : null,
-              )
-            else
-              InfoRow(Icons.sports, 'Coach : ${me.fullName} (vous)'),
-            const SizedBox(height: Gap.m),
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _room,
-                    decoration: const InputDecoration(labelText: 'Salle'),
-                    validator: Validators.text(field: 'La salle', max: 40),
-                  ),
-                ),
-                const SizedBox(width: Gap.s),
-                Expanded(
-                  child: TextFormField(
-                    controller: _capacity,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Capacité'),
-                    validator: Validators.intRange(
-                      field: 'Capacité',
-                      min: 1,
-                      max: 100,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: Gap.s),
-                Expanded(
-                  child: TextFormField(
-                    controller: _duration,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Durée (min)'),
-                    validator: Validators.intRange(
-                      field: 'Durée',
-                      min: 15,
-                      max: 180,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const FormSection('Planification'),
-            Wrap(
-              spacing: Gap.s,
-              children: [
-                GfFilterChip(
-                  label: 'Date fixée',
-                  selected: _planned,
-                  onTap: () => setState(() => _planned = true),
-                ),
-                GfFilterChip(
-                  label: 'À planifier',
-                  selected: !_planned,
-                  onTap: () => setState(() => _planned = false),
-                ),
-              ],
-            ),
-            AnimatedSize(
-              duration: const Duration(milliseconds: 250),
-              child: _planned
-                  ? Padding(
-                      padding: const EdgeInsets.only(top: Gap.m),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: _pickDate,
-                              icon: const Icon(Icons.calendar_month),
-                              label: Text(
-                                _date == null
-                                    ? 'Choisir la date'
-                                    : Fmt.dayShort(_date!),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: Gap.s),
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: _pickTime,
-                              icon: const Icon(Icons.schedule),
-                              label: Text(_time.format(context)),
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  : const SizedBox(width: double.infinity),
-            ),
-            const SizedBox(height: Gap.m),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              value: _included,
-              onChanged: (v) => setState(() => _included = v),
-              title: Text('Inclus dans l\'abonnement', style: AppText.body()),
-            ),
-            if (!_included)
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
               TextFormField(
-                controller: _price,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                decoration: const InputDecoration(labelText: 'Prix (TND)'),
-                validator: Validators.decimalRange(
-                  field: 'Le prix',
-                  min: 0.5,
+                controller: _title,
+                decoration: const InputDecoration(labelText: 'Titre du cours'),
+                validator: Validators.text(field: 'Le titre', min: 3, max: 60),
+              ),
+              const SizedBox(height: Gap.m),
+              TextFormField(
+                controller: _description,
+                maxLines: 3,
+                decoration: const InputDecoration(labelText: 'Description'),
+                validator: Validators.text(
+                  field: 'La description',
+                  min: 10,
                   max: 500,
                 ),
               ),
-            const SizedBox(height: Gap.m),
-            TextFormField(
-              controller: _image,
-              decoration: const InputDecoration(
-                labelText: 'Image (adresse web, facultatif)',
+              const SizedBox(height: Gap.m),
+              Row(
+                children: [
+                  Expanded(
+                    child: EnumDropdown<CourseCategory>(
+                      label: 'Catégorie',
+                      value: _category,
+                      values: CourseCategory.values,
+                      labelOf: (c) => c.label,
+                      onChanged: (c) => setState(() => _category = c),
+                    ),
+                  ),
+                  const SizedBox(width: Gap.s),
+                  Expanded(
+                    child: EnumDropdown<Level>(
+                      label: 'Niveau',
+                      value: _level,
+                      values: Level.values,
+                      labelOf: (l) => l.label,
+                      onChanged: (l) => setState(() => _level = l),
+                    ),
+                  ),
+                ],
               ),
-              validator: Validators.url,
-            ),
-            const SizedBox(height: Gap.l),
-            LoadingButton(
-              label: 'Enregistrer',
-              loading: _saving,
-              onPressed: _save,
-              icon: Icons.check,
-            ),
-            const SizedBox(height: Gap.l),
-          ],
+              const SizedBox(height: Gap.m),
+              if (me.isAdmin)
+                DropdownButtonFormField<String>(
+                  initialValue: _coachId,
+                  isExpanded: true,
+                  decoration: const InputDecoration(labelText: 'Coach affecté'),
+                  items: [
+                    for (final c in b.userService.coaches())
+                      DropdownMenuItem(
+                        value: c.id,
+                        child: Text('${c.fullName} — ${c.specialty ?? ''}'),
+                      ),
+                  ],
+                  onChanged: (v) => setState(() => _coachId = v),
+                  validator: (v) => v == null ? 'Affectez un coach.' : null,
+                )
+              else
+                InfoRow(Icons.sports, 'Coach : ${me.fullName} (vous)'),
+              const SizedBox(height: Gap.m),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _room,
+                      decoration: const InputDecoration(labelText: 'Salle'),
+                      validator: Validators.text(field: 'La salle', max: 40),
+                    ),
+                  ),
+                  const SizedBox(width: Gap.s),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _capacity,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(labelText: 'Capacité'),
+                      validator: Validators.intRange(
+                        field: 'Capacité',
+                        min: 1,
+                        max: 100,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: Gap.s),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _duration,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Durée (min)',
+                      ),
+                      validator: Validators.intRange(
+                        field: 'Durée',
+                        min: 15,
+                        max: 180,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const FormSection('Planification'),
+              Wrap(
+                spacing: Gap.s,
+                children: [
+                  GfFilterChip(
+                    label: 'Date fixée',
+                    selected: _planned,
+                    onTap: () => setState(() => _planned = true),
+                  ),
+                  GfFilterChip(
+                    label: 'À planifier',
+                    selected: !_planned,
+                    onTap: () => setState(() => _planned = false),
+                  ),
+                ],
+              ),
+              AnimatedSize(
+                duration: const Duration(milliseconds: 250),
+                child: _planned
+                    ? Padding(
+                        padding: const EdgeInsets.only(top: Gap.m),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: _pickDate,
+                                icon: const Icon(Icons.calendar_month),
+                                label: Text(
+                                  _date == null
+                                      ? 'Choisir la date'
+                                      : Fmt.dayShort(_date!),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: Gap.s),
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: _pickTime,
+                                icon: const Icon(Icons.schedule),
+                                label: Text(_time.format(context)),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : const SizedBox(width: double.infinity),
+              ),
+              const SizedBox(height: Gap.m),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                value: _included,
+                onChanged: (v) => setState(() => _included = v),
+                title: Text('Inclus dans l\'abonnement', style: AppText.body()),
+              ),
+              if (!_included)
+                TextFormField(
+                  controller: _price,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  decoration: const InputDecoration(labelText: 'Prix (TND)'),
+                  validator: Validators.decimalRange(
+                    field: 'Le prix',
+                    min: 0.5,
+                    max: 500,
+                  ),
+                ),
+              const SizedBox(height: Gap.m),
+              TextFormField(
+                controller: _image,
+                decoration: const InputDecoration(
+                  labelText: 'Image (adresse web, facultatif)',
+                ),
+                validator: Validators.url,
+              ),
+              const SizedBox(height: Gap.l),
+              LoadingButton(
+                label: 'Enregistrer',
+                loading: _saving,
+                onPressed: _save,
+                icon: Icons.check,
+              ),
+              const SizedBox(height: Gap.l),
+            ],
+          ),
         ),
       ),
     );

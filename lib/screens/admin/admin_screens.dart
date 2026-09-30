@@ -690,65 +690,68 @@ class _NewCoachScreenState extends State<NewCoachScreen> {
       appBar: AppBar(title: const Text('Nouveau coach')),
       body: Form(
         key: _formKey,
-        child: ListView(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(Gap.m),
-          children: [
-            TextFormField(
-              controller: _name,
-              decoration: const InputDecoration(labelText: 'Nom complet'),
-              validator: Validators.name,
-            ),
-            const SizedBox(height: Gap.m),
-            TextFormField(
-              controller: _email,
-              keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(
-                labelText: 'E-mail professionnel',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextFormField(
+                controller: _name,
+                decoration: const InputDecoration(labelText: 'Nom complet'),
+                validator: Validators.name,
               ),
-              validator: Validators.email,
-            ),
-            const SizedBox(height: Gap.m),
-            TextFormField(
-              controller: _specialty,
-              decoration: const InputDecoration(
-                labelText: 'Spécialité (ex. Pilates, CrossFit)',
+              const SizedBox(height: Gap.m),
+              TextFormField(
+                controller: _email,
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(
+                  labelText: 'E-mail professionnel',
+                ),
+                validator: Validators.email,
               ),
-              validator: Validators.text(
-                field: 'La spécialité',
-                min: 3,
-                max: 60,
+              const SizedBox(height: Gap.m),
+              TextFormField(
+                controller: _specialty,
+                decoration: const InputDecoration(
+                  labelText: 'Spécialité (ex. Pilates, CrossFit)',
+                ),
+                validator: Validators.text(
+                  field: 'La spécialité',
+                  min: 3,
+                  max: 60,
+                ),
               ),
-            ),
-            const SizedBox(height: Gap.m),
-            TextFormField(
-              controller: _password,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Mot de passe provisoire',
-                helperText: 'Le coach pourra le changer dans Paramètres.',
+              const SizedBox(height: Gap.m),
+              TextFormField(
+                controller: _password,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: 'Mot de passe provisoire',
+                  helperText: 'Le coach pourra le changer dans Paramètres.',
+                ),
+                validator: Validators.password,
               ),
-              validator: Validators.password,
-            ),
-            const FormSection('Genre'),
-            Wrap(
-              spacing: Gap.s,
-              children: [
-                for (final g in Gender.values)
-                  GfFilterChip(
-                    label: g.label,
-                    selected: _gender == g,
-                    onTap: () => setState(() => _gender = g),
-                  ),
-              ],
-            ),
-            const SizedBox(height: Gap.l),
-            LoadingButton(
-              label: 'Créer le coach',
-              loading: _saving,
-              onPressed: _save,
-              icon: Icons.person_add_alt,
-            ),
-          ],
+              const FormSection('Genre'),
+              Wrap(
+                spacing: Gap.s,
+                children: [
+                  for (final g in Gender.values)
+                    GfFilterChip(
+                      label: g.label,
+                      selected: _gender == g,
+                      onTap: () => setState(() => _gender = g),
+                    ),
+                ],
+              ),
+              const SizedBox(height: Gap.l),
+              LoadingButton(
+                label: 'Créer le coach',
+                loading: _saving,
+                onPressed: _save,
+                icon: Icons.person_add_alt,
+              ),
+            ],
+          ),
         ),
       ),
     );

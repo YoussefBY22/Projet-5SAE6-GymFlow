@@ -159,44 +159,47 @@ class _AnnouncementFormScreenState extends State<AnnouncementFormScreen> {
       appBar: AppBar(title: const Text('Nouvelle annonce')),
       body: Form(
         key: _formKey,
-        child: ListView(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(Gap.m),
-          children: [
-            TextFormField(
-              controller: _title,
-              decoration: const InputDecoration(labelText: 'Titre'),
-              validator: Validators.text(field: 'Le titre', min: 4, max: 80),
-            ),
-            const SizedBox(height: Gap.m),
-            TextFormField(
-              controller: _body,
-              maxLines: 5,
-              decoration: const InputDecoration(
-                labelText: 'Message',
-                alignLabelWithHint: true,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextFormField(
+                controller: _title,
+                decoration: const InputDecoration(labelText: 'Titre'),
+                validator: Validators.text(field: 'Le titre', min: 4, max: 80),
               ),
-              validator: Validators.text(
-                field: 'Le message',
-                min: 10,
-                max: 800,
+              const SizedBox(height: Gap.m),
+              TextFormField(
+                controller: _body,
+                maxLines: 5,
+                decoration: const InputDecoration(
+                  labelText: 'Message',
+                  alignLabelWithHint: true,
+                ),
+                validator: Validators.text(
+                  field: 'Le message',
+                  min: 10,
+                  max: 800,
+                ),
               ),
-            ),
-            const SizedBox(height: Gap.m),
-            TextFormField(
-              controller: _image,
-              decoration: const InputDecoration(
-                labelText: 'Image (adresse web, facultatif)',
+              const SizedBox(height: Gap.m),
+              TextFormField(
+                controller: _image,
+                decoration: const InputDecoration(
+                  labelText: 'Image (adresse web, facultatif)',
+                ),
+                validator: Validators.url,
               ),
-              validator: Validators.url,
-            ),
-            const SizedBox(height: Gap.l),
-            LoadingButton(
-              label: 'Publier',
-              loading: _saving,
-              onPressed: _publish,
-              icon: Icons.send,
-            ),
-          ],
+              const SizedBox(height: Gap.l),
+              LoadingButton(
+                label: 'Publier',
+                loading: _saving,
+                onPressed: _publish,
+                icon: Icons.send,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -395,158 +398,165 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
       appBar: AppBar(title: const Text('IMC & calories')),
       body: Form(
         key: _formKey,
-        child: ListView(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(Gap.m),
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _weight,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    decoration: const InputDecoration(labelText: 'Poids (kg)'),
-                    validator: Validators.decimalRange(
-                      field: 'Le poids',
-                      min: 30,
-                      max: 250,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: Gap.s),
-                Expanded(
-                  child: TextFormField(
-                    controller: _height,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Taille (cm)'),
-                    validator: Validators.decimalRange(
-                      field: 'La taille',
-                      min: 100,
-                      max: 230,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: Gap.s),
-                Expanded(
-                  child: TextFormField(
-                    controller: _age,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Âge'),
-                    validator: Validators.intRange(
-                      field: 'L\'âge',
-                      min: 12,
-                      max: 100,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const FormSection('Genre'),
-            Wrap(
-              spacing: Gap.s,
-              children: [
-                for (final g in Gender.values)
-                  GfFilterChip(
-                    label: g.label,
-                    selected: _gender == g,
-                    onTap: () => setState(() => _gender = g),
-                  ),
-              ],
-            ),
-            const FormSection('Niveau d\'activité'),
-            Wrap(
-              spacing: Gap.s,
-              runSpacing: Gap.s,
-              children: [
-                for (final (factor, label) in _levels)
-                  GfFilterChip(
-                    label: label,
-                    selected: _activity == factor,
-                    onTap: () => setState(() => _activity = factor),
-                  ),
-              ],
-            ),
-            const FormSection('Objectif'),
-            Wrap(
-              spacing: Gap.s,
-              runSpacing: Gap.s,
-              children: [
-                for (final g in Goal.values)
-                  GfFilterChip(
-                    label: g.label,
-                    icon: g.icon,
-                    selected: _goal == g,
-                    onTap: () => setState(() => _goal = g),
-                  ),
-              ],
-            ),
-            const SizedBox(height: Gap.l),
-            ElevatedButton.icon(
-              onPressed: _compute,
-              icon: const Icon(Icons.calculate),
-              label: const Text('Calculer'),
-            ),
-            const SizedBox(height: Gap.l),
-            AnimatedSwitcher(
-              duration: kAnim,
-              child: _bmi == null
-                  ? const SizedBox.shrink()
-                  : GfCard(
-                      key: ValueKey('$_bmi$_kcal'),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              children: [
-                                AnimatedCounter(
-                                  value: _bmi!,
-                                  format: Fmt.dec1,
-                                  style: AppText.display(size: 30),
-                                ),
-                                Text('IMC', style: AppText.label()),
-                                Text(
-                                  ProgressService.bmiCategory(_bmi!),
-                                  textAlign: TextAlign.center,
-                                  style: AppText.subtitle(size: 13),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Container(
-                            width: 1,
-                            height: 70,
-                            color: AppColors.divider,
-                          ),
-                          Expanded(
-                            child: Column(
-                              children: [
-                                AnimatedCounter(
-                                  value: _kcal!,
-                                  format: (v) => Fmt.number(v.round()),
-                                  style: AppText.display(
-                                    color: AppColors.red,
-                                    size: 30,
-                                  ),
-                                ),
-                                Text('kcal / jour', style: AppText.label()),
-                                Text(
-                                  _goal.label,
-                                  style: AppText.subtitle(size: 13),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _weight,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      decoration: const InputDecoration(
+                        labelText: 'Poids (kg)',
+                      ),
+                      validator: Validators.decimalRange(
+                        field: 'Le poids',
+                        min: 30,
+                        max: 250,
                       ),
                     ),
-            ),
-            const SizedBox(height: Gap.m),
-            Text(
-              'Estimation indicative (formule de Mifflin-St Jeor). Pour un suivi nutritionnel, consultez un professionnel de santé.',
-              style: AppText.label(size: 12),
-            ),
-          ],
+                  ),
+                  const SizedBox(width: Gap.s),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _height,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Taille (cm)',
+                      ),
+                      validator: Validators.decimalRange(
+                        field: 'La taille',
+                        min: 100,
+                        max: 230,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: Gap.s),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _age,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(labelText: 'Âge'),
+                      validator: Validators.intRange(
+                        field: 'L\'âge',
+                        min: 12,
+                        max: 100,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const FormSection('Genre'),
+              Wrap(
+                spacing: Gap.s,
+                children: [
+                  for (final g in Gender.values)
+                    GfFilterChip(
+                      label: g.label,
+                      selected: _gender == g,
+                      onTap: () => setState(() => _gender = g),
+                    ),
+                ],
+              ),
+              const FormSection('Niveau d\'activité'),
+              Wrap(
+                spacing: Gap.s,
+                runSpacing: Gap.s,
+                children: [
+                  for (final (factor, label) in _levels)
+                    GfFilterChip(
+                      label: label,
+                      selected: _activity == factor,
+                      onTap: () => setState(() => _activity = factor),
+                    ),
+                ],
+              ),
+              const FormSection('Objectif'),
+              Wrap(
+                spacing: Gap.s,
+                runSpacing: Gap.s,
+                children: [
+                  for (final g in Goal.values)
+                    GfFilterChip(
+                      label: g.label,
+                      icon: g.icon,
+                      selected: _goal == g,
+                      onTap: () => setState(() => _goal = g),
+                    ),
+                ],
+              ),
+              const SizedBox(height: Gap.l),
+              ElevatedButton.icon(
+                onPressed: _compute,
+                icon: const Icon(Icons.calculate),
+                label: const Text('Calculer'),
+              ),
+              const SizedBox(height: Gap.l),
+              AnimatedSwitcher(
+                duration: kAnim,
+                child: _bmi == null
+                    ? const SizedBox.shrink()
+                    : GfCard(
+                        key: ValueKey('$_bmi$_kcal'),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                children: [
+                                  AnimatedCounter(
+                                    value: _bmi!,
+                                    format: Fmt.dec1,
+                                    style: AppText.display(size: 30),
+                                  ),
+                                  Text('IMC', style: AppText.label()),
+                                  Text(
+                                    ProgressService.bmiCategory(_bmi!),
+                                    textAlign: TextAlign.center,
+                                    style: AppText.subtitle(size: 13),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Container(
+                              width: 1,
+                              height: 70,
+                              color: AppColors.divider,
+                            ),
+                            Expanded(
+                              child: Column(
+                                children: [
+                                  AnimatedCounter(
+                                    value: _kcal!,
+                                    format: (v) => Fmt.number(v.round()),
+                                    style: AppText.display(
+                                      color: AppColors.red,
+                                      size: 30,
+                                    ),
+                                  ),
+                                  Text('kcal / jour', style: AppText.label()),
+                                  Text(
+                                    _goal.label,
+                                    style: AppText.subtitle(size: 13),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+              ),
+              const SizedBox(height: Gap.m),
+              Text(
+                'Estimation indicative (formule de Mifflin-St Jeor). Pour un suivi nutritionnel, consultez un professionnel de santé.',
+                style: AppText.label(size: 12),
+              ),
+            ],
+          ),
         ),
       ),
     );

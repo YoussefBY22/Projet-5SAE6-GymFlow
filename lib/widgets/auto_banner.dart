@@ -119,11 +119,12 @@ class _AutoBannerState extends State<AutoBanner> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Row(
+                                  Wrap(
+                                    spacing: 6,
+                                    runSpacing: 4,
                                     children: [
                                       Pill(item.badge, color: AppColors.red),
                                       if (item.isNew) ...[
-                                        const SizedBox(width: 6),
                                         const Pill(
                                           'Nouveau',
                                           color: AppColors.gold,

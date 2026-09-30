@@ -20,8 +20,13 @@ import '../training/training_screen.dart';
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
 
-  static final GlobalKey<ScaffoldState> scaffoldKey =
-      GlobalKey<ScaffoldState>();
+  /// Ouvre le Drawer de la coquille depuis un écran d'onglet (chaque
+  /// onglet a son propre Scaffold/AppBar).
+  static void openDrawer(BuildContext context) => context
+      .findAncestorStateOfType<_MainShellState>()
+      ?._scaffoldKey
+      .currentState
+      ?.openDrawer();
 
   /// Permet aux écrans enfants de changer d'onglet (ex. « Voir tout »).
   static final ValueNotifier<int> tab = ValueNotifier<int>(0);
@@ -31,6 +36,9 @@ class MainShell extends StatefulWidget {
 }
 
 class _MainShellState extends State<MainShell> {
+  // Clé propre à l'instance (pas de clé globale statique partagée).
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
+
   @override
   void initState() {
     super.initState();
@@ -56,7 +64,7 @@ class _MainShellState extends State<MainShell> {
           builder: (context, index, _) {
             final i = index.clamp(0, tabs.length - 1);
             return Scaffold(
-              key: MainShell.scaffoldKey,
+              key: _scaffoldKey,
               drawer: const AppDrawer(),
               body: IndexedStack(
                 index: i,
@@ -153,7 +161,7 @@ class ShellMenuButton extends StatelessWidget {
     return IconButton(
       tooltip: 'Menu',
       icon: const Icon(Icons.menu),
-      onPressed: () => MainShell.scaffoldKey.currentState?.openDrawer(),
+      onPressed: () => MainShell.openDrawer(context),
     );
   }
 }

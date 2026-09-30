@@ -30,6 +30,10 @@ class GymFlowApp extends StatelessWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       initialRoute: initialRoute,
+      // Une seule route initiale (sinon « /home » empilerait aussi « / »).
+      onGenerateInitialRoutes: (name) => [
+        Routes.onGenerateRoute(RouteSettings(name: name)),
+      ],
       onGenerateRoute: Routes.onGenerateRoute,
     );
   }

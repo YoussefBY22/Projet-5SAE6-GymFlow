@@ -409,81 +409,88 @@ class _WorkoutFormScreenState extends State<WorkoutFormScreen> {
         key: _formKey,
         child: CustomScrollView(
           slivers: [
+            // Champs non paresseux : tous restent montés pour la validation.
             SliverPadding(
               padding: const EdgeInsets.all(Gap.m),
-              sliver: SliverList.list(
-                children: [
-                  TextFormField(
-                    controller: _name,
-                    decoration: const InputDecoration(
-                      labelText: 'Nom (ex. Push Day)',
-                    ),
-                    validator: Validators.text(
-                      field: 'Le nom',
-                      min: 3,
-                      max: 60,
-                    ),
-                  ),
-                  const SizedBox(height: Gap.m),
-                  TextFormField(
-                    controller: _focus,
-                    decoration: const InputDecoration(
-                      labelText: 'Zones travaillées (ex. Pectoraux · Épaules)',
-                    ),
-                    validator: Validators.text(
-                      field: 'Les zones',
-                      max: 80,
-                      optional: true,
-                    ),
-                  ),
-                  const SizedBox(height: Gap.m),
-                  TextFormField(
-                    controller: _description,
-                    maxLines: 3,
-                    decoration: const InputDecoration(labelText: 'Description'),
-                    validator: Validators.text(
-                      field: 'La description',
-                      max: 500,
-                      optional: true,
-                    ),
-                  ),
-                  const SizedBox(height: Gap.m),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: EnumDropdown<Level>(
-                          label: 'Niveau',
-                          value: _level,
-                          values: Level.values,
-                          labelOf: (l) => l.label,
-                          onChanged: (l) => setState(() => _level = l),
-                        ),
+              sliver: SliverToBoxAdapter(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    TextFormField(
+                      controller: _name,
+                      decoration: const InputDecoration(
+                        labelText: 'Nom (ex. Push Day)',
                       ),
-                      const SizedBox(width: Gap.s),
-                      Expanded(
-                        child: EnumDropdown<Goal>(
-                          label: 'Objectif',
-                          value: _goal,
-                          values: Goal.values,
-                          labelOf: (g) => g.label,
-                          onChanged: (g) => setState(() => _goal = g),
-                        ),
+                      validator: Validators.text(
+                        field: 'Le nom',
+                        min: 3,
+                        max: 60,
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: Gap.m),
-                  TextFormField(
-                    controller: _cover,
-                    decoration: const InputDecoration(
-                      labelText:
-                          'Image de couverture (adresse web, facultatif)',
                     ),
-                    validator: Validators.url,
-                  ),
-                  FormSection(
-                    'Exercices (${_items.length}) — maintenez pour réordonner',
-                  ),
-                ],
+                    const SizedBox(height: Gap.m),
+                    TextFormField(
+                      controller: _focus,
+                      decoration: const InputDecoration(
+                        labelText:
+                            'Zones travaillées (ex. Pectoraux · Épaules)',
+                      ),
+                      validator: Validators.text(
+                        field: 'Les zones',
+                        max: 80,
+                        optional: true,
+                      ),
+                    ),
+                    const SizedBox(height: Gap.m),
+                    TextFormField(
+                      controller: _description,
+                      maxLines: 3,
+                      decoration: const InputDecoration(
+                        labelText: 'Description',
+                      ),
+                      validator: Validators.text(
+                        field: 'La description',
+                        max: 500,
+                        optional: true,
+                      ),
+                    ),
+                    const SizedBox(height: Gap.m),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: EnumDropdown<Level>(
+                            label: 'Niveau',
+                            value: _level,
+                            values: Level.values,
+                            labelOf: (l) => l.label,
+                            onChanged: (l) => setState(() => _level = l),
+                          ),
+                        ),
+                        const SizedBox(width: Gap.s),
+                        Expanded(
+                          child: EnumDropdown<Goal>(
+                            label: 'Objectif',
+                            value: _goal,
+                            values: Goal.values,
+                            labelOf: (g) => g.label,
+                            onChanged: (g) => setState(() => _goal = g),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: Gap.m),
+                    TextFormField(
+                      controller: _cover,
+                      decoration: const InputDecoration(
+                        labelText:
+                            'Image de couverture (adresse web, facultatif)',
+                      ),
+                      validator: Validators.url,
+                    ),
+                    FormSection(
+                      'Exercices (${_items.length}) — maintenez pour réordonner',
+                    ),
+                  ],
+                ),
               ),
             ),
             SliverReorderableList(
@@ -1081,115 +1088,120 @@ class _ProgramFormScreenState extends State<ProgramFormScreen> {
       ),
       body: Form(
         key: _formKey,
-        child: ListView(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(Gap.m),
-          children: [
-            TextFormField(
-              controller: _name,
-              decoration: const InputDecoration(labelText: 'Nom du programme'),
-              validator: Validators.text(field: 'Le nom', min: 3, max: 60),
-            ),
-            const SizedBox(height: Gap.m),
-            TextFormField(
-              controller: _description,
-              maxLines: 3,
-              decoration: const InputDecoration(labelText: 'Description'),
-              validator: Validators.text(
-                field: 'La description',
-                max: 500,
-                optional: true,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextFormField(
+                controller: _name,
+                decoration: const InputDecoration(
+                  labelText: 'Nom du programme',
+                ),
+                validator: Validators.text(field: 'Le nom', min: 3, max: 60),
               ),
-            ),
-            const SizedBox(height: Gap.m),
-            Row(
-              children: [
-                Expanded(
-                  child: EnumDropdown<Level>(
-                    label: 'Niveau',
-                    value: _level,
-                    values: Level.values,
-                    labelOf: (l) => l.label,
-                    onChanged: (l) => setState(() => _level = l),
-                  ),
+              const SizedBox(height: Gap.m),
+              TextFormField(
+                controller: _description,
+                maxLines: 3,
+                decoration: const InputDecoration(labelText: 'Description'),
+                validator: Validators.text(
+                  field: 'La description',
+                  max: 500,
+                  optional: true,
                 ),
-                const SizedBox(width: Gap.s),
-                Expanded(
-                  child: EnumDropdown<Goal>(
-                    label: 'Objectif',
-                    value: _goal,
-                    values: Goal.values,
-                    labelOf: (g) => g.label,
-                    onChanged: (g) => setState(() => _goal = g),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: Gap.m),
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _weeks,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'Durée (semaines)',
-                    ),
-                    validator: Validators.intRange(
-                      field: 'La durée',
-                      min: 1,
-                      max: 52,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: Gap.s),
-                Expanded(
-                  child: TextFormField(
-                    controller: _equipment,
-                    decoration: const InputDecoration(labelText: 'Matériel'),
-                    validator: Validators.text(field: 'Le matériel', max: 60),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: Gap.m),
-            TextFormField(
-              controller: _cover,
-              decoration: const InputDecoration(
-                labelText: 'Image de couverture (adresse web, facultatif)',
               ),
-              validator: Validators.url,
-            ),
-            const FormSection('Planning de la semaine'),
-            for (var d = 1; d <= 7; d++)
-              Padding(
-                padding: const EdgeInsets.only(bottom: Gap.s),
-                child: DropdownButtonFormField<String?>(
-                  initialValue: _days[d],
-                  isExpanded: true,
-                  decoration: InputDecoration(labelText: weekdayNames[d - 1]),
-                  items: [
-                    const DropdownMenuItem<String?>(
-                      value: null,
-                      child: Text('Repos'),
+              const SizedBox(height: Gap.m),
+              Row(
+                children: [
+                  Expanded(
+                    child: EnumDropdown<Level>(
+                      label: 'Niveau',
+                      value: _level,
+                      values: Level.values,
+                      labelOf: (l) => l.label,
+                      onChanged: (l) => setState(() => _level = l),
                     ),
-                    for (final w in workouts)
-                      DropdownMenuItem<String?>(
-                        value: w.id,
-                        child: Text(w.name),
+                  ),
+                  const SizedBox(width: Gap.s),
+                  Expanded(
+                    child: EnumDropdown<Goal>(
+                      label: 'Objectif',
+                      value: _goal,
+                      values: Goal.values,
+                      labelOf: (g) => g.label,
+                      onChanged: (g) => setState(() => _goal = g),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: Gap.m),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _weeks,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Durée (semaines)',
                       ),
-                  ],
-                  onChanged: (v) => setState(() => _days[d] = v),
-                ),
+                      validator: Validators.intRange(
+                        field: 'La durée',
+                        min: 1,
+                        max: 52,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: Gap.s),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _equipment,
+                      decoration: const InputDecoration(labelText: 'Matériel'),
+                      validator: Validators.text(field: 'Le matériel', max: 60),
+                    ),
+                  ),
+                ],
               ),
-            const SizedBox(height: Gap.l),
-            LoadingButton(
-              label: 'Enregistrer',
-              loading: _saving,
-              onPressed: _save,
-              icon: Icons.check,
-            ),
-            const SizedBox(height: Gap.l),
-          ],
+              const SizedBox(height: Gap.m),
+              TextFormField(
+                controller: _cover,
+                decoration: const InputDecoration(
+                  labelText: 'Image de couverture (adresse web, facultatif)',
+                ),
+                validator: Validators.url,
+              ),
+              const FormSection('Planning de la semaine'),
+              for (var d = 1; d <= 7; d++)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: Gap.s),
+                  child: DropdownButtonFormField<String?>(
+                    initialValue: _days[d],
+                    isExpanded: true,
+                    decoration: InputDecoration(labelText: weekdayNames[d - 1]),
+                    items: [
+                      const DropdownMenuItem<String?>(
+                        value: null,
+                        child: Text('Repos'),
+                      ),
+                      for (final w in workouts)
+                        DropdownMenuItem<String?>(
+                          value: w.id,
+                          child: Text(w.name),
+                        ),
+                    ],
+                    onChanged: (v) => setState(() => _days[d] = v),
+                  ),
+                ),
+              const SizedBox(height: Gap.l),
+              LoadingButton(
+                label: 'Enregistrer',
+                loading: _saving,
+                onPressed: _save,
+                icon: Icons.check,
+              ),
+              const SizedBox(height: Gap.l),
+            ],
+          ),
         ),
       ),
     );

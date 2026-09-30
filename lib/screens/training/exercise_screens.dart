@@ -471,182 +471,185 @@ class _ExerciseFormScreenState extends State<ExerciseFormScreen> {
       body: SafeArea(
         child: Form(
           key: _formKey,
-          child: ListView(
+          child: SingleChildScrollView(
             padding: const EdgeInsets.all(Gap.m),
-            children: [
-              TextFormField(
-                controller: _name,
-                decoration: const InputDecoration(
-                  labelText: 'Nom de l\'exercice',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TextFormField(
+                  controller: _name,
+                  decoration: const InputDecoration(
+                    labelText: 'Nom de l\'exercice',
+                  ),
+                  validator: Validators.text(field: 'Le nom', min: 3, max: 80),
                 ),
-                validator: Validators.text(field: 'Le nom', min: 3, max: 80),
-              ),
-              const SizedBox(height: Gap.m),
-              EnumDropdown<Muscle>(
-                label: 'Muscle principal',
-                value: _muscle,
-                values: Muscle.values,
-                labelOf: (m) => m.label,
-                onChanged: (m) => setState(() => _muscle = m),
-              ),
-              const FormSection('Muscles secondaires'),
-              Wrap(
-                spacing: Gap.s,
-                runSpacing: Gap.s,
-                children: [
-                  for (final m in Muscle.values.where((m) => m != _muscle))
-                    GfFilterChip(
-                      label: m.label,
-                      selected: _secondary.contains(m),
-                      onTap: () => setState(
-                        () => _secondary.contains(m)
-                            ? _secondary.remove(m)
-                            : _secondary.add(m),
+                const SizedBox(height: Gap.m),
+                EnumDropdown<Muscle>(
+                  label: 'Muscle principal',
+                  value: _muscle,
+                  values: Muscle.values,
+                  labelOf: (m) => m.label,
+                  onChanged: (m) => setState(() => _muscle = m),
+                ),
+                const FormSection('Muscles secondaires'),
+                Wrap(
+                  spacing: Gap.s,
+                  runSpacing: Gap.s,
+                  children: [
+                    for (final m in Muscle.values.where((m) => m != _muscle))
+                      GfFilterChip(
+                        label: m.label,
+                        selected: _secondary.contains(m),
+                        onTap: () => setState(
+                          () => _secondary.contains(m)
+                              ? _secondary.remove(m)
+                              : _secondary.add(m),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: Gap.m),
+                Row(
+                  children: [
+                    Expanded(
+                      child: EnumDropdown<Equipment>(
+                        label: 'Équipement',
+                        value: _equipment,
+                        values: Equipment.values,
+                        labelOf: (e) => e.label,
+                        onChanged: (e) => setState(() => _equipment = e),
                       ),
                     ),
-                ],
-              ),
-              const SizedBox(height: Gap.m),
-              Row(
-                children: [
-                  Expanded(
-                    child: EnumDropdown<Equipment>(
-                      label: 'Équipement',
-                      value: _equipment,
-                      values: Equipment.values,
-                      labelOf: (e) => e.label,
-                      onChanged: (e) => setState(() => _equipment = e),
+                    const SizedBox(width: Gap.s),
+                    Expanded(
+                      child: EnumDropdown<Level>(
+                        label: 'Niveau',
+                        value: _level,
+                        values: Level.values,
+                        labelOf: (l) => l.label,
+                        onChanged: (l) => setState(() => _level = l),
+                      ),
                     ),
+                  ],
+                ),
+                const SizedBox(height: Gap.m),
+                EnumDropdown<ExerciseType>(
+                  label: 'Type',
+                  value: _type,
+                  values: ExerciseType.values,
+                  labelOf: (t) => t.label,
+                  onChanged: (t) => setState(() => _type = t),
+                ),
+                const SizedBox(height: Gap.m),
+                TextFormField(
+                  controller: _description,
+                  maxLines: 3,
+                  decoration: const InputDecoration(labelText: 'Description'),
+                  validator: Validators.text(
+                    field: 'La description',
+                    min: 10,
+                    max: 600,
                   ),
-                  const SizedBox(width: Gap.s),
-                  Expanded(
-                    child: EnumDropdown<Level>(
-                      label: 'Niveau',
-                      value: _level,
-                      values: Level.values,
-                      labelOf: (l) => l.label,
-                      onChanged: (l) => setState(() => _level = l),
-                    ),
+                ),
+                const SizedBox(height: Gap.m),
+                TextFormField(
+                  controller: _steps,
+                  maxLines: 5,
+                  decoration: const InputDecoration(
+                    labelText: 'Étapes d\'exécution',
+                    helperText: 'Une étape par ligne',
+                    alignLabelWithHint: true,
                   ),
-                ],
-              ),
-              const SizedBox(height: Gap.m),
-              EnumDropdown<ExerciseType>(
-                label: 'Type',
-                value: _type,
-                values: ExerciseType.values,
-                labelOf: (t) => t.label,
-                onChanged: (t) => setState(() => _type = t),
-              ),
-              const SizedBox(height: Gap.m),
-              TextFormField(
-                controller: _description,
-                maxLines: 3,
-                decoration: const InputDecoration(labelText: 'Description'),
-                validator: Validators.text(
-                  field: 'La description',
-                  min: 10,
-                  max: 600,
+                  validator: (v) => _lines(_steps).isEmpty
+                      ? 'Indiquez au moins une étape.'
+                      : null,
                 ),
-              ),
-              const SizedBox(height: Gap.m),
-              TextFormField(
-                controller: _steps,
-                maxLines: 5,
-                decoration: const InputDecoration(
-                  labelText: 'Étapes d\'exécution',
-                  helperText: 'Une étape par ligne',
-                  alignLabelWithHint: true,
+                const SizedBox(height: Gap.m),
+                TextFormField(
+                  controller: _mistakes,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    labelText: 'Erreurs fréquentes',
+                    helperText: 'Une erreur par ligne',
+                    alignLabelWithHint: true,
+                  ),
                 ),
-                validator: (v) => _lines(_steps).isEmpty
-                    ? 'Indiquez au moins une étape.'
-                    : null,
-              ),
-              const SizedBox(height: Gap.m),
-              TextFormField(
-                controller: _mistakes,
-                maxLines: 3,
-                decoration: const InputDecoration(
-                  labelText: 'Erreurs fréquentes',
-                  helperText: 'Une erreur par ligne',
-                  alignLabelWithHint: true,
+                const SizedBox(height: Gap.m),
+                TextFormField(
+                  controller: _breathing,
+                  decoration: const InputDecoration(
+                    labelText: 'Conseil de respiration',
+                  ),
+                  validator: Validators.text(
+                    field: 'Le conseil',
+                    max: 200,
+                    optional: true,
+                  ),
                 ),
-              ),
-              const SizedBox(height: Gap.m),
-              TextFormField(
-                controller: _breathing,
-                decoration: const InputDecoration(
-                  labelText: 'Conseil de respiration',
-                ),
-                validator: Validators.text(
-                  field: 'Le conseil',
-                  max: 200,
-                  optional: true,
-                ),
-              ),
-              const FormSection('Médias'),
-              for (var i = 0; i < _media.length; i++)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: Gap.s),
-                  child: GfCard(
-                    padding: const EdgeInsets.all(Gap.s),
-                    child: Row(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: SizedBox(
-                            width: 64,
-                            height: 48,
-                            child: switch (_media[i].kind) {
-                              MediaKind.image => NetImage(_media[i].source),
-                              MediaKind.youtube => NetImage(
-                                youtubeThumb(_media[i].source),
-                              ),
-                              MediaKind.video => Container(
-                                color: AppColors.navy,
-                                child: const Icon(
-                                  Icons.movie,
-                                  color: AppColors.white,
+                const FormSection('Médias'),
+                for (var i = 0; i < _media.length; i++)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: Gap.s),
+                    child: GfCard(
+                      padding: const EdgeInsets.all(Gap.s),
+                      child: Row(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: SizedBox(
+                              width: 64,
+                              height: 48,
+                              child: switch (_media[i].kind) {
+                                MediaKind.image => NetImage(_media[i].source),
+                                MediaKind.youtube => NetImage(
+                                  youtubeThumb(_media[i].source),
                                 ),
-                              ),
-                            },
+                                MediaKind.video => Container(
+                                  color: AppColors.navy,
+                                  child: const Icon(
+                                    Icons.movie,
+                                    color: AppColors.white,
+                                  ),
+                                ),
+                              },
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: Gap.s),
-                        Expanded(
-                          child: Text(
-                            '${_media[i].kind.label} · ${_media[i].isLocalFile ? 'fichier du téléphone' : _media[i].source}',
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppText.label(),
+                          const SizedBox(width: Gap.s),
+                          Expanded(
+                            child: Text(
+                              '${_media[i].kind.label} · ${_media[i].isLocalFile ? 'fichier du téléphone' : _media[i].source}',
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppText.label(),
+                            ),
                           ),
-                        ),
-                        IconButton(
-                          tooltip: 'Retirer',
-                          icon: const Icon(
-                            Icons.delete_outline,
-                            color: AppColors.red,
+                          IconButton(
+                            tooltip: 'Retirer',
+                            icon: const Icon(
+                              Icons.delete_outline,
+                              color: AppColors.red,
+                            ),
+                            onPressed: () => setState(() => _media.removeAt(i)),
                           ),
-                          onPressed: () => setState(() => _media.removeAt(i)),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
+                OutlinedButton.icon(
+                  onPressed: _addMedia,
+                  icon: const Icon(Icons.add),
+                  label: const Text('Ajouter une image ou une vidéo'),
                 ),
-              OutlinedButton.icon(
-                onPressed: _addMedia,
-                icon: const Icon(Icons.add),
-                label: const Text('Ajouter une image ou une vidéo'),
-              ),
-              const SizedBox(height: Gap.l),
-              LoadingButton(
-                label: 'Enregistrer',
-                loading: _saving,
-                onPressed: _save,
-                icon: Icons.check,
-              ),
-              const SizedBox(height: Gap.l),
-            ],
+                const SizedBox(height: Gap.l),
+                LoadingButton(
+                  label: 'Enregistrer',
+                  loading: _saving,
+                  onPressed: _save,
+                  icon: Icons.check,
+                ),
+                const SizedBox(height: Gap.l),
+              ],
+            ),
           ),
         ),
       ),

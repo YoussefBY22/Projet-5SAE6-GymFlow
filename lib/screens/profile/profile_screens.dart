@@ -717,156 +717,163 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       appBar: AppBar(title: const Text('Modifier mon profil')),
       body: Form(
         key: _formKey,
-        child: ListView(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(Gap.m),
-          children: [
-            Center(
-              child: GestureDetector(
-                onTap: _pickAvatar,
-                child: Stack(
-                  children: [
-                    Hero(tag: 'avatar', child: GfAvatar(preview, radius: 48)),
-                    const Positioned(
-                      right: 0,
-                      bottom: 0,
-                      child: CircleAvatar(
-                        radius: 16,
-                        backgroundColor: AppColors.red,
-                        child: Icon(
-                          Icons.photo_camera,
-                          color: AppColors.white,
-                          size: 18,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: GestureDetector(
+                  onTap: _pickAvatar,
+                  child: Stack(
+                    children: [
+                      Hero(tag: 'avatar', child: GfAvatar(preview, radius: 48)),
+                      const Positioned(
+                        right: 0,
+                        bottom: 0,
+                        child: CircleAvatar(
+                          radius: 16,
+                          backgroundColor: AppColors.red,
+                          child: Icon(
+                            Icons.photo_camera,
+                            color: AppColors.white,
+                            size: 18,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-            if (_avatar != null)
-              Center(
-                child: TextButton(
-                  onPressed: () => setState(() => _avatar = null),
-                  child: const Text('Retirer la photo'),
+              if (_avatar != null)
+                Center(
+                  child: TextButton(
+                    onPressed: () => setState(() => _avatar = null),
+                    child: const Text('Retirer la photo'),
+                  ),
                 ),
+              const SizedBox(height: Gap.m),
+              TextFormField(
+                controller: _name,
+                decoration: const InputDecoration(labelText: 'Nom complet'),
+                validator: Validators.name,
               ),
-            const SizedBox(height: Gap.m),
-            TextFormField(
-              controller: _name,
-              decoration: const InputDecoration(labelText: 'Nom complet'),
-              validator: Validators.name,
-            ),
-            const SizedBox(height: Gap.m),
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _age,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Âge'),
-                    validator: Validators.intRange(
-                      field: 'L\'âge',
-                      min: 12,
-                      max: 100,
-                      optional: true,
+              const SizedBox(height: Gap.m),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _age,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(labelText: 'Âge'),
+                      validator: Validators.intRange(
+                        field: 'L\'âge',
+                        min: 12,
+                        max: 100,
+                        optional: true,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: Gap.s),
-                Expanded(
-                  child: TextFormField(
-                    controller: _height,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Taille (cm)'),
-                    validator: Validators.decimalRange(
-                      field: 'La taille',
-                      min: 100,
-                      max: 230,
-                      optional: true,
+                  const SizedBox(width: Gap.s),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _height,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Taille (cm)',
+                      ),
+                      validator: Validators.decimalRange(
+                        field: 'La taille',
+                        min: 100,
+                        max: 230,
+                        optional: true,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: Gap.s),
-                Expanded(
-                  child: TextFormField(
-                    controller: _weight,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    decoration: const InputDecoration(labelText: 'Poids (kg)'),
-                    validator: Validators.decimalRange(
-                      field: 'Le poids',
-                      min: 30,
-                      max: 250,
-                      optional: true,
+                  const SizedBox(width: Gap.s),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _weight,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      decoration: const InputDecoration(
+                        labelText: 'Poids (kg)',
+                      ),
+                      validator: Validators.decimalRange(
+                        field: 'Le poids',
+                        min: 30,
+                        max: 250,
+                        optional: true,
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: Gap.m),
-            TextFormField(
-              controller: _phone,
-              keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(
-                labelText: 'Téléphone (facultatif)',
+                ],
               ),
-              validator: (v) {
-                final t = v?.trim() ?? '';
-                if (t.isEmpty) return null;
-                return RegExp(r'^\+?[\d\s]{8,16}$').hasMatch(t)
-                    ? null
-                    : 'Numéro invalide.';
-              },
-            ),
-            const FormSection('Genre'),
-            Wrap(
-              spacing: Gap.s,
-              children: [
-                for (final g in Gender.values)
-                  GfFilterChip(
-                    label: g.label,
-                    selected: _gender == g,
-                    onTap: () => setState(() => _gender = g),
-                  ),
-              ],
-            ),
-            const FormSection('Objectif'),
-            Wrap(
-              spacing: Gap.s,
-              runSpacing: Gap.s,
-              children: [
-                for (final g in Goal.values)
-                  GfFilterChip(
-                    label: g.label,
-                    icon: g.icon,
-                    selected: _goal == g,
-                    onTap: () => setState(() => _goal = g),
-                  ),
-              ],
-            ),
-            FormSection(
-              'Objectif hebdomadaire : $_weeklyGoal séance${_weeklyGoal > 1 ? 's' : ''}',
-            ),
-            Slider(
-              value: _weeklyGoal.toDouble(),
-              min: 1,
-              max: 7,
-              divisions: 6,
-              label: '$_weeklyGoal',
-              activeColor: AppColors.red,
-              inactiveColor: AppColors.divider,
-              onChanged: (v) => setState(() => _weeklyGoal = v.round()),
-            ),
-            const SizedBox(height: Gap.l),
-            LoadingButton(
-              label: 'Enregistrer',
-              loading: _saving,
-              onPressed: _save,
-              icon: Icons.check,
-            ),
-            const SizedBox(height: Gap.l),
-          ],
+              const SizedBox(height: Gap.m),
+              TextFormField(
+                controller: _phone,
+                keyboardType: TextInputType.phone,
+                decoration: const InputDecoration(
+                  labelText: 'Téléphone (facultatif)',
+                ),
+                validator: (v) {
+                  final t = v?.trim() ?? '';
+                  if (t.isEmpty) return null;
+                  return RegExp(r'^\+?[\d\s]{8,16}$').hasMatch(t)
+                      ? null
+                      : 'Numéro invalide.';
+                },
+              ),
+              const FormSection('Genre'),
+              Wrap(
+                spacing: Gap.s,
+                children: [
+                  for (final g in Gender.values)
+                    GfFilterChip(
+                      label: g.label,
+                      selected: _gender == g,
+                      onTap: () => setState(() => _gender = g),
+                    ),
+                ],
+              ),
+              const FormSection('Objectif'),
+              Wrap(
+                spacing: Gap.s,
+                runSpacing: Gap.s,
+                children: [
+                  for (final g in Goal.values)
+                    GfFilterChip(
+                      label: g.label,
+                      icon: g.icon,
+                      selected: _goal == g,
+                      onTap: () => setState(() => _goal = g),
+                    ),
+                ],
+              ),
+              FormSection(
+                'Objectif hebdomadaire : $_weeklyGoal séance${_weeklyGoal > 1 ? 's' : ''}',
+              ),
+              Slider(
+                value: _weeklyGoal.toDouble(),
+                min: 1,
+                max: 7,
+                divisions: 6,
+                label: '$_weeklyGoal',
+                activeColor: AppColors.red,
+                inactiveColor: AppColors.divider,
+                onChanged: (v) => setState(() => _weeklyGoal = v.round()),
+              ),
+              const SizedBox(height: Gap.l),
+              LoadingButton(
+                label: 'Enregistrer',
+                loading: _saving,
+                onPressed: _save,
+                icon: Icons.check,
+              ),
+              const SizedBox(height: Gap.l),
+            ],
+          ),
         ),
       ),
     );

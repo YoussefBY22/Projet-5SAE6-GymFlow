@@ -363,174 +363,181 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       ),
       body: Form(
         key: _formKey,
-        child: ListView(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(Gap.m),
-          children: [
-            SizedBox(
-              height: 110,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                children: [
-                  for (var i = 0; i < _images.length; i++)
-                    Padding(
-                      padding: const EdgeInsets.only(right: Gap.s),
-                      child: Stack(
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: NetImage(
-                              _images[i],
-                              width: 110,
-                              height: 110,
-                              cacheWidth: 300,
-                            ),
-                          ),
-                          Positioned(
-                            right: 0,
-                            top: 0,
-                            child: IconButton.filled(
-                              tooltip: 'Retirer',
-                              style: IconButton.styleFrom(
-                                backgroundColor: AppColors.red,
-                                foregroundColor: AppColors.white,
-                                minimumSize: const Size(32, 32),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SizedBox(
+                height: 110,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  children: [
+                    for (var i = 0; i < _images.length; i++)
+                      Padding(
+                        padding: const EdgeInsets.only(right: Gap.s),
+                        child: Stack(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: NetImage(
+                                _images[i],
+                                width: 110,
+                                height: 110,
+                                cacheWidth: 300,
                               ),
-                              onPressed: () =>
-                                  setState(() => _images.removeAt(i)),
-                              icon: const Icon(Icons.close, size: 16),
                             ),
-                          ),
-                        ],
+                            Positioned(
+                              right: 0,
+                              top: 0,
+                              child: IconButton.filled(
+                                tooltip: 'Retirer',
+                                style: IconButton.styleFrom(
+                                  backgroundColor: AppColors.red,
+                                  foregroundColor: AppColors.white,
+                                  minimumSize: const Size(32, 32),
+                                ),
+                                onPressed: () =>
+                                    setState(() => _images.removeAt(i)),
+                                icon: const Icon(Icons.close, size: 16),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    InkWell(
+                      onTap: _addImage,
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        width: 110,
+                        decoration: BoxDecoration(
+                          color: AppColors.cream,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.outline),
+                        ),
+                        child: const Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.add_a_photo_outlined,
+                              color: AppColors.navy,
+                            ),
+                            Text('Photo'),
+                          ],
+                        ),
                       ),
                     ),
-                  InkWell(
-                    onTap: _addImage,
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      width: 110,
-                      decoration: BoxDecoration(
-                        color: AppColors.cream,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.outline),
+                  ],
+                ),
+              ),
+              const SizedBox(height: Gap.m),
+              TextFormField(
+                controller: _name,
+                decoration: const InputDecoration(labelText: 'Nom du produit'),
+                validator: Validators.text(field: 'Le nom', min: 3, max: 80),
+              ),
+              const SizedBox(height: Gap.m),
+              TextFormField(
+                controller: _description,
+                maxLines: 3,
+                decoration: const InputDecoration(labelText: 'Description'),
+                validator: Validators.text(
+                  field: 'La description',
+                  min: 10,
+                  max: 600,
+                ),
+              ),
+              const SizedBox(height: Gap.m),
+              EnumDropdown<ProductCategory>(
+                label: 'Catégorie',
+                value: _category,
+                values: ProductCategory.values,
+                labelOf: (c) => c.label,
+                onChanged: (c) => setState(() => _category = c),
+              ),
+              const SizedBox(height: Gap.m),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _price,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
                       ),
-                      child: const Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.add_a_photo_outlined,
-                            color: AppColors.navy,
-                          ),
-                          Text('Photo'),
-                        ],
+                      decoration: const InputDecoration(
+                        labelText: 'Prix (TND)',
+                      ),
+                      validator: Validators.decimalRange(
+                        field: 'Le prix',
+                        min: 0.1,
+                        max: 5000,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: Gap.s),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _promo,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      decoration: const InputDecoration(
+                        labelText: 'Prix promo',
+                      ),
+                      validator: (v) {
+                        final base = Validators.decimalRange(
+                          field: 'Le prix promo',
+                          min: 0.1,
+                          max: 5000,
+                          optional: true,
+                        )(v);
+                        if (base != null) return base;
+                        final promo = Validators.parseDecimal(v);
+                        final price = Validators.parseDecimal(_price.text);
+                        if (promo != null && price != null && promo >= price) {
+                          return 'Doit être < prix.';
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: Gap.s),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _stock,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(labelText: 'Stock'),
+                      validator: Validators.intRange(
+                        field: 'Le stock',
+                        min: 0,
+                        max: 10000,
                       ),
                     ),
                   ),
                 ],
               ),
-            ),
-            const SizedBox(height: Gap.m),
-            TextFormField(
-              controller: _name,
-              decoration: const InputDecoration(labelText: 'Nom du produit'),
-              validator: Validators.text(field: 'Le nom', min: 3, max: 80),
-            ),
-            const SizedBox(height: Gap.m),
-            TextFormField(
-              controller: _description,
-              maxLines: 3,
-              decoration: const InputDecoration(labelText: 'Description'),
-              validator: Validators.text(
-                field: 'La description',
-                min: 10,
-                max: 600,
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                value: _active,
+                onChanged: (v) => setState(() => _active = v),
+                title: Text('En vente', style: AppText.body()),
               ),
-            ),
-            const SizedBox(height: Gap.m),
-            EnumDropdown<ProductCategory>(
-              label: 'Catégorie',
-              value: _category,
-              values: ProductCategory.values,
-              labelOf: (c) => c.label,
-              onChanged: (c) => setState(() => _category = c),
-            ),
-            const SizedBox(height: Gap.m),
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _price,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    decoration: const InputDecoration(labelText: 'Prix (TND)'),
-                    validator: Validators.decimalRange(
-                      field: 'Le prix',
-                      min: 0.1,
-                      max: 5000,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: Gap.s),
-                Expanded(
-                  child: TextFormField(
-                    controller: _promo,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    decoration: const InputDecoration(labelText: 'Prix promo'),
-                    validator: (v) {
-                      final base = Validators.decimalRange(
-                        field: 'Le prix promo',
-                        min: 0.1,
-                        max: 5000,
-                        optional: true,
-                      )(v);
-                      if (base != null) return base;
-                      final promo = Validators.parseDecimal(v);
-                      final price = Validators.parseDecimal(_price.text);
-                      if (promo != null && price != null && promo >= price) {
-                        return 'Doit être < prix.';
-                      }
-                      return null;
-                    },
-                  ),
-                ),
-                const SizedBox(width: Gap.s),
-                Expanded(
-                  child: TextFormField(
-                    controller: _stock,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Stock'),
-                    validator: Validators.intRange(
-                      field: 'Le stock',
-                      min: 0,
-                      max: 10000,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              value: _active,
-              onChanged: (v) => setState(() => _active = v),
-              title: Text('En vente', style: AppText.body()),
-            ),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              value: _featured,
-              onChanged: (v) => setState(() => _featured = v),
-              title: Text('À la une (accueil)', style: AppText.body()),
-            ),
-            const SizedBox(height: Gap.m),
-            LoadingButton(
-              label: 'Enregistrer',
-              loading: _saving,
-              onPressed: _save,
-              icon: Icons.check,
-            ),
-            const SizedBox(height: Gap.l),
-          ],
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                value: _featured,
+                onChanged: (v) => setState(() => _featured = v),
+                title: Text('À la une (accueil)', style: AppText.body()),
+              ),
+              const SizedBox(height: Gap.m),
+              LoadingButton(
+                label: 'Enregistrer',
+                loading: _saving,
+                onPressed: _save,
+                icon: Icons.check,
+              ),
+              const SizedBox(height: Gap.l),
+            ],
+          ),
         ),
       ),
     );
