@@ -16,7 +16,8 @@ class Subscription {
 
   int daysLeft(DateTime now) {
     if (end == null || !end!.isAfter(now)) return 0;
-    return end!.difference(now).inHours ~/ 24 + 1;
+    // Jours entamés restants (arrondi supérieur).
+    return (end!.difference(now).inMinutes / (24 * 60)).ceil();
   }
 
   Json toJson() => {

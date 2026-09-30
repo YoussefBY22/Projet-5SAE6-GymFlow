@@ -129,6 +129,9 @@ class NetImage extends StatelessWidget {
   final IconData fallbackIcon;
   final int cacheWidth;
 
+  /// Désactivé dans les tests (pas d'accès réseau) : affiche le repli.
+  static bool networkEnabled = true;
+
   Widget _fallback() => Container(
     width: width,
     height: height,
@@ -142,6 +145,7 @@ class NetImage extends StatelessWidget {
     final src = source;
     if (src == null || src.isEmpty) return _fallback();
     if (src.startsWith('http')) {
+      if (!networkEnabled) return _fallback();
       return CachedNetworkImage(
         imageUrl: src,
         width: width,

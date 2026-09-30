@@ -28,20 +28,17 @@ class FadeSlideIn extends StatefulWidget {
 
 class _FadeSlideInState extends State<FadeSlideIn>
     with SingleTickerProviderStateMixin {
+  // Le décalage de la cascade est intégré à la durée (Interval) : aucun
+  // Timer, l'animation reste pilotée par le moteur de rendu.
+  late final int _delayMs = 40 * math.min(widget.index, 8);
   late final AnimationController _c = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 420),
+    duration: Duration(milliseconds: 420 + _delayMs),
+  )..forward();
+  late final Animation<double> _t = CurvedAnimation(
+    parent: _c,
+    curve: Interval(_delayMs / (420 + _delayMs), 1, curve: kCurve),
   );
-  late final Animation<double> _t = CurvedAnimation(parent: _c, curve: kCurve);
-
-  @override
-  void initState() {
-    super.initState();
-    final delay = Duration(milliseconds: 40 * math.min(widget.index, 8));
-    Future<void>.delayed(delay, () {
-      if (mounted) _c.forward();
-    });
-  }
 
   @override
   void dispose() {
