@@ -64,7 +64,7 @@ class ShopDashboardScreen extends StatelessWidget {
                 physics: const NeverScrollableScrollPhysics(),
                 mainAxisSpacing: Gap.s,
                 crossAxisSpacing: Gap.s,
-                childAspectRatio: 1.6,
+                childAspectRatio: 1.45,
                 children: [
                   KpiCard(
                     icon: Icons.payments,

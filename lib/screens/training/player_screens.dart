@@ -347,7 +347,7 @@ class _SessionPlayerScreenState extends State<SessionPlayerScreen> {
                       child: Container(
                         height: 200,
                         color: AppColors.white,
-                        child: NetImage(exerciseThumb(ex), fit: BoxFit.contain),
+                        child: ExerciseImage(ex, fit: BoxFit.contain),
                       ),
                     ),
                   const SizedBox(height: Gap.s),

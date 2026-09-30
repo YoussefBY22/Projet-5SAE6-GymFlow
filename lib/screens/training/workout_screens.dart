@@ -246,7 +246,7 @@ class _WorkoutItemTile extends StatelessWidget {
                   width: 64,
                   height: 64,
                   color: AppColors.white,
-                  child: NetImage(exerciseThumb(exercise), cacheWidth: 200),
+                  child: ExerciseImage(exercise, cacheWidth: 200),
                 ),
               ),
               Positioned(
@@ -612,7 +612,7 @@ class _ExercisePickerState extends State<_ExercisePicker> {
                   child: SizedBox(
                     width: 48,
                     height: 48,
-                    child: NetImage(exerciseThumb(list[i]), cacheWidth: 150),
+                    child: ExerciseImage(list[i], cacheWidth: 150),
                   ),
                 ),
                 title: Text(list[i].name),

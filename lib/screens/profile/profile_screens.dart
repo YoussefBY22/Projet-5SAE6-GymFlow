@@ -523,7 +523,9 @@ class ProgressView extends StatelessWidget {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          '$streak jour${streak > 1 ? 's' : ''} d\'affilée',
+                          streak == 0
+                              ? 'Pas encore de série'
+                              : "$streak jour${streak > 1 ? 's' : ''} d'affilée",
                           style: AppText.subtitle(size: 14),
                         ),
                       ],

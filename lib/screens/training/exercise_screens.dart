@@ -93,10 +93,7 @@ class ExerciseDetailScreen extends StatelessWidget {
                         tag: 'ex_${e.id}',
                         child: Container(
                           color: AppColors.white,
-                          child: NetImage(
-                            exerciseThumb(e),
-                            fit: BoxFit.contain,
-                          ),
+                          child: ExerciseImage(e, fit: BoxFit.contain),
                         ),
                       ),
                       // Voile sombre en haut : icônes blanches de l'AppBar lisibles.

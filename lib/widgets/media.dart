@@ -38,16 +38,45 @@ String? youtubeId(String input) {
 String youtubeThumb(String id) =>
     'https://img.youtube.com/vi/$id/hqdefault.jpg';
 
-/// Vignette d'un exercice : 1re image, sinon miniature YouTube.
-String? exerciseThumb(Exercise e) {
-  if (e.images.isNotEmpty) return e.images.first.source;
-  for (final m in e.media) {
-    if (m.kind == MediaKind.youtube) {
-      final id = youtubeId(m.source);
-      if (id != null) return youtubeThumb(id);
-    }
+/// Vignettes possibles d'un exercice, par ordre de préférence :
+/// 1re image (wger ou upload), puis miniature de la vidéo YouTube.
+List<String> exerciseThumbs(Exercise e) {
+  final ytId = e.media
+      .where((m) => m.kind == MediaKind.youtube)
+      .map((m) => youtubeId(m.source))
+      .whereType<String>()
+      .firstOrNull;
+  return [
+    if (e.images.isNotEmpty) e.images.first.source,
+    if (ytId != null) youtubeThumb(ytId),
+  ];
+}
+
+String? exerciseThumb(Exercise e) => exerciseThumbs(e).firstOrNull;
+
+/// Image d'un exercice avec repli automatique (image → YouTube → icône).
+class ExerciseImage extends StatelessWidget {
+  const ExerciseImage(
+    this.exercise, {
+    super.key,
+    this.fit = BoxFit.cover,
+    this.cacheWidth = 800,
+  });
+
+  final Exercise exercise;
+  final BoxFit fit;
+  final int cacheWidth;
+
+  @override
+  Widget build(BuildContext context) {
+    final thumbs = exerciseThumbs(exercise);
+    return NetImage(
+      thumbs.firstOrNull,
+      fit: fit,
+      cacheWidth: cacheWidth,
+      fallbackSources: thumbs.skip(1).toList(),
+    );
   }
-  return null;
 }
 
 /// Lecteur YouTube intégré (lu directement dans l'application).

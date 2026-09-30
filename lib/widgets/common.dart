@@ -48,16 +48,30 @@ class GfCard extends StatelessWidget {
 
 /// Titre de section avec action optionnelle « Voir tout ».
 class SectionHeader extends StatelessWidget {
-  const SectionHeader(this.title, {super.key, this.action, this.onAction});
+  const SectionHeader(
+    this.title, {
+    super.key,
+    this.action,
+    this.onAction,
+    this.padded = true,
+  });
 
   final String title;
   final String? action;
   final VoidCallback? onAction;
 
+  /// `false` quand la liste parente a déjà sa propre marge horizontale.
+  final bool padded;
+
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(Gap.m, Gap.l, Gap.s, Gap.s),
+      padding: EdgeInsets.fromLTRB(
+        padded ? Gap.m : 0,
+        Gap.l,
+        padded ? Gap.s : 0,
+        Gap.s,
+      ),
       child: Row(
         children: [
           Expanded(child: Text(title, style: AppText.title(size: 18))),
@@ -120,9 +134,13 @@ class NetImage extends StatelessWidget {
     this.height,
     this.fallbackIcon = Icons.fitness_center,
     this.cacheWidth = 800,
+    this.fallbackSources = const [],
   });
 
   final String? source;
+
+  /// Sources de repli essayées dans l'ordre si [source] échoue.
+  final List<String> fallbackSources;
   final BoxFit fit;
   final double? width;
   final double? height;
@@ -132,7 +150,19 @@ class NetImage extends StatelessWidget {
   /// Désactivé dans les tests (pas d'accès réseau) : affiche le repli.
   static bool networkEnabled = true;
 
-  Widget _fallback() => Container(
+  Widget _fallback() => fallbackSources.isNotEmpty
+      ? NetImage(
+          fallbackSources.first,
+          fit: fit,
+          width: width,
+          height: height,
+          fallbackIcon: fallbackIcon,
+          cacheWidth: cacheWidth,
+          fallbackSources: fallbackSources.sublist(1),
+        )
+      : _icon();
+
+  Widget _icon() => Container(
     width: width,
     height: height,
     color: AppColors.cream,
@@ -349,7 +379,12 @@ class StatTile extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         if (icon != null) Icon(icon, size: 18, color: color),
-        Text(value, style: AppText.stat(color: color, size: 20)),
+        Text(
+          value,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: AppText.stat(color: color, size: 18),
+        ),
         Text(label, style: AppText.label(size: 12)),
       ],
     );

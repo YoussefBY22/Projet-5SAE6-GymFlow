@@ -8,6 +8,35 @@ import '../core/theme.dart';
 
 /// Graphiques fl_chart aux couleurs GymFlow (infobulles marine, texte blanc).
 
+/// Pas de graduation « rond » (1, 2, 5, 10, 20, 50…) pour ~4 graduations.
+double niceInterval(double range) {
+  final raw = range / 4;
+  if (raw <= 1) return 1;
+  final magnitude = math
+      .pow(10, (math.log(raw) / math.ln10).floor())
+      .toDouble();
+  for (final m in const [1, 2, 5, 10]) {
+    if (raw <= m * magnitude) return m * magnitude;
+  }
+  return 10 * magnitude;
+}
+
+/// Libellé d'axe masqué au bord haut (évite les chevauchements).
+Widget _axisLabel(double v, TitleMeta meta, String text) {
+  if (v == meta.max) return const SizedBox.shrink();
+  return SideTitleWidget(
+    meta: meta,
+    child: Text(text, style: AppText.label(size: 10)),
+  );
+}
+
+FlGridData _grid(double interval) => FlGridData(
+  drawVerticalLine: false,
+  horizontalInterval: interval,
+  getDrawingHorizontalLine: (_) =>
+      const FlLine(color: AppColors.divider, strokeWidth: 1),
+);
+
 /// Courbe temporelle (poids, inscriptions…).
 class GfLineChart extends StatelessWidget {
   const GfLineChart({
@@ -34,20 +63,18 @@ class GfLineChart extends StatelessWidget {
       );
     }
     final values = points.map((p) => p.$2);
-    final minY = values.reduce(math.min);
-    final maxY = values.reduce(math.max);
-    final pad = math.max(1.0, (maxY - minY) * 0.2);
+    final minV = values.reduce(math.min);
+    final maxV = values.reduce(math.max);
+    final interval = niceInterval(math.max(1, maxV - minV) * 1.4);
+    final minY = ((minV - interval * 0.5) / interval).floor() * interval;
+    final maxY = ((maxV + interval * 0.5) / interval).ceil() * interval;
     return SizedBox(
       height: height,
       child: LineChart(
         LineChartData(
-          minY: (minY - pad).floorToDouble(),
-          maxY: (maxY + pad).ceilToDouble(),
-          gridData: FlGridData(
-            drawVerticalLine: false,
-            getDrawingHorizontalLine: (_) =>
-                const FlLine(color: AppColors.divider, strokeWidth: 1),
-          ),
+          minY: math.max(0, minY),
+          maxY: maxY,
+          gridData: _grid(interval),
           borderData: FlBorderData(show: false),
           titlesData: FlTitlesData(
             topTitles: const AxisTitles(),
@@ -56,13 +83,9 @@ class GfLineChart extends StatelessWidget {
               sideTitles: SideTitles(
                 showTitles: true,
                 reservedSize: 40,
-                getTitlesWidget: (v, meta) => SideTitleWidget(
-                  meta: meta,
-                  child: Text(
-                    v.toStringAsFixed(0),
-                    style: AppText.label(size: 11),
-                  ),
-                ),
+                interval: interval,
+                getTitlesWidget: (v, meta) =>
+                    _axisLabel(v, meta, v.toStringAsFixed(0)),
               ),
             ),
             bottomTitles: AxisTitles(
@@ -138,35 +161,32 @@ class GfBarChart extends StatelessWidget {
     this.height = 200,
     this.color = AppColors.navy,
     this.valueLabel,
-    this.maxY,
   });
 
   final List<(String, double)> bars;
   final double height;
   final Color color;
   final String Function(double)? valueLabel;
-  final double? maxY;
 
   @override
   Widget build(BuildContext context) {
-    if (bars.isEmpty) {
+    if (bars.isEmpty || bars.every((b) => b.$2 <= 0)) {
       return SizedBox(
         height: height / 2,
-        child: Center(child: Text('Aucune donnée', style: AppText.label())),
+        child: Center(
+          child: Text('Pas encore de données', style: AppText.label()),
+        ),
       );
     }
-    final top =
-        maxY ?? math.max(1.0, bars.map((b) => b.$2).reduce(math.max) * 1.15);
+    final maxV = bars.map((b) => b.$2).reduce(math.max);
+    final interval = niceInterval(maxV * 1.1);
+    final top = ((maxV * 1.1) / interval).ceil() * interval;
     return SizedBox(
       height: height,
       child: BarChart(
         BarChartData(
           maxY: top,
-          gridData: FlGridData(
-            drawVerticalLine: false,
-            getDrawingHorizontalLine: (_) =>
-                const FlLine(color: AppColors.divider, strokeWidth: 1),
-          ),
+          gridData: _grid(interval),
           borderData: FlBorderData(show: false),
           titlesData: FlTitlesData(
             topTitles: const AxisTitles(),
@@ -175,12 +195,11 @@ class GfBarChart extends StatelessWidget {
               sideTitles: SideTitles(
                 showTitles: true,
                 reservedSize: 40,
-                getTitlesWidget: (v, meta) => SideTitleWidget(
-                  meta: meta,
-                  child: Text(
-                    valueLabel?.call(v) ?? v.toStringAsFixed(0),
-                    style: AppText.label(size: 10),
-                  ),
+                interval: interval,
+                getTitlesWidget: (v, meta) => _axisLabel(
+                  v,
+                  meta,
+                  valueLabel?.call(v) ?? v.toStringAsFixed(0),
                 ),
               ),
             ),

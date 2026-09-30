@@ -117,19 +117,21 @@ class DashboardService {
   List<(Course, double)> fillRates({int limit = 8}) {
     _b.requireRole(Backend.adminOnly);
     final now = _b.now();
-    final list =
+    // Cours à venir d'abord (pilotage), complétés par les plus récents terminés.
+    final upcoming =
         _b.courses.all
-            .where(
-              (c) =>
-                  c.statusAt(now) == CourseStatus.scheduled ||
-                  c.statusAt(now) == CourseStatus.done,
-            )
+            .where((c) => c.statusAt(now) == CourseStatus.scheduled)
             .toList()
           ..sort((a, b) => a.startAt!.compareTo(b.startAt!));
-    return list
-        .take(limit)
-        .map((c) => (c, _b.courseService.fillRate(c)))
-        .toList();
+    final done =
+        _b.courses.all
+            .where((c) => c.statusAt(now) == CourseStatus.done)
+            .toList()
+          ..sort((a, b) => b.startAt!.compareTo(a.startAt!));
+    return [
+      ...upcoming,
+      ...done,
+    ].take(limit).map((c) => (c, _b.courseService.fillRate(c))).toList();
   }
 
   /// Cours les plus réservés (par titre).

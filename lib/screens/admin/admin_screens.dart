@@ -49,7 +49,7 @@ class AdminDashboardScreen extends StatelessWidget {
                 physics: const NeverScrollableScrollPhysics(),
                 mainAxisSpacing: Gap.s,
                 crossAxisSpacing: Gap.s,
-                childAspectRatio: 1.55,
+                childAspectRatio: 1.3,
                 children: [
                   KpiCard(
                     icon: Icons.group,

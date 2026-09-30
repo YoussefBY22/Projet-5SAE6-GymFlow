@@ -325,7 +325,7 @@ class SeedService {
           age: 27,
           goal: Goal.muscleGain,
           subscription: sub(SubscriptionType.monthly, -50),
-          createdAt: _day(-100),
+          createdAt: _day(-26),
         ),
         'Membre2026!',
       ),

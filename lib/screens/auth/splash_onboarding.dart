@@ -6,6 +6,7 @@ import '../../core/routes.dart';
 import '../../core/theme.dart';
 import '../../services/bootstrap.dart';
 import '../../widgets/animations.dart';
+import '../../widgets/common.dart';
 
 /// Splash animé : attend l'initialisation (base SQLite, jeu de démo,
 /// session) puis redirige vers l'onboarding, la connexion ou l'accueil.
@@ -174,6 +175,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 fit: StackFit.expand,
                 children: [
                   Image.asset(image, fit: BoxFit.cover),
+                  const TopScrim(height: 140),
                   // Dégradé sombre : texte blanc lisible sur la photo.
                   const DecoratedBox(
                     decoration: BoxDecoration(

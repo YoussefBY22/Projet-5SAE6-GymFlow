@@ -86,7 +86,7 @@ class ExerciseTile extends StatelessWidget {
                 color: AppColors.white,
                 width: 76,
                 height: 76,
-                child: NetImage(exerciseThumb(e), cacheWidth: 240),
+                child: ExerciseImage(e, cacheWidth: 240),
               ),
             ),
           ),
@@ -169,8 +169,12 @@ class CoverCard extends StatelessWidget {
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  stops: [0.2, 1],
-                  colors: [Color(0x1A00101F), Color(0xE600101F)],
+                  stops: [0, 0.35, 1],
+                  colors: [
+                    Color(0x9900101F),
+                    Color(0x1A00101F),
+                    Color(0xE600101F),
+                  ],
                 ),
               ),
             ),

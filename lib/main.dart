@@ -1,9 +1,11 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 import 'app.dart';
+import 'repositories/data_store.dart';
 import 'repositories/sqlite_data_store.dart';
 import 'services/backend.dart';
 import 'services/bootstrap.dart';
@@ -31,7 +33,8 @@ Future<void> main() async {
   // Le backend (SQLite + jeu de démo) est initialisé pendant le splash.
   BackendBootstrap.start(
     () => Backend.init(
-      store: SqliteDataStore(),
+      // Web (prévisualisation) : données en mémoire ; Android : SQLite.
+      store: kIsWeb ? MemoryDataStore() : SqliteDataStore(),
       sessionStorage: SecureSessionStorage(),
       notifier: notifier,
       calendar: DeviceCalendar(),

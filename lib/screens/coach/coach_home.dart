@@ -41,7 +41,7 @@ class CoachHomeScreen extends StatelessWidget {
                 physics: const NeverScrollableScrollPhysics(),
                 mainAxisSpacing: Gap.s,
                 crossAxisSpacing: Gap.s,
-                childAspectRatio: 1.6,
+                childAspectRatio: 1.45,
                 children: [
                   _KpiCard(
                     icon: Icons.event,
@@ -255,7 +255,7 @@ class _KpiCard extends StatelessWidget {
           Text(
             label,
             style: AppText.label(size: 12),
-            maxLines: 1,
+            maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
         ],
