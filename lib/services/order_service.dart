@@ -15,8 +15,9 @@ class OrderService {
   /// Vérifie que chaque ligne est encore disponible (avant ET après le
   /// paiement : le stock est revérifié au dernier moment).
   void checkStock(List<CartLine> lines) {
-    if (lines.isEmpty)
+    if (lines.isEmpty) {
       throw const BusinessRuleException('Votre panier est vide.');
+    }
     for (final l in lines) {
       final p = _b.products.byId(l.product.id);
       if (p == null || !p.active) {
@@ -106,8 +107,9 @@ class OrderService {
     final me = _b.requireUser();
     final o = _b.orders.byId(id);
     if (o == null) return null;
-    if (o.userId != me.id && !me.isAdmin)
+    if (o.userId != me.id && !me.isAdmin) {
       throw const PermissionDeniedException();
+    }
     return o;
   }
 

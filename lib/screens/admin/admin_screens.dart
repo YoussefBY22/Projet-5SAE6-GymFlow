@@ -222,8 +222,9 @@ class _RankList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (items.isEmpty)
+    if (items.isEmpty) {
       return const GfCard(child: InfoRow(Icons.info_outline, 'Aucune donnée.'));
+    }
     final max = items.first.$2;
     return GfCard(
       child: Column(

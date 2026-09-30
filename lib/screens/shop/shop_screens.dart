@@ -590,8 +590,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final lines = _lines;
     final gateway = b.payment;
     if (gateway is SimulatedPaymentGateway &&
-        !_formKey.currentState!.validate())
+        !_formKey.currentState!.validate()) {
       return;
+    }
     setState(() => _paying = true);
     try {
       b.orderService.checkStock(lines); // 1re vérification du stock
@@ -607,8 +608,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           context,
           gfRoute(StripeCheckoutPage(session: session)),
         );
-        if (sessionId == null)
+        if (sessionId == null) {
           throw const BusinessRuleException('Paiement annulé.');
+        }
         result = await gateway.verify(sessionId);
       } else if (gateway is SimulatedPaymentGateway) {
         result = await gateway.charge(
@@ -619,17 +621,19 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           now: b.now(),
         );
       }
-      if (result == null || !result.success)
+      if (result == null || !result.success) {
         throw const BusinessRuleException('Paiement non finalisé.');
+      }
       // Le stock est revérifié au moment d'enregistrer la commande.
       final order = await b.orderService.placeOrder(lines, result);
       if (widget.direct == null) b.cart.clear();
-      if (mounted)
+      if (mounted) {
         Navigator.pushReplacementNamed(
           context,
           Routes.orderConfirmation,
           arguments: order.id,
         );
+      }
     } catch (e) {
       if (mounted) showSnack(context, friendlyError(e), error: true);
     } finally {

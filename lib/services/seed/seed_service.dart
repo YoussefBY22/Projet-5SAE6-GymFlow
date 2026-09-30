@@ -921,8 +921,9 @@ class SeedService {
         // Hedi a arrêté il y a 5 semaines (abonnement expiré).
         if (key == 'hedi' && d < 35) workoutKey = null;
         // Ahmed : série de 3 jours consécutifs pour la démo des streaks.
-        if (key == 'ahmed' && d <= 3)
+        if (key == 'ahmed' && d <= 3) {
           workoutKey = ['push', 'pull', 'legs'][3 - d];
+        }
         if (workoutKey == null) continue;
         if (_rnd.nextDouble() < 0.12 && d > 3) continue; // séance manquée
         final weekIndex = weeks - (d ~/ 7);

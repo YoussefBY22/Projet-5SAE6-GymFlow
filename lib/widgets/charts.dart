@@ -72,8 +72,9 @@ class GfLineChart extends StatelessWidget {
                 interval: math.max(1, (points.length / 4).ceilToDouble()),
                 getTitlesWidget: (v, meta) {
                   final i = v.round();
-                  if (i < 0 || i >= points.length)
+                  if (i < 0 || i >= points.length) {
                     return const SizedBox.shrink();
+                  }
                   final d = points[i].$1;
                   return SideTitleWidget(
                     meta: meta,

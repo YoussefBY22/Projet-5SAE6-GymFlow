@@ -319,8 +319,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
     if (!mounted) return;
     setState(() => _loading = false);
-    if (ok)
+    if (ok) {
       Navigator.pushNamedAndRemoveUntil(context, Routes.home, (_) => false);
+    }
   }
 
   @override

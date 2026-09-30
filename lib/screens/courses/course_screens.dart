@@ -410,11 +410,12 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                               confirmLabel: 'Annuler la réservation',
                               destructive: true,
                             );
-                            if (ok)
+                            if (ok) {
                               await _act(
                                 () => b.reservationService.cancel(active.id),
                                 'Réservation annulée.',
                               );
+                            }
                           },
                     icon: const Icon(Icons.event_busy),
                     label: Text(
@@ -468,12 +469,13 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                     PopupMenuButton<String>(
                       tooltip: 'Gérer',
                       onSelected: (v) {
-                        if (v == 'edit')
+                        if (v == 'edit') {
                           Navigator.pushNamed(
                             context,
                             Routes.courseForm,
                             arguments: c.id,
                           );
+                        }
                         if (v == 'cancel') _cancelCourse(c);
                       },
                       itemBuilder: (_) => const [

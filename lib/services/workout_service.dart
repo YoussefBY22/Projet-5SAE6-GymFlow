@@ -194,8 +194,9 @@ class WorkoutService {
     } else {
       final existing =
           _b.programs.byId(id) ?? (throw const NotFoundException());
-      if (!canEditProgram(me, existing))
+      if (!canEditProgram(me, existing)) {
         throw const PermissionDeniedException();
+      }
       p = existing.copyWith(
         name: name.trim(),
         description: description.trim(),

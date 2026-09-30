@@ -488,8 +488,9 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                       if (base != null) return base;
                       final promo = Validators.parseDecimal(v);
                       final price = Validators.parseDecimal(_price.text);
-                      if (promo != null && price != null && promo >= price)
+                      if (promo != null && price != null && promo >= price) {
                         return 'Doit être < prix.';
+                      }
                       return null;
                     },
                   ),

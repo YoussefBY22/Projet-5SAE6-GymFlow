@@ -35,8 +35,9 @@ class _AutoBannerState extends State<AutoBanner> {
     if (!mounted ||
         _touching ||
         widget.items.length < 2 ||
-        !_controller.hasClients)
+        !_controller.hasClients) {
       return;
+    }
     final next = (_page + 1) % widget.items.length;
     _controller.animateToPage(
       next,

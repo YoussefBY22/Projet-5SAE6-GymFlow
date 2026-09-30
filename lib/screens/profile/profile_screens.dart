@@ -987,12 +987,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             onPressed: () async {
               await b.auth.logout();
-              if (context.mounted)
+              if (context.mounted) {
                 Navigator.pushNamedAndRemoveUntil(
                   context,
                   Routes.login,
                   (_) => false,
                 );
+              }
             },
             icon: const Icon(Icons.logout),
             label: const Text('Se déconnecter'),

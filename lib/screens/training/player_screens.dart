@@ -234,12 +234,13 @@ class _SessionPlayerScreenState extends State<SessionPlayerScreen> {
         sets: sets,
       );
       _ticker?.cancel();
-      if (mounted)
+      if (mounted) {
         Navigator.pushReplacementNamed(
           context,
           Routes.summary,
           arguments: result,
         );
+      }
     } catch (e) {
       if (mounted) {
         setState(() => _finishing = false);
@@ -266,8 +267,9 @@ class _SessionPlayerScreenState extends State<SessionPlayerScreen> {
             tooltip: 'Abandonner',
             icon: const Icon(Icons.close),
             onPressed: () async {
-              if (await _confirmQuit() && context.mounted)
+              if (await _confirmQuit() && context.mounted) {
                 Navigator.pop(context);
+              }
             },
           ),
           title: Text(_workout.name),

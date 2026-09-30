@@ -390,12 +390,13 @@ class _ExerciseFormScreenState extends State<ExerciseFormScreen> {
         if (url != null) item = MediaItem(kind: MediaKind.image, source: url);
       case 'video':
         final path = await pickVideoFile(context);
-        if (path != null)
+        if (path != null) {
           item = MediaItem(
             kind: MediaKind.video,
             source: path,
             caption: 'Vidéo importée',
           );
+        }
       case 'youtube':
         final link = await askText(
           context,
