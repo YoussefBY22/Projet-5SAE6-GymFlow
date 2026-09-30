@@ -15,7 +15,8 @@ import 'backend.dart';
 /// API interne d'authentification : inscription, connexion, session,
 /// verrouillage après échecs, mot de passe oublié (flux simulé).
 class AuthService extends ChangeNotifier {
-  AuthService(this._b) : hasher = PasswordHasher(iterations: _b.passwordIterations);
+  AuthService(this._b)
+    : hasher = PasswordHasher(iterations: _b.passwordIterations);
 
   final Backend _b;
   final PasswordHasher hasher;
@@ -83,7 +84,9 @@ class AuthService extends ChangeNotifier {
 
   Future<AppUser> login(String email, String password) async {
     if (Validators.email(email) != null || password.isEmpty) {
-      throw const ValidationException('Saisissez votre e-mail et mot de passe.');
+      throw const ValidationException(
+        'Saisissez votre e-mail et mot de passe.',
+      );
     }
     const generic = 'E-mail ou mot de passe incorrect.';
     final user = _findByEmail(email);
@@ -239,7 +242,11 @@ class AuthService extends ChangeNotifier {
     return code;
   }
 
-  Future<void> resetPassword(String email, String code, String newPassword) async {
+  Future<void> resetPassword(
+    String email,
+    String code,
+    String newPassword,
+  ) async {
     final pwdError = Validators.password(newPassword);
     if (pwdError != null) throw ValidationException(pwdError);
     final user = _findByEmail(email);

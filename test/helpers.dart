@@ -34,9 +34,11 @@ void Function(DateTime)? _setNow;
 /// Avance l'horloge du backend de test.
 void setNow(DateTime d) => _setNow?.call(d);
 
-Future<void> loginAs(Backend b, String email) =>
-    b.auth.login(email, email.startsWith('admin')
-        ? 'Admin2026!'
-        : ['amira', 'mehdi', 'sarra'].any(email.startsWith)
-        ? 'Coach2026!'
-        : 'Membre2026!');
+Future<void> loginAs(Backend b, String email) => b.auth.login(
+  email,
+  email.startsWith('admin')
+      ? 'Admin2026!'
+      : ['amira', 'mehdi', 'sarra'].any(email.startsWith)
+      ? 'Coach2026!'
+      : 'Membre2026!',
+);

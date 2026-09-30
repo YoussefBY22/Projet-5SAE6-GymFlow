@@ -69,7 +69,9 @@ class DashboardService {
       members: users.where((u) => u.isMember).length,
       coaches: users.where((u) => u.isCoach).length,
       activeSubscriptions: users
-          .where((u) => u.isMember && u.active && u.subscription.isActiveAt(now))
+          .where(
+            (u) => u.isMember && u.active && u.subscription.isActiveAt(now),
+          )
           .length,
       upcomingCourses: _b.courses.all
           .where((c) => c.statusAt(now) == CourseStatus.scheduled)
@@ -115,14 +117,15 @@ class DashboardService {
   List<(Course, double)> fillRates({int limit = 8}) {
     _b.requireRole(Backend.adminOnly);
     final now = _b.now();
-    final list = _b.courses.all
-        .where(
-          (c) =>
-              c.statusAt(now) == CourseStatus.scheduled ||
-              c.statusAt(now) == CourseStatus.done,
-        )
-        .toList()
-      ..sort((a, b) => a.startAt!.compareTo(b.startAt!));
+    final list =
+        _b.courses.all
+            .where(
+              (c) =>
+                  c.statusAt(now) == CourseStatus.scheduled ||
+                  c.statusAt(now) == CourseStatus.done,
+            )
+            .toList()
+          ..sort((a, b) => a.startAt!.compareTo(b.startAt!));
     return list
         .take(limit)
         .map((c) => (c, _b.courseService.fillRate(c)))
@@ -189,11 +192,15 @@ class DashboardService {
         .map((c) => c.id)
         .toSet();
     final doneRes = _b.reservations.all.where(
-      (r) => doneIds.contains(r.courseId) && r.status == ReservationStatus.confirmed,
+      (r) =>
+          doneIds.contains(r.courseId) &&
+          r.status == ReservationStatus.confirmed,
     );
     final marked = doneRes.where((r) => r.attended != null).toList();
     final present = marked.where((r) => r.attended == true).length;
-    final ratings = doneRes.where((r) => r.rating != null).map((r) => r.rating!);
+    final ratings = doneRes
+        .where((r) => r.rating != null)
+        .map((r) => r.rating!);
     final enrolled = upcoming.fold<int>(
       0,
       (s, c) => s + _b.courseService.confirmedCount(c.id),

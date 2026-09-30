@@ -14,21 +14,21 @@ class ProductService {
     final me = _b.requireUser();
     final q = ExerciseService.normalize(query);
     return _b.products.where(
-        (p) =>
-            (p.active || me.isAdmin) &&
-            (category == null || p.category == category) &&
-            (q.isEmpty ||
-                ExerciseService.normalize(
-                  '${p.name} ${p.category.label}',
-                ).contains(q)),
-      )
-      ..sort((a, b) {
-        if (a.inStock != b.inStock) return a.inStock ? -1 : 1;
-        return a.name.compareTo(b.name);
-      });
+      (p) =>
+          (p.active || me.isAdmin) &&
+          (category == null || p.category == category) &&
+          (q.isEmpty ||
+              ExerciseService.normalize(
+                '${p.name} ${p.category.label}',
+              ).contains(q)),
+    )..sort((a, b) {
+      if (a.inStock != b.inStock) return a.inStock ? -1 : 1;
+      return a.name.compareTo(b.name);
+    });
   }
 
-  List<Product> featured() => list().where((p) => p.featured || p.onPromo).toList();
+  List<Product> featured() =>
+      list().where((p) => p.featured || p.onPromo).toList();
 
   Product? byId(String id) => _b.products.byId(id);
 
@@ -75,7 +75,8 @@ class ProductService {
         createdAt: _b.now(),
       );
     } else {
-      final existing = _b.products.byId(id) ?? (throw const NotFoundException());
+      final existing =
+          _b.products.byId(id) ?? (throw const NotFoundException());
       p = existing.copyWith(
         name: name.trim(),
         description: description.trim(),

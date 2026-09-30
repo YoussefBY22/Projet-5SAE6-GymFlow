@@ -14,11 +14,9 @@ class UserService {
 
   AppUser? byId(String id) => _b.users.byId(id);
 
-  List<AppUser> coaches({bool activeOnly = true}) =>
-      _b.users.where(
-          (u) => u.role == UserRole.coach && (!activeOnly || u.active),
-        )
-        ..sort((a, b) => a.fullName.compareTo(b.fullName));
+  List<AppUser> coaches({bool activeOnly = true}) => _b.users.where(
+    (u) => u.role == UserRole.coach && (!activeOnly || u.active),
+  )..sort((a, b) => a.fullName.compareTo(b.fullName));
 
   /// Mise à jour du profil par l'utilisateur lui-même.
   Future<AppUser> updateProfile({
@@ -92,14 +90,13 @@ class UserService {
     _b.requireRole(Backend.adminOnly);
     final q = query.trim().toLowerCase();
     return _b.users.where(
-        (u) =>
-            (role == null || u.role == role) &&
-            (active == null || u.active == active) &&
-            (q.isEmpty ||
-                u.fullName.toLowerCase().contains(q) ||
-                u.email.toLowerCase().contains(q)),
-      )
-      ..sort((a, b) => a.fullName.compareTo(b.fullName));
+      (u) =>
+          (role == null || u.role == role) &&
+          (active == null || u.active == active) &&
+          (q.isEmpty ||
+              u.fullName.toLowerCase().contains(q) ||
+              u.email.toLowerCase().contains(q)),
+    )..sort((a, b) => a.fullName.compareTo(b.fullName));
   }
 
   Future<AppUser> setActive(String userId, bool active) async {
@@ -145,7 +142,10 @@ class UserService {
     return updated;
   }
 
-  Future<AppUser> updateSubscription(String userId, SubscriptionType type) async {
+  Future<AppUser> updateSubscription(
+    String userId,
+    SubscriptionType type,
+  ) async {
     _b.requireRole(Backend.adminOnly);
     final u = _b.users.byId(userId) ?? (throw const NotFoundException());
     final now = _b.now();

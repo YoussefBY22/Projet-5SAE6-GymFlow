@@ -160,5 +160,4 @@ class ExerciseService {
     }
     return buf.toString();
   }
-
 }

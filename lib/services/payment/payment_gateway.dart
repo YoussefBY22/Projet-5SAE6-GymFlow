@@ -99,7 +99,8 @@ class SimulatedPaymentGateway implements PaymentGateway {
     await Future<void>.delayed(latency);
     switch (number) {
       case successCard:
-        final ref = 'SIM-${now.millisecondsSinceEpoch.toRadixString(36).toUpperCase()}'
+        final ref =
+            'SIM-${now.millisecondsSinceEpoch.toRadixString(36).toUpperCase()}'
             '-${Random().nextInt(9999).toString().padLeft(4, '0')}';
         return PaymentResult(
           success: true,
@@ -171,7 +172,11 @@ class StripeCheckoutGateway implements PaymentGateway {
     }
     try {
       final res = await _client
-          .post(Uri.parse('$_api/checkout/sessions'), headers: _headers, body: body)
+          .post(
+            Uri.parse('$_api/checkout/sessions'),
+            headers: _headers,
+            body: body,
+          )
           .timeout(const Duration(seconds: 20));
       final json = jsonDecode(res.body) as Map<String, dynamic>;
       if (res.statusCode != 200) {

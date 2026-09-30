@@ -145,7 +145,8 @@ class ProgressService {
     for (final set in sets) {
       if (set.loadKg <= 0 || set.reps <= 0) continue;
       final prev = previous[set.exerciseId];
-      final bestSoFar = found[set.exerciseId]?.bestLoadKg ?? prev?.bestLoadKg ?? 0;
+      final bestSoFar =
+          found[set.exerciseId]?.bestLoadKg ?? prev?.bestLoadKg ?? 0;
       if (set.loadKg > bestSoFar) {
         found[set.exerciseId] = PersonalRecord(
           exerciseId: set.exerciseId,

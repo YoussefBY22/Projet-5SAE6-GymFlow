@@ -70,20 +70,20 @@ class CourseService {
   }
 
   /// Cours à venir d'un coach (dashboard coach).
-  List<Course> coachUpcoming(String coachId) => list(
-    view: CourseView.upcoming,
-    coachId: coachId,
-  );
+  List<Course> coachUpcoming(String coachId) =>
+      list(view: CourseView.upcoming, coachId: coachId);
 
   int confirmedCount(String courseId) => _b.reservations
       .where(
-        (r) => r.courseId == courseId && r.status == ReservationStatus.confirmed,
+        (r) =>
+            r.courseId == courseId && r.status == ReservationStatus.confirmed,
       )
       .length;
 
   int waitlistCount(String courseId) => _b.reservations
       .where(
-        (r) => r.courseId == courseId && r.status == ReservationStatus.waitlisted,
+        (r) =>
+            r.courseId == courseId && r.status == ReservationStatus.waitlisted,
       )
       .length;
 
@@ -105,11 +105,10 @@ class CourseService {
     final now = _b.now();
     final since = now.subtract(Duration(days: days));
     return _b.courses.where(
-        (c) =>
-            c.statusAt(now) == CourseStatus.scheduled &&
-            c.createdAt.isAfter(since),
-      )
-      ..sort((a, b) => a.startAt!.compareTo(b.startAt!));
+      (c) =>
+          c.statusAt(now) == CourseStatus.scheduled &&
+          c.createdAt.isAfter(since),
+    )..sort((a, b) => a.startAt!.compareTo(b.startAt!));
   }
 
   bool canManage(AppUser u, Course c) =>
@@ -193,7 +192,9 @@ class CourseService {
       );
     }
     if (existing.statusAt(now) == CourseStatus.done) {
-      throw const BusinessRuleException('Un cours terminé ne peut plus être modifié.');
+      throw const BusinessRuleException(
+        'Un cours terminé ne peut plus être modifié.',
+      );
     }
     if (capacity < confirmedCount(id)) {
       throw ValidationException(
@@ -223,7 +224,9 @@ class CourseService {
       await _b.notifications.notify(
         r.userId,
         NotificationType.course,
-        timeChanged ? 'Horaire modifié : ${updated.title}' : 'Cours modifié : ${updated.title}',
+        timeChanged
+            ? 'Horaire modifié : ${updated.title}'
+            : 'Cours modifié : ${updated.title}',
         updated.startAt == null
             ? 'Le cours repasse « à planifier ».'
             : 'Nouveau créneau : ${Fmt.dateTime(updated.startAt!)} · ${updated.room}.',
@@ -252,8 +255,12 @@ class CourseService {
     await _b.courses.save(
       c.copyWith(cancelled: true, cancelReason: reason.trim()),
     );
-    for (final r in _b.reservations.where((r) => r.courseId == id && r.isActive)) {
-      await _b.reservations.save(r.copyWith(status: ReservationStatus.cancelled));
+    for (final r in _b.reservations.where(
+      (r) => r.courseId == id && r.isActive,
+    )) {
+      await _b.reservations.save(
+        r.copyWith(status: ReservationStatus.cancelled),
+      );
       await _b.notifications.cancelCourseReminders(r.id);
       await _b.notifications.notify(
         r.userId,

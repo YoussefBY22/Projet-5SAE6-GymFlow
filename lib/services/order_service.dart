@@ -15,11 +15,14 @@ class OrderService {
   /// Vérifie que chaque ligne est encore disponible (avant ET après le
   /// paiement : le stock est revérifié au dernier moment).
   void checkStock(List<CartLine> lines) {
-    if (lines.isEmpty) throw const BusinessRuleException('Votre panier est vide.');
+    if (lines.isEmpty)
+      throw const BusinessRuleException('Votre panier est vide.');
     for (final l in lines) {
       final p = _b.products.byId(l.product.id);
       if (p == null || !p.active) {
-        throw BusinessRuleException('« ${l.product.name} » n\'est plus disponible.');
+        throw BusinessRuleException(
+          '« ${l.product.name} » n\'est plus disponible.',
+        );
       }
       if (l.quantity < 1) {
         throw const ValidationException('Quantité invalide.');
@@ -40,7 +43,10 @@ class OrderService {
   });
 
   /// Crée la commande après un paiement accepté et décrémente le stock.
-  Future<ShopOrder> placeOrder(List<CartLine> lines, PaymentResult payment) async {
+  Future<ShopOrder> placeOrder(
+    List<CartLine> lines,
+    PaymentResult payment,
+  ) async {
     final me = _b.requireUser();
     if (!payment.success) {
       throw const BusinessRuleException('Paiement non validé.');
@@ -100,7 +106,8 @@ class OrderService {
     final me = _b.requireUser();
     final o = _b.orders.byId(id);
     if (o == null) return null;
-    if (o.userId != me.id && !me.isAdmin) throw const PermissionDeniedException();
+    if (o.userId != me.id && !me.isAdmin)
+      throw const PermissionDeniedException();
     return o;
   }
 
@@ -136,7 +143,11 @@ class OrderService {
       route: '/orders',
       refId: o.id,
     );
-    await _b.audit.log('Commande ${next.label.toLowerCase()}', o.number, targetId: o.id);
+    await _b.audit.log(
+      'Commande ${next.label.toLowerCase()}',
+      o.number,
+      targetId: o.id,
+    );
     _b.bus.emit();
     return updated;
   }

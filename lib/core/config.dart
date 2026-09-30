@@ -9,7 +9,8 @@ class AppConfig {
 
   static const String appName = 'GymFlow';
   static const String gymName = 'GymFlow Club Lac 2';
-  static const String gymAddress = 'Rue du Lac Windermere, Les Berges du Lac 2, Tunis';
+  static const String gymAddress =
+      'Rue du Lac Windermere, Les Berges du Lac 2, Tunis';
 
   static const String stripeTestSecretKey = String.fromEnvironment(
     'STRIPE_TEST_SECRET_KEY',
@@ -28,7 +29,13 @@ class AppConfig {
   static const int maxImageBytes = 10 * 1024 * 1024;
   static const int maxVideoBytes = 100 * 1024 * 1024;
   static const List<String> imageExtensions = ['jpg', 'jpeg', 'png', 'webp'];
-  static const List<String> videoExtensions = ['mp4', 'mov', 'webm', '3gp', 'mkv'];
+  static const List<String> videoExtensions = [
+    'mp4',
+    'mov',
+    'webm',
+    '3gp',
+    'mkv',
+  ];
 
   /// Règles métier.
   static const int maxLoginAttempts = 5;

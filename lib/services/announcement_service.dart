@@ -39,7 +39,11 @@ class AnnouncementService {
     });
   }
 
-  Future<Announcement> publish(String title, String body, {String? imageUrl}) async {
+  Future<Announcement> publish(
+    String title,
+    String body, {
+    String? imageUrl,
+  }) async {
     final admin = _b.requireRole(Backend.adminOnly);
     if (title.trim().length < 4) {
       throw const ValidationException('Titre : 4 caractères minimum.');
@@ -98,7 +102,8 @@ class AnnouncementService {
       items.add(
         BannerItem(
           title: p.name,
-          subtitle: '-${p.discountPercent} % · ${Fmt.money(p.effectivePrice)} au lieu de ${Fmt.money(p.price)}',
+          subtitle:
+              '-${p.discountPercent} % · ${Fmt.money(p.effectivePrice)} au lieu de ${Fmt.money(p.price)}',
           badge: 'Promo boutique',
           imageUrl: p.images.isEmpty ? null : p.images.first,
           route: '/shop/product',

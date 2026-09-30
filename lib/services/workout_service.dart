@@ -18,13 +18,12 @@ class WorkoutService {
     _b.requireUser();
     final q = ExerciseService.normalize(query);
     return _b.workouts.where(
-        (w) =>
-            (level == null || w.level == level) &&
-            (goal == null || w.goal == goal) &&
-            (q.isEmpty ||
-                ExerciseService.normalize('${w.name} ${w.focus}').contains(q)),
-      )
-      ..sort((a, b) => a.name.compareTo(b.name));
+      (w) =>
+          (level == null || w.level == level) &&
+          (goal == null || w.goal == goal) &&
+          (q.isEmpty ||
+              ExerciseService.normalize('${w.name} ${w.focus}').contains(q)),
+    )..sort((a, b) => a.name.compareTo(b.name));
   }
 
   Workout? workoutById(String id) => _b.workouts.byId(id);
@@ -60,7 +59,9 @@ class WorkoutService {
     }
     for (final i in items) {
       if (_b.exercises.byId(i.exerciseId) == null) {
-        throw const ValidationException('Un exercice sélectionné n\'existe plus.');
+        throw const ValidationException(
+          'Un exercice sélectionné n\'existe plus.',
+        );
       }
       if (i.sets < 1 || i.sets > 10) {
         throw const ValidationException('Séries : entre 1 et 10.');
@@ -89,7 +90,8 @@ class WorkoutService {
         focus: focus.trim(),
       );
     } else {
-      final existing = _b.workouts.byId(id) ?? (throw const NotFoundException());
+      final existing =
+          _b.workouts.byId(id) ?? (throw const NotFoundException());
       if (!canEditWorkout(me, existing)) {
         throw const PermissionDeniedException(
           'Un coach ne peut modifier que ses propres workouts.',
@@ -132,11 +134,10 @@ class WorkoutService {
   List<Program> programs({Level? level, Goal? goal}) {
     _b.requireUser();
     return _b.programs.where(
-        (p) =>
-            (level == null || p.level == level) &&
-            (goal == null || p.goal == goal),
-      )
-      ..sort((a, b) => a.level.index.compareTo(b.level.index));
+      (p) =>
+          (level == null || p.level == level) &&
+          (goal == null || p.goal == goal),
+    )..sort((a, b) => a.level.index.compareTo(b.level.index));
   }
 
   Program? programById(String id) => _b.programs.byId(id);
@@ -154,7 +155,9 @@ class WorkoutService {
   }) async {
     final me = _b.requireRole(Backend.staff);
     if (name.trim().length < 3) {
-      throw const ValidationException('Nom du programme : 3 caractères minimum.');
+      throw const ValidationException(
+        'Nom du programme : 3 caractères minimum.',
+      );
     }
     if (days.isEmpty || days.length > 7) {
       throw const ValidationException('Entre 1 et 7 jours d\'entraînement.');
@@ -167,7 +170,9 @@ class WorkoutService {
     }
     for (final d in days) {
       if (_b.workouts.byId(d.workoutId) == null) {
-        throw const ValidationException('Un workout sélectionné n\'existe plus.');
+        throw const ValidationException(
+          'Un workout sélectionné n\'existe plus.',
+        );
       }
     }
     final sorted = [...days]..sort((a, b) => a.weekday.compareTo(b.weekday));
@@ -187,8 +192,10 @@ class WorkoutService {
         coverImage: coverImage,
       );
     } else {
-      final existing = _b.programs.byId(id) ?? (throw const NotFoundException());
-      if (!canEditProgram(me, existing)) throw const PermissionDeniedException();
+      final existing =
+          _b.programs.byId(id) ?? (throw const NotFoundException());
+      if (!canEditProgram(me, existing))
+        throw const PermissionDeniedException();
       p = existing.copyWith(
         name: name.trim(),
         description: description.trim(),

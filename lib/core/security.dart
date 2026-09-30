@@ -54,8 +54,7 @@ class PasswordHasher {
     final out = BytesBuilder();
     var block = 1;
     while (out.length < keyLength) {
-      final blockIndex = Uint8List(4)
-        ..buffer.asByteData().setUint32(0, block);
+      final blockIndex = Uint8List(4)..buffer.asByteData().setUint32(0, block);
       var u = hmac.convert([...salt, ...blockIndex]).bytes;
       final t = Uint8List.fromList(u);
       for (var i = 1; i < rounds; i++) {
@@ -89,4 +88,5 @@ String newSessionToken([Random? random]) {
 }
 
 /// Empreinte SHA-256 d'un jeton : seule l'empreinte est gardée en base.
-String tokenDigest(String token) => sha256.convert(utf8.encode(token)).toString();
+String tokenDigest(String token) =>
+    sha256.convert(utf8.encode(token)).toString();

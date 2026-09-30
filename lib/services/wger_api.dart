@@ -41,7 +41,10 @@ class WgerExercise {
       return null;
     }
 
-    final t = pick(12) ?? pick(2) ?? (translations.isEmpty ? null : translations.first);
+    final t =
+        pick(12) ??
+        pick(2) ??
+        (translations.isEmpty ? null : translations.first);
     return WgerExercise(
       id: j['id'] as int,
       name: (t?['name'] as String? ?? 'Exercice ${j['id']}').trim(),
@@ -199,7 +202,11 @@ class WgerApi {
       description: description,
       media: [
         for (final i in w.images.take(3))
-          MediaItem(kind: MediaKind.image, source: i, caption: 'wger.de · ${w.license}'),
+          MediaItem(
+            kind: MediaKind.image,
+            source: i,
+            caption: 'wger.de · ${w.license}',
+          ),
       ],
       wgerId: w.id,
     );

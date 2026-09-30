@@ -22,14 +22,54 @@ class DemoAccount {
 
 /// Comptes de démo (panneau retirable sur l'écran de connexion).
 const demoAccounts = <DemoAccount>[
-  DemoAccount('Karim — Super Admin', 'admin@gymflow.tn', 'Admin2026!', UserRole.superAdmin),
-  DemoAccount('Amira — Coach yoga', 'amira@gymflow.tn', 'Coach2026!', UserRole.coach),
-  DemoAccount('Mehdi — Coach force', 'mehdi@gymflow.tn', 'Coach2026!', UserRole.coach),
-  DemoAccount('Sarra — Coach cardio', 'sarra@gymflow.tn', 'Coach2026!', UserRole.coach),
-  DemoAccount('Nour — Abonnée (nouvelle)', 'nour@gymflow.tn', 'Membre2026!', UserRole.member),
-  DemoAccount('Ahmed — Abonné confirmé', 'ahmed@gymflow.tn', 'Membre2026!', UserRole.member),
-  DemoAccount('Hedi — Abonnement expiré', 'hedi@gymflow.tn', 'Membre2026!', UserRole.member),
-  DemoAccount('Walid — Compte désactivé', 'walid@gymflow.tn', 'Membre2026!', UserRole.member),
+  DemoAccount(
+    'Karim — Super Admin',
+    'admin@gymflow.tn',
+    'Admin2026!',
+    UserRole.superAdmin,
+  ),
+  DemoAccount(
+    'Amira — Coach yoga',
+    'amira@gymflow.tn',
+    'Coach2026!',
+    UserRole.coach,
+  ),
+  DemoAccount(
+    'Mehdi — Coach force',
+    'mehdi@gymflow.tn',
+    'Coach2026!',
+    UserRole.coach,
+  ),
+  DemoAccount(
+    'Sarra — Coach cardio',
+    'sarra@gymflow.tn',
+    'Coach2026!',
+    UserRole.coach,
+  ),
+  DemoAccount(
+    'Nour — Abonnée (nouvelle)',
+    'nour@gymflow.tn',
+    'Membre2026!',
+    UserRole.member,
+  ),
+  DemoAccount(
+    'Ahmed — Abonné confirmé',
+    'ahmed@gymflow.tn',
+    'Membre2026!',
+    UserRole.member,
+  ),
+  DemoAccount(
+    'Hedi — Abonnement expiré',
+    'hedi@gymflow.tn',
+    'Membre2026!',
+    UserRole.member,
+  ),
+  DemoAccount(
+    'Walid — Compte désactivé',
+    'walid@gymflow.tn',
+    'Membre2026!',
+    UserRole.member,
+  ),
 ];
 
 /// Charge le jeu de données de démonstration au premier lancement.
@@ -112,7 +152,8 @@ class SeedService {
           gender: Gender.male,
           age: 36,
           specialty: 'Musculation & force',
-          bio: 'Préparateur physique, ancien haltérophile de l\'équipe nationale.',
+          bio:
+              'Préparateur physique, ancien haltérophile de l\'équipe nationale.',
           createdAt: _day(-370),
         ),
         'Coach2026!',
@@ -306,7 +347,16 @@ class SeedService {
         createdAt: _day(-6, 10, 12),
       ),
     );
-    for (final key in ['nour', 'ahmed', 'leila', 'omar', 'ines', 'rami', 'salma', 'hedi']) {
+    for (final key in [
+      'nour',
+      'ahmed',
+      'leila',
+      'omar',
+      'ines',
+      'rami',
+      'salma',
+      'hedi',
+    ]) {
       await _note(
         key,
         NotificationType.system,
@@ -358,17 +408,13 @@ class SeedService {
       seedExercises.map((e) => e.build(_ids[e.author]!, created)),
     );
     final workouts = seedWorkouts(created).map(
-      (s) => Workout.fromJson({
-        ...s.workout.toJson(),
-        'authorId': _ids[s.author],
-      }),
+      (s) =>
+          Workout.fromJson({...s.workout.toJson(), 'authorId': _ids[s.author]}),
     );
     await _b.workouts.saveAll(workouts);
     final programs = seedPrograms(created).map(
-      (s) => Program.fromJson({
-        ...s.program.toJson(),
-        'authorId': _ids[s.author],
-      }),
+      (s) =>
+          Program.fromJson({...s.program.toJson(), 'authorId': _ids[s.author]}),
     );
     await _b.programs.saveAll(programs);
   }
@@ -425,68 +471,276 @@ class SeedService {
 
     final courses = [
       // Terminés (avec présences et notes)
-      c('d1', 'Yoga Vinyasa', 'Enchaînements fluides synchronisés avec la respiration.',
-          CourseCategory.yoga, Level.intermediate, 'amira', 'Studio Zen', 15, 60,
-          _day(-2, 18), yoga),
-      c('d2', 'HIIT 45', 'Intervalles haute intensité : 40 s d\'effort, 20 s de repos.',
-          CourseCategory.hiit, Level.intermediate, 'sarra', 'Salle Énergie', 20, 45,
-          _day(-3, 19), hiit),
-      c('d3', 'Spinning Endurance', 'Montées, sprints et récupération en musique.',
-          CourseCategory.spinning, Level.beginner, 'sarra', 'Studio Vélo', 18, 45,
-          _day(-5, 7, 30), spin),
-      c('d4', 'Force & technique : squat', 'Atelier technique pour progresser en sécurité sur le squat.',
-          CourseCategory.strength, Level.intermediate, 'mehdi', 'Plateau musculation', 10, 75,
-          _day(-6, 18, 30), barbell),
-      c('d5', 'Pilates Core', 'Renforcement profond de la sangle abdominale.',
-          CourseCategory.pilates, Level.beginner, 'amira', 'Studio Zen', 12, 50,
-          _day(-8, 12, 15), pilates),
-      c('d6', 'Boxe Cardio', 'Enchaînements au sac, cardio et coordination.',
-          CourseCategory.boxing, Level.beginner, 'sarra', 'Ring', 16, 60,
-          _day(-10, 19, 30), box),
+      c(
+        'd1',
+        'Yoga Vinyasa',
+        'Enchaînements fluides synchronisés avec la respiration.',
+        CourseCategory.yoga,
+        Level.intermediate,
+        'amira',
+        'Studio Zen',
+        15,
+        60,
+        _day(-2, 18),
+        yoga,
+      ),
+      c(
+        'd2',
+        'HIIT 45',
+        'Intervalles haute intensité : 40 s d\'effort, 20 s de repos.',
+        CourseCategory.hiit,
+        Level.intermediate,
+        'sarra',
+        'Salle Énergie',
+        20,
+        45,
+        _day(-3, 19),
+        hiit,
+      ),
+      c(
+        'd3',
+        'Spinning Endurance',
+        'Montées, sprints et récupération en musique.',
+        CourseCategory.spinning,
+        Level.beginner,
+        'sarra',
+        'Studio Vélo',
+        18,
+        45,
+        _day(-5, 7, 30),
+        spin,
+      ),
+      c(
+        'd4',
+        'Force & technique : squat',
+        'Atelier technique pour progresser en sécurité sur le squat.',
+        CourseCategory.strength,
+        Level.intermediate,
+        'mehdi',
+        'Plateau musculation',
+        10,
+        75,
+        _day(-6, 18, 30),
+        barbell,
+      ),
+      c(
+        'd5',
+        'Pilates Core',
+        'Renforcement profond de la sangle abdominale.',
+        CourseCategory.pilates,
+        Level.beginner,
+        'amira',
+        'Studio Zen',
+        12,
+        50,
+        _day(-8, 12, 15),
+        pilates,
+      ),
+      c(
+        'd6',
+        'Boxe Cardio',
+        'Enchaînements au sac, cardio et coordination.',
+        CourseCategory.boxing,
+        Level.beginner,
+        'sarra',
+        'Ring',
+        16,
+        60,
+        _day(-10, 19, 30),
+        box,
+      ),
       // Programmés (semaine en cours et suivante)
-      c('s1', 'Yoga Vinyasa', 'Enchaînements fluides synchronisés avec la respiration.',
-          CourseCategory.yoga, Level.intermediate, 'amira', 'Studio Zen', 15, 60,
-          _day(1, 18), yoga),
-      c('s2', 'HIIT Express', '30 minutes chrono pour la pause déjeuner.',
-          CourseCategory.hiit, Level.intermediate, 'sarra', 'Salle Énergie', 20, 30,
-          _day(1, 12, 30), hiit),
-      c('s3', 'Spinning Sunrise', 'Réveil musculaire sur le vélo avant le travail.',
-          CourseCategory.spinning, Level.beginner, 'sarra', 'Studio Vélo', 6, 45,
-          _day(2, 7, 30), spin2),
-      c('s4', 'Musculation guidée débutants', 'Découverte des machines et des gestes de base avec un coach.',
-          CourseCategory.strength, Level.beginner, 'mehdi', 'Plateau musculation', 8, 60,
-          _day(2, 18, 30), barbell),
-      c('s5', 'Zumba Party', 'Danse fitness sur rythmes latinos : on transpire en s\'amusant.',
-          CourseCategory.zumba, Level.beginner, 'sarra', 'Salle Énergie', 25, 55,
-          _day(3, 19), zumba),
-      c('s6', 'Pilates Reformer — Initiation', 'Nouveau ! Découvrez le Pilates sur machine Reformer.',
-          CourseCategory.pilates, Level.beginner, 'amira', 'Studio Zen', 8, 50,
-          _day(4, 10), pilates, createdDaysAgo: 2),
-      c('s7', 'Boxe Technique', 'Garde, déplacements et combinaisons au sac et aux pattes d\'ours.',
-          CourseCategory.boxing, Level.intermediate, 'sarra', 'Ring', 14, 60,
-          _day(5, 19, 30), ring),
-      c('s8', 'Stretching & mobilité', 'Nouveau ! Séance douce pour gagner en souplesse.',
-          CourseCategory.stretching, Level.beginner, 'amira', 'Studio Zen', 15, 45,
-          _day(8, 9), stretch, createdDaysAgo: 1),
-      c('s9', 'Clinique soulevé de terre', 'Nouveau ! Atelier de 90 min en petit groupe pour maîtriser le soulevé de terre.',
-          CourseCategory.strength, Level.intermediate, 'mehdi', 'Plateau musculation', 6, 90,
-          _day(9, 18), deadlift, createdDaysAgo: 3, included: false, price: 25),
-      c('s10', 'Yoga doux seniors', 'Postures accessibles, équilibre et respiration.',
-          CourseCategory.yoga, Level.beginner, 'amira', 'Studio Zen', 12, 50,
-          _day(10, 10, 30), yoga2),
-      c('s11', 'HIIT 45', 'Intervalles haute intensité : 40 s d\'effort, 20 s de repos.',
-          CourseCategory.hiit, Level.intermediate, 'sarra', 'Salle Énergie', 20, 45,
-          _day(11, 19), hiit),
+      c(
+        's1',
+        'Yoga Vinyasa',
+        'Enchaînements fluides synchronisés avec la respiration.',
+        CourseCategory.yoga,
+        Level.intermediate,
+        'amira',
+        'Studio Zen',
+        15,
+        60,
+        _day(1, 18),
+        yoga,
+      ),
+      c(
+        's2',
+        'HIIT Express',
+        '30 minutes chrono pour la pause déjeuner.',
+        CourseCategory.hiit,
+        Level.intermediate,
+        'sarra',
+        'Salle Énergie',
+        20,
+        30,
+        _day(1, 12, 30),
+        hiit,
+      ),
+      c(
+        's3',
+        'Spinning Sunrise',
+        'Réveil musculaire sur le vélo avant le travail.',
+        CourseCategory.spinning,
+        Level.beginner,
+        'sarra',
+        'Studio Vélo',
+        6,
+        45,
+        _day(2, 7, 30),
+        spin2,
+      ),
+      c(
+        's4',
+        'Musculation guidée débutants',
+        'Découverte des machines et des gestes de base avec un coach.',
+        CourseCategory.strength,
+        Level.beginner,
+        'mehdi',
+        'Plateau musculation',
+        8,
+        60,
+        _day(2, 18, 30),
+        barbell,
+      ),
+      c(
+        's5',
+        'Zumba Party',
+        'Danse fitness sur rythmes latinos : on transpire en s\'amusant.',
+        CourseCategory.zumba,
+        Level.beginner,
+        'sarra',
+        'Salle Énergie',
+        25,
+        55,
+        _day(3, 19),
+        zumba,
+      ),
+      c(
+        's6',
+        'Pilates Reformer — Initiation',
+        'Nouveau ! Découvrez le Pilates sur machine Reformer.',
+        CourseCategory.pilates,
+        Level.beginner,
+        'amira',
+        'Studio Zen',
+        8,
+        50,
+        _day(4, 10),
+        pilates,
+        createdDaysAgo: 2,
+      ),
+      c(
+        's7',
+        'Boxe Technique',
+        'Garde, déplacements et combinaisons au sac et aux pattes d\'ours.',
+        CourseCategory.boxing,
+        Level.intermediate,
+        'sarra',
+        'Ring',
+        14,
+        60,
+        _day(5, 19, 30),
+        ring,
+      ),
+      c(
+        's8',
+        'Stretching & mobilité',
+        'Nouveau ! Séance douce pour gagner en souplesse.',
+        CourseCategory.stretching,
+        Level.beginner,
+        'amira',
+        'Studio Zen',
+        15,
+        45,
+        _day(8, 9),
+        stretch,
+        createdDaysAgo: 1,
+      ),
+      c(
+        's9',
+        'Clinique soulevé de terre',
+        'Nouveau ! Atelier de 90 min en petit groupe pour maîtriser le soulevé de terre.',
+        CourseCategory.strength,
+        Level.intermediate,
+        'mehdi',
+        'Plateau musculation',
+        6,
+        90,
+        _day(9, 18),
+        deadlift,
+        createdDaysAgo: 3,
+        included: false,
+        price: 25,
+      ),
+      c(
+        's10',
+        'Yoga doux seniors',
+        'Postures accessibles, équilibre et respiration.',
+        CourseCategory.yoga,
+        Level.beginner,
+        'amira',
+        'Studio Zen',
+        12,
+        50,
+        _day(10, 10, 30),
+        yoga2,
+      ),
+      c(
+        's11',
+        'HIIT 45',
+        'Intervalles haute intensité : 40 s d\'effort, 20 s de repos.',
+        CourseCategory.hiit,
+        Level.intermediate,
+        'sarra',
+        'Salle Énergie',
+        20,
+        45,
+        _day(11, 19),
+        hiit,
+      ),
       // À planifier (coach affecté, sans date)
-      c('p1', 'Cross Training découverte', 'Bientôt : circuits fonctionnels variés en petit groupe.',
-          CourseCategory.hiit, Level.intermediate, 'sarra', 'Salle Énergie', 12, 60,
-          null, hiit, createdDaysAgo: 4),
-      c('p2', 'Yin Yoga & respiration', 'Bientôt : postures longues et relaxation profonde.',
-          CourseCategory.yoga, Level.beginner, 'amira', 'Studio Zen', 14, 75,
-          null, stretch2, createdDaysAgo: 5),
-      c('p3', 'Kettlebell fondamentaux', 'Bientôt : swing, goblet squat et get-up en toute sécurité.',
-          CourseCategory.strength, Level.beginner, 'mehdi', 'Plateau musculation', 10, 60,
-          null, deadlift, createdDaysAgo: 6),
+      c(
+        'p1',
+        'Cross Training découverte',
+        'Bientôt : circuits fonctionnels variés en petit groupe.',
+        CourseCategory.hiit,
+        Level.intermediate,
+        'sarra',
+        'Salle Énergie',
+        12,
+        60,
+        null,
+        hiit,
+        createdDaysAgo: 4,
+      ),
+      c(
+        'p2',
+        'Yin Yoga & respiration',
+        'Bientôt : postures longues et relaxation profonde.',
+        CourseCategory.yoga,
+        Level.beginner,
+        'amira',
+        'Studio Zen',
+        14,
+        75,
+        null,
+        stretch2,
+        createdDaysAgo: 5,
+      ),
+      c(
+        'p3',
+        'Kettlebell fondamentaux',
+        'Bientôt : swing, goblet squat et get-up en toute sécurité.',
+        CourseCategory.strength,
+        Level.beginner,
+        'mehdi',
+        'Plateau musculation',
+        10,
+        60,
+        null,
+        deadlift,
+        createdDaysAgo: 6,
+      ),
     ];
     await _b.courses.saveAll(courses);
 
@@ -513,23 +767,48 @@ class SeedService {
         comment: comment,
       );
       await _b.reservations.save(r);
-      if (status == ReservationStatus.confirmed && course.statusAt(_now) == CourseStatus.scheduled) {
+      if (status == ReservationStatus.confirmed &&
+          course.statusAt(_now) == CourseStatus.scheduled) {
         await _b.notifications.scheduleCourseReminders(r, course);
       }
     }
 
     // Cours terminés : présences + notes.
-    await book('d1', 'leila', attended: true, rating: 5, comment: 'Amira est géniale, cours très fluide.');
+    await book(
+      'd1',
+      'leila',
+      attended: true,
+      rating: 5,
+      comment: 'Amira est géniale, cours très fluide.',
+    );
     await book('d1', 'ines', attended: true, rating: 4);
     await book('d1', 'salma', attended: false);
-    await book('d2', 'ines', attended: true, rating: 5, comment: 'Intense mais super motivant !');
+    await book(
+      'd2',
+      'ines',
+      attended: true,
+      rating: 5,
+      comment: 'Intense mais super motivant !',
+    );
     await book('d2', 'rami', attended: true, rating: 4);
     await book('d2', 'salma', attended: true, rating: 5);
     await book('d2', 'ahmed', attended: true, rating: 4);
     await book('d3', 'ines', attended: true, rating: 5);
-    await book('d3', 'omar', attended: true, rating: 4, comment: 'Parfait pour reprendre en douceur.');
+    await book(
+      'd3',
+      'omar',
+      attended: true,
+      rating: 4,
+      comment: 'Parfait pour reprendre en douceur.',
+    );
     await book('d3', 'leila', attended: true, rating: 4);
-    await book('d4', 'ahmed', attended: true, rating: 5, comment: 'J\'ai enfin compris le placement du dos.');
+    await book(
+      'd4',
+      'ahmed',
+      attended: true,
+      rating: 5,
+      comment: 'J\'ai enfin compris le placement du dos.',
+    );
     await book('d4', 'rami', attended: true, rating: 5);
     await book('d5', 'leila', attended: true, rating: 5);
     await book('d5', 'salma', attended: true, rating: 4);
@@ -580,14 +859,40 @@ class SeedService {
   // ------------------------------------------------------ Historique séances
 
   static const Map<String, double> _baseLoad = {
-    'bench': 60, 'db_bench': 22, 'incline_db': 20, 'db_fly': 12,
-    'cable_cross': 15, 'latpull': 50, 'bb_row': 50, 'db_row': 24,
-    'cable_row': 45, 'deadlift': 100, 'facepull': 15, 'ohp': 40,
-    'db_shoulder': 16, 'lateral': 8, 'reardelt': 6, 'shrug': 24,
-    'bb_curl': 30, 'db_curl': 12, 'hammer': 12, 'preacher': 25,
-    'pushdown': 25, 'skull': 25, 'oh_ext': 16, 'squat': 80, 'goblet': 20,
-    'legpress': 120, 'lunge': 14, 'bulgarian': 12, 'rdl': 60,
-    'legcurl': 35, 'legext': 40, 'calf': 60, 'hipthrust': 80, 'kbswing': 16,
+    'bench': 60,
+    'db_bench': 22,
+    'incline_db': 20,
+    'db_fly': 12,
+    'cable_cross': 15,
+    'latpull': 50,
+    'bb_row': 50,
+    'db_row': 24,
+    'cable_row': 45,
+    'deadlift': 100,
+    'facepull': 15,
+    'ohp': 40,
+    'db_shoulder': 16,
+    'lateral': 8,
+    'reardelt': 6,
+    'shrug': 24,
+    'bb_curl': 30,
+    'db_curl': 12,
+    'hammer': 12,
+    'preacher': 25,
+    'pushdown': 25,
+    'skull': 25,
+    'oh_ext': 16,
+    'squat': 80,
+    'goblet': 20,
+    'legpress': 120,
+    'lunge': 14,
+    'bulgarian': 12,
+    'rdl': 60,
+    'legcurl': 35,
+    'legext': 40,
+    'calf': 60,
+    'hipthrust': 80,
+    'kbswing': 16,
   };
 
   Future<void> _seedHistory() async {
@@ -597,7 +902,12 @@ class SeedService {
       ('rami', 1.2, {1: 'push', 2: 'pull', 3: 'legs', 5: 'push', 6: 'pull'}, 8),
       ('leila', 0.45, {1: 'fb_a', 3: 'fb_b', 6: 'mobility'}, 8),
       ('omar', 0.55, {2: 'fb_a', 5: 'fb_b'}, 4),
-      ('ines', 0.5, {1: 'cardio_kb', 3: 'hiit_home', 5: 'core', 7: 'mobility'}, 8),
+      (
+        'ines',
+        0.5,
+        {1: 'cardio_kb', 3: 'hiit_home', 5: 'core', 7: 'mobility'},
+        8,
+      ),
       ('salma', 0.4, {1: 'hiit_home', 3: 'core', 5: 'hiit_home'}, 8),
       ('hedi', 0.8, {2: 'upper', 4: 'lower'}, 8),
     ];
@@ -611,18 +921,27 @@ class SeedService {
         // Hedi a arrêté il y a 5 semaines (abonnement expiré).
         if (key == 'hedi' && d < 35) workoutKey = null;
         // Ahmed : série de 3 jours consécutifs pour la démo des streaks.
-        if (key == 'ahmed' && d <= 3) workoutKey = ['push', 'pull', 'legs'][3 - d];
+        if (key == 'ahmed' && d <= 3)
+          workoutKey = ['push', 'pull', 'legs'][3 - d];
         if (workoutKey == null) continue;
         if (_rnd.nextDouble() < 0.12 && d > 3) continue; // séance manquée
         final weekIndex = weeks - (d ~/ 7);
         pending.add(
-          _buildSession(userId, workoutKey, date, factor, weekIndex, pending.length),
+          _buildSession(
+            userId,
+            workoutKey,
+            date,
+            factor,
+            weekIndex,
+            pending.length,
+          ),
         );
       }
     }
     pending.sort((a, b) => a.startedAt.compareTo(b.startedAt));
     final memberIds = [
-      for (final k in ['ahmed', 'leila', 'omar', 'ines', 'rami', 'salma']) _ids[k]!,
+      for (final k in ['ahmed', 'leila', 'omar', 'ines', 'rami', 'salma'])
+        _ids[k]!,
     ];
     for (final s in pending) {
       final records = _b.progress.detectRecords(s.userId, s.sets, s.startedAt);
@@ -646,7 +965,10 @@ class SeedService {
     for (final e in trends.entries) {
       for (var i = 0; i <= 8; i++) {
         final t = i / 8;
-        final kg = e.value.$1 + (e.value.$2 - e.value.$1) * t + (_rnd.nextDouble() - 0.5) * 0.6;
+        final kg =
+            e.value.$1 +
+            (e.value.$2 - e.value.$1) * t +
+            (_rnd.nextDouble() - 0.5) * 0.6;
         await _b.weights.save(
           WeightEntry(
             id: 'wt_seed_${w++}',
@@ -668,7 +990,9 @@ class SeedService {
     int index,
   ) {
     final workout = _b.workouts.byId('w_$workoutKey')!;
-    final start = date.add(Duration(hours: 7 + _rnd.nextInt(12), minutes: _rnd.nextInt(4) * 15));
+    final start = date.add(
+      Duration(hours: 7 + _rnd.nextInt(12), minutes: _rnd.nextInt(4) * 15),
+    );
     final sets = <SetLog>[];
     for (final item in workout.items) {
       final ex = _b.exercises.byId(item.exerciseId)!;
@@ -685,7 +1009,10 @@ class SeedService {
         }
         final reps = item.isTimed
             ? 1
-            : max(1, (item.reps ?? 10) - (s == item.sets ? _rnd.nextInt(2) : 0));
+            : max(
+                1,
+                (item.reps ?? 10) - (s == item.sets ? _rnd.nextInt(2) : 0),
+              );
         sets.add(
           SetLog(
             exerciseId: ex.id,
@@ -738,70 +1065,156 @@ class SeedService {
     );
 
     final products = [
-      p('whey', 'Whey protéine vanille 2 kg',
-          'Protéine de lactosérum concentrée, 24 g de protéines par dose de 30 g. Idéale après la séance.',
-          ProductCategory.supplements, 189, 14,
-          ['photo-1693996045300-521e9d08cabc'], featured: true),
-      p('isolate', 'Whey isolate chocolat 900 g',
-          'Isolat ultra-filtré, faible en lactose et en sucres. 27 g de protéines par dose.',
-          ProductCategory.supplements, 149, 6,
-          ['photo-1704650311190-7eeb9c4f6e11'], promo: 129),
-      p('creatine', 'Créatine monohydrate 300 g',
-          'Créatine pure micronisée, 3 à 5 g par jour pour la force et la puissance.',
-          ProductCategory.supplements, 69, 20,
-          ['photo-1693996045435-af7c48b9cafb']),
-      p('bcaa', 'BCAA 2:1:1 pastèque 400 g',
-          'Acides aminés branchés à boire pendant l\'entraînement.',
-          ProductCategory.supplements, 79, 0,
-          ['photo-1709976142749-4a83767c4228']),
-      p('bar', 'Barres protéinées (boîte de 12)',
-          '20 g de protéines par barre, saveur caramel-cacahuète. Collation pratique.',
-          ProductCategory.supplements, 54, 25,
-          ['photo-1633360821154-1935fb5671e6'], featured: true),
-      p('shaker', 'Shaker GymFlow 700 ml',
-          'Shaker étanche avec grille de mélange, sans BPA.',
-          ProductCategory.accessories, 18, 40,
-          ['photo-1595348020949-87cdfbb44174']),
-      p('bottle', 'Gourde isotherme 750 ml',
-          'Garde l\'eau fraîche 24 h. Inox double paroi.',
-          ProductCategory.accessories, 35, 15,
-          ['photo-1649888254873-d9870ee286ee']),
-      p('rope', 'Corde à sauter speed',
-          'Câble acier gainé, poignées roulements à billes, longueur réglable.',
-          ProductCategory.accessories, 29, 12,
-          ['photo-1516876345887-6dd74f80787a']),
-      p('bands', 'Kit élastiques de résistance (5 niveaux)',
-          'Cinq bandes de 5 à 40 kg pour s\'entraîner partout.',
-          ProductCategory.accessories, 45, 9,
-          ['photo-1584827386916-b5351d3ba34b'], promo: 39, featured: true),
-      p('mat', 'Tapis de yoga 6 mm',
-          'Antidérapant, épaisseur confortable pour les genoux, sangle de transport.',
-          ProductCategory.accessories, 65, 7,
-          ['photo-1646239646963-b0b9be56d6b5']),
-      p('gloves', 'Gants de musculation',
-          'Paume renforcée et respirante pour protéger les mains.',
-          ProductCategory.accessories, 39, 11,
-          ['photo-1557127972-1c446ea89ea5']),
-      p('roller', 'Rouleau de massage (foam roller)',
-          'Relâchement myofascial après l\'effort, mousse haute densité.',
-          ProductCategory.accessories, 49, 5,
-          ['photo-1591741535585-9c4f52b3f13f']),
-      p('tshirt', 'T-shirt technique GymFlow',
-          'Tissu respirant à séchage rapide. Tailles XS à XXL.',
-          ProductCategory.clothing, 42, 30,
-          ['photo-1716951980904-fbe5c5aa2279']),
-      p('leggings', 'Legging sport taille haute',
-          'Maintien confortable, tissu opaque et extensible.',
-          ProductCategory.clothing, 69, 18,
-          ['photo-1600696491085-19dbbeb4f8c1'], featured: true),
-      p('towel', 'Serviette microfibre',
-          'Compacte, absorbante et à séchage rapide.',
-          ProductCategory.clothing, 22, 3,
-          ['photo-1638183130424-873c491cca1b']),
-      p('iso', 'Boisson isotonique (pack de 6)',
-          'Réhydratation et électrolytes pendant l\'effort. Saveur agrumes.',
-          ProductCategory.drinks, 24, 20,
-          ['photo-1506353219544-65860ffc5f41']),
+      p(
+        'whey',
+        'Whey protéine vanille 2 kg',
+        'Protéine de lactosérum concentrée, 24 g de protéines par dose de 30 g. Idéale après la séance.',
+        ProductCategory.supplements,
+        189,
+        14,
+        ['photo-1693996045300-521e9d08cabc'],
+        featured: true,
+      ),
+      p(
+        'isolate',
+        'Whey isolate chocolat 900 g',
+        'Isolat ultra-filtré, faible en lactose et en sucres. 27 g de protéines par dose.',
+        ProductCategory.supplements,
+        149,
+        6,
+        ['photo-1704650311190-7eeb9c4f6e11'],
+        promo: 129,
+      ),
+      p(
+        'creatine',
+        'Créatine monohydrate 300 g',
+        'Créatine pure micronisée, 3 à 5 g par jour pour la force et la puissance.',
+        ProductCategory.supplements,
+        69,
+        20,
+        ['photo-1693996045435-af7c48b9cafb'],
+      ),
+      p(
+        'bcaa',
+        'BCAA 2:1:1 pastèque 400 g',
+        'Acides aminés branchés à boire pendant l\'entraînement.',
+        ProductCategory.supplements,
+        79,
+        0,
+        ['photo-1709976142749-4a83767c4228'],
+      ),
+      p(
+        'bar',
+        'Barres protéinées (boîte de 12)',
+        '20 g de protéines par barre, saveur caramel-cacahuète. Collation pratique.',
+        ProductCategory.supplements,
+        54,
+        25,
+        ['photo-1633360821154-1935fb5671e6'],
+        featured: true,
+      ),
+      p(
+        'shaker',
+        'Shaker GymFlow 700 ml',
+        'Shaker étanche avec grille de mélange, sans BPA.',
+        ProductCategory.accessories,
+        18,
+        40,
+        ['photo-1595348020949-87cdfbb44174'],
+      ),
+      p(
+        'bottle',
+        'Gourde isotherme 750 ml',
+        'Garde l\'eau fraîche 24 h. Inox double paroi.',
+        ProductCategory.accessories,
+        35,
+        15,
+        ['photo-1649888254873-d9870ee286ee'],
+      ),
+      p(
+        'rope',
+        'Corde à sauter speed',
+        'Câble acier gainé, poignées roulements à billes, longueur réglable.',
+        ProductCategory.accessories,
+        29,
+        12,
+        ['photo-1516876345887-6dd74f80787a'],
+      ),
+      p(
+        'bands',
+        'Kit élastiques de résistance (5 niveaux)',
+        'Cinq bandes de 5 à 40 kg pour s\'entraîner partout.',
+        ProductCategory.accessories,
+        45,
+        9,
+        ['photo-1584827386916-b5351d3ba34b'],
+        promo: 39,
+        featured: true,
+      ),
+      p(
+        'mat',
+        'Tapis de yoga 6 mm',
+        'Antidérapant, épaisseur confortable pour les genoux, sangle de transport.',
+        ProductCategory.accessories,
+        65,
+        7,
+        ['photo-1646239646963-b0b9be56d6b5'],
+      ),
+      p(
+        'gloves',
+        'Gants de musculation',
+        'Paume renforcée et respirante pour protéger les mains.',
+        ProductCategory.accessories,
+        39,
+        11,
+        ['photo-1557127972-1c446ea89ea5'],
+      ),
+      p(
+        'roller',
+        'Rouleau de massage (foam roller)',
+        'Relâchement myofascial après l\'effort, mousse haute densité.',
+        ProductCategory.accessories,
+        49,
+        5,
+        ['photo-1591741535585-9c4f52b3f13f'],
+      ),
+      p(
+        'tshirt',
+        'T-shirt technique GymFlow',
+        'Tissu respirant à séchage rapide. Tailles XS à XXL.',
+        ProductCategory.clothing,
+        42,
+        30,
+        ['photo-1716951980904-fbe5c5aa2279'],
+      ),
+      p(
+        'leggings',
+        'Legging sport taille haute',
+        'Maintien confortable, tissu opaque et extensible.',
+        ProductCategory.clothing,
+        69,
+        18,
+        ['photo-1600696491085-19dbbeb4f8c1'],
+        featured: true,
+      ),
+      p(
+        'towel',
+        'Serviette microfibre',
+        'Compacte, absorbante et à séchage rapide.',
+        ProductCategory.clothing,
+        22,
+        3,
+        ['photo-1638183130424-873c491cca1b'],
+      ),
+      p(
+        'iso',
+        'Boisson isotonique (pack de 6)',
+        'Réhydratation et électrolytes pendant l\'effort. Saveur agrumes.',
+        ProductCategory.drinks,
+        24,
+        20,
+        ['photo-1506353219544-65860ffc5f41'],
+      ),
     ];
     await _b.products.saveAll(products);
 
@@ -855,7 +1268,8 @@ class SeedService {
       Announcement(
         id: 'an_1',
         title: 'Ouverture dès 6 h en semaine',
-        body: 'À partir de lundi, la salle ouvre à 6 h du lundi au vendredi pour les lève-tôt !',
+        body:
+            'À partir de lundi, la salle ouvre à 6 h du lundi au vendredi pour les lève-tôt !',
         authorId: _ids['admin']!,
         createdAt: _now.subtract(const Duration(days: 2)),
         imageUrl: unsplash('photo-1593079831268-3381b0db4a77'),
@@ -864,7 +1278,8 @@ class SeedService {
       Announcement(
         id: 'an_2',
         title: '-15 % sur les compléments',
-        body: 'Tout le mois, profitez de prix réduits sur une sélection de compléments à la boutique.',
+        body:
+            'Tout le mois, profitez de prix réduits sur une sélection de compléments à la boutique.',
         authorId: _ids['admin']!,
         createdAt: _now.subtract(const Duration(days: 4)),
         imageUrl: unsplash('photo-1693996045300-521e9d08cabc'),
@@ -872,7 +1287,8 @@ class SeedService {
       Announcement(
         id: 'an_3',
         title: 'Défi du mois : 12 séances',
-        body: 'Réalisez 12 séances ce mois-ci et gagnez un t-shirt GymFlow. Suivez votre compteur dans votre profil.',
+        body:
+            'Réalisez 12 séances ce mois-ci et gagnez un t-shirt GymFlow. Suivez votre compteur dans votre profil.',
         authorId: _ids['admin']!,
         createdAt: _now.subtract(const Duration(days: 6)),
         imageUrl: unsplash('photo-1633394782240-f81aba3f850d'),

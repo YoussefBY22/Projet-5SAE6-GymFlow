@@ -60,7 +60,8 @@ class SeedExercise {
     mistakes: mistakes,
     breathing: breathing,
     media: [
-      for (final i in images) MediaItem(kind: MediaKind.image, source: '$_wger$i'),
+      for (final i in images)
+        MediaItem(kind: MediaKind.image, source: '$_wger$i'),
       if (video != null)
         MediaItem(
           kind: MediaKind.video,
@@ -104,7 +105,8 @@ const seedExercises = <SeedExercise>[
       'Écarter les coudes à 90° (stress sur l\'épaule).',
       'Décoller les fesses du banc.',
     ],
-    breathing: 'Inspirez en descendant, bloquez brièvement, expirez en poussant.',
+    breathing:
+        'Inspirez en descendant, bloquez brièvement, expirez en poussant.',
     images: ['192/Bench-press-1.png', '192/Bench-press-2.png'],
     video: '73/cfb72002-898f-443a-a124-a0bce8a2e6ad.MP4',
     youtube: 'hWbUlkb5Ms4',
@@ -308,7 +310,8 @@ const seedExercises = <SeedExercise>[
     equipment: Equipment.cable,
     level: Level.beginner,
     type: ExerciseType.strength,
-    description: 'Alternative guidée aux tractions pour développer la largeur du dos.',
+    description:
+        'Alternative guidée aux tractions pour développer la largeur du dos.',
     steps: [
       'Calez les cuisses sous les boudins, buste légèrement incliné.',
       'Tirez la barre vers le haut de la poitrine en abaissant les coudes.',
@@ -336,7 +339,8 @@ const seedExercises = <SeedExercise>[
     equipment: Equipment.barbell,
     level: Level.intermediate,
     type: ExerciseType.strength,
-    description: 'Construit l\'épaisseur du dos et renforce la chaîne postérieure.',
+    description:
+        'Construit l\'épaisseur du dos et renforce la chaîne postérieure.',
     steps: [
       'Pieds largeur de hanches, genoux fléchis, buste penché à ~45°, dos plat.',
       'Barre en prise pronation, bras tendus.',
@@ -345,7 +349,10 @@ const seedExercises = <SeedExercise>[
     ],
     mistakes: ['Arrondir le bas du dos.', 'Donner des à-coups avec le buste.'],
     breathing: 'Expirez en tirant, inspirez en descendant.',
-    images: ['109/Barbell-rear-delt-row-1.png', '109/Barbell-rear-delt-row-2.png'],
+    images: [
+      '109/Barbell-rear-delt-row-1.png',
+      '109/Barbell-rear-delt-row-2.png',
+    ],
     youtube: '6FZHJGzMFEc',
     wgerId: 83,
     author: 'mehdi',
@@ -364,7 +371,10 @@ const seedExercises = <SeedExercise>[
       'Tirez l\'haltère vers la hanche, coude près du corps.',
       'Contractez le dos en haut, puis redescendez lentement.',
     ],
-    mistakes: ['Tourner le buste pour lever plus lourd.', 'Tirer vers l\'épaule.'],
+    mistakes: [
+      'Tourner le buste pour lever plus lourd.',
+      'Tirer vers l\'épaule.',
+    ],
     breathing: 'Expirez en tirant, inspirez en descendant.',
     images: ['81/a751a438-ae2d-4751-8d61-cef0e9292174.png'],
     youtube: 'yHqqGd0tXcw',
@@ -379,7 +389,8 @@ const seedExercises = <SeedExercise>[
     equipment: Equipment.cable,
     level: Level.beginner,
     type: ExerciseType.strength,
-    description: 'Mouvement guidé idéal pour apprendre à engager le milieu du dos.',
+    description:
+        'Mouvement guidé idéal pour apprendre à engager le milieu du dos.',
     steps: [
       'Assis, pieds sur les cales, genoux légèrement fléchis, dos droit.',
       'Tirez la poignée vers le bas du ventre.',
@@ -508,7 +519,10 @@ const seedExercises = <SeedExercise>[
       'Pensez « écarter » plutôt que « lever ».',
       'Redescendez en 2 à 3 secondes.',
     ],
-    mistakes: ['Utiliser l\'élan du corps.', 'Monter les mains plus haut que les coudes.'],
+    mistakes: [
+      'Utiliser l\'élan du corps.',
+      'Monter les mains plus haut que les coudes.',
+    ],
     breathing: 'Expirez en montant, inspirez en descendant.',
     images: [
       '148/lateral-dumbbell-raises-large-2.png',
@@ -532,7 +546,10 @@ const seedExercises = <SeedExercise>[
       'Ouvrez les bras sur les côtés, coudes légèrement fléchis.',
       'Serrez l\'arrière des épaules, puis redescendez.',
     ],
-    mistakes: ['Serrer les omoplates au lieu des deltoïdes.', 'Charge trop lourde.'],
+    mistakes: [
+      'Serrer les omoplates au lieu des deltoïdes.',
+      'Charge trop lourde.',
+    ],
     breathing: 'Expirez en ouvrant, inspirez en refermant.',
     images: [
       '487/ad724e5c-b1ed-49e8-9279-a17545b0dd0b.png',
@@ -661,7 +678,10 @@ const seedExercises = <SeedExercise>[
       'Poussez vers le bas jusqu\'à l\'extension complète.',
       'Remontez jusqu\'à ce que les avant-bras soient parallèles au sol.',
     ],
-    mistakes: ['Laisser les coudes partir vers l\'avant.', 'Se pencher sur la charge.'],
+    mistakes: [
+      'Laisser les coudes partir vers l\'avant.',
+      'Se pencher sur la charge.',
+    ],
     breathing: 'Expirez en poussant, inspirez en remontant.',
     images: ['805/7a437824-e2cc-46e1-804a-674f0ea31d25.png'],
     youtube: '1FjkhpZsaxc',
@@ -675,7 +695,8 @@ const seedExercises = <SeedExercise>[
     equipment: Equipment.barbell,
     level: Level.intermediate,
     type: ExerciseType.strength,
-    description: 'Extension allongée qui sollicite la longue portion du triceps.',
+    description:
+        'Extension allongée qui sollicite la longue portion du triceps.',
     steps: [
       'Allongé, barre EZ bras tendus au-dessus des épaules.',
       'Fléchissez les coudes pour amener la barre derrière le front.',
@@ -754,7 +775,8 @@ const seedExercises = <SeedExercise>[
       'Talons qui décollent.',
       'Dos qui s\'arrondit en bas.',
     ],
-    breathing: 'Inspirez et gainez avant de descendre, expirez en fin de montée.',
+    breathing:
+        'Inspirez et gainez avant de descendre, expirez en fin de montée.',
     images: [
       '1801/60043328-1cfb-4289-9865-aaf64d5aaa28.jpg',
       '1801/68720d5e-f422-47ac-81e4-c7b51144d302.jpg',
@@ -771,7 +793,8 @@ const seedExercises = <SeedExercise>[
     equipment: Equipment.dumbbell,
     level: Level.beginner,
     type: ExerciseType.strength,
-    description: 'Le meilleur squat pour apprendre : haltère tenu contre la poitrine.',
+    description:
+        'Le meilleur squat pour apprendre : haltère tenu contre la poitrine.',
     steps: [
       'Tenez un haltère verticalement contre la poitrine.',
       'Descendez entre vos genoux, buste droit.',
@@ -816,7 +839,8 @@ const seedExercises = <SeedExercise>[
     equipment: Equipment.dumbbell,
     level: Level.beginner,
     type: ExerciseType.strength,
-    description: 'Exercice unilatéral pour l\'équilibre, les cuisses et les fessiers.',
+    description:
+        'Exercice unilatéral pour l\'équilibre, les cuisses et les fessiers.',
     steps: [
       'Debout, haltères en mains (ou sans charge pour débuter).',
       'Faites un grand pas en avant et descendez le genou arrière vers le sol.',
@@ -976,7 +1000,8 @@ const seedExercises = <SeedExercise>[
     equipment: Equipment.mat,
     level: Level.beginner,
     type: ExerciseType.strength,
-    description: 'Version au sol du hip thrust, parfaite pour débuter à la maison.',
+    description:
+        'Version au sol du hip thrust, parfaite pour débuter à la maison.',
     steps: [
       'Allongé sur le dos, genoux fléchis, pieds à plat.',
       'Poussez sur les talons pour monter le bassin.',
@@ -1002,7 +1027,10 @@ const seedExercises = <SeedExercise>[
       'Tendez une jambe vers l\'arrière en serrant le fessier.',
       'Revenez lentement sans poser le pied.',
     ],
-    mistakes: ['Se cambrer pour monter la jambe plus haut.', 'Aller trop vite.'],
+    mistakes: [
+      'Se cambrer pour monter la jambe plus haut.',
+      'Aller trop vite.',
+    ],
     breathing: 'Expirez en poussant, inspirez au retour.',
     images: ['1613/a851fe9d-771f-44da-82f0-799e02ae3fd1.jpg'],
     youtube: 'CZvQm1vNzD0',
@@ -1024,7 +1052,10 @@ const seedExercises = <SeedExercise>[
       'Alignez tête, épaules, bassin et chevilles.',
       'Serrez fessiers et abdominaux, tenez la position.',
     ],
-    mistakes: ['Hanches trop hautes ou trop basses.', 'Retenir sa respiration.'],
+    mistakes: [
+      'Hanches trop hautes ou trop basses.',
+      'Retenir sa respiration.',
+    ],
     breathing: 'Respirez calmement et régulièrement pendant tout le maintien.',
     images: [
       '458/b7bd9c28-9f1d-4647-bd17-ab6a3adf5770.png',
@@ -1102,7 +1133,8 @@ const seedExercises = <SeedExercise>[
     equipment: Equipment.bodyweight,
     level: Level.beginner,
     type: ExerciseType.cardio,
-    description: 'Cardio et gainage : ramenez les genoux rapidement vers la poitrine.',
+    description:
+        'Cardio et gainage : ramenez les genoux rapidement vers la poitrine.',
     steps: [
       'Position de pompe, bras tendus, corps gainé.',
       'Ramenez un genou vers la poitrine puis alternez rapidement.',
@@ -1152,7 +1184,10 @@ const seedExercises = <SeedExercise>[
       'Lancez les pieds en arrière en position de pompe.',
       'Ramenez les pieds et sautez bras en l\'air.',
     ],
-    mistakes: ['Laisser le dos se creuser en planche.', 'Atterrir jambes tendues.'],
+    mistakes: [
+      'Laisser le dos se creuser en planche.',
+      'Atterrir jambes tendues.',
+    ],
     breathing: 'Expirez pendant le saut, inspirez en descendant.',
     youtube: 'zYBkodZ1SRU',
     author: 'sarra',
@@ -1193,7 +1228,10 @@ const seedExercises = <SeedExercise>[
       'Projetez les hanches vers l\'avant pour lancer la kettlebell à hauteur des épaules.',
       'Laissez-la redescendre et enchaînez.',
     ],
-    mistakes: ['Faire un squat au lieu d\'une charnière.', 'Lever avec les bras.'],
+    mistakes: [
+      'Faire un squat au lieu d\'une charnière.',
+      'Lever avec les bras.',
+    ],
     breathing: 'Expirez fort à chaque poussée de hanches.',
     images: ['960/da4d0560-da89-4bb5-b91f-746458fb04ad.png'],
     youtube: 'aSYap2yhW8s',
@@ -1208,7 +1246,8 @@ const seedExercises = <SeedExercise>[
     equipment: Equipment.cardioMachine,
     level: Level.beginner,
     type: ExerciseType.cardio,
-    description: 'Cardio doux pour les articulations, idéal en échauffement ou en endurance.',
+    description:
+        'Cardio doux pour les articulations, idéal en échauffement ou en endurance.',
     steps: [
       'Réglez la selle à hauteur de hanche.',
       'Pédalez à cadence régulière (80-90 tr/min).',
@@ -1328,13 +1367,17 @@ const seedExercises = <SeedExercise>[
     equipment: Equipment.mat,
     level: Level.beginner,
     type: ExerciseType.stretching,
-    description: 'Libère l\'avant des hanches, souvent raides en position assise.',
+    description:
+        'Libère l\'avant des hanches, souvent raides en position assise.',
     steps: [
       'Un genou au sol, l\'autre pied devant (fente basse).',
       'Rétroversez le bassin en serrant le fessier arrière.',
       'Avancez légèrement le bassin jusqu\'à sentir l\'étirement.',
     ],
-    mistakes: ['Se cambrer.', 'Genou avant au-delà des orteils de façon excessive.'],
+    mistakes: [
+      'Se cambrer.',
+      'Genou avant au-delà des orteils de façon excessive.',
+    ],
     breathing: 'Respirez calmement pendant le maintien.',
     images: ['1867/767631e5-10d2-46b8-b03f-cc298f96963b.png'],
     youtube: 'DXuStgWuJV8',

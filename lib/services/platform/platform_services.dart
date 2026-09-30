@@ -153,7 +153,8 @@ class RecordingNotifier implements LocalNotifier {
   }
 
   @override
-  Future<void> show(int id, String title, String body) async => shown.add(title);
+  Future<void> show(int id, String title, String body) async =>
+      shown.add(title);
 
   @override
   Future<void> cancel(int id) async => scheduled.remove(id);

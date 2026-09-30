@@ -16,12 +16,18 @@ class AppColors {
 
   static const Color ink = Color(0xFF1F2937); // Texte principal gris foncé
   static const Color inkSoft = Color(0xFF4B5563); // Texte secondaire (minimum)
-  static const Color navyMuted = Color(0xFFB9C3D1); // Texte secondaire sur marine
+  static const Color navyMuted = Color(
+    0xFFB9C3D1,
+  ); // Texte secondaire sur marine
   static const Color outline = Color(0xFF6B7280); // Bordures de champs
   static const Color divider = Color(0xFFE5E3DC);
   static const Color success = Color(0xFF166534); // Vert foncé (texte blanc)
-  static const Color successSoft = Color(0xFFDCFCE7); // Fond vert pâle (texte vert foncé)
-  static const Color redSoft = Color(0xFFFDE8EC); // Fond rouge pâle (texte rouge)
+  static const Color successSoft = Color(
+    0xFFDCFCE7,
+  ); // Fond vert pâle (texte vert foncé)
+  static const Color redSoft = Color(
+    0xFFFDE8EC,
+  ); // Fond rouge pâle (texte rouge)
   static const Color skeleton = Color(0xFFE7E5DE);
   static const Color overlay = Color(0xCC00101F); // Voile sombre sur photo
 
@@ -206,7 +212,10 @@ class AppTheme {
         errorStyle: AppText.label(color: AppColors.red, size: 12),
         prefixIconColor: AppColors.inkSoft,
         suffixIconColor: AppColors.inkSoft,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
         border: border(AppColors.outline),
         enabledBorder: border(AppColors.outline),
         focusedBorder: border(AppColors.navy, 2),

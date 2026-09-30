@@ -32,14 +32,19 @@ WorkoutItem _r(
   notes: notes,
 );
 
-WorkoutItem _t(String ex, int sets, int seconds, int rest, {String notes = ''}) =>
-    WorkoutItem(
-      exerciseId: 'ex_$ex',
-      sets: sets,
-      durationSec: seconds,
-      restSec: rest,
-      notes: notes,
-    );
+WorkoutItem _t(
+  String ex,
+  int sets,
+  int seconds,
+  int rest, {
+  String notes = '',
+}) => WorkoutItem(
+  exerciseId: 'ex_$ex',
+  sets: sets,
+  durationSec: seconds,
+  restSec: rest,
+  notes: notes,
+);
 
 class SeedWorkout {
   const SeedWorkout(this.workout, this.author);
@@ -88,7 +93,13 @@ List<SeedWorkout> seedWorkouts(DateTime at) {
           _r('ohp', 3, 8, 120, load: '65-70 % 1RM'),
           _r('lateral', 3, 15, 60, load: 'Léger, sans élan'),
           _r('pushdown', 3, 12, 60, tempo: '2-0-1'),
-          _r('dips', 3, 10, 90, notes: 'Ajoutez du lest si 10 reps sont faciles.'),
+          _r(
+            'dips',
+            3,
+            10,
+            90,
+            notes: 'Ajoutez du lest si 10 reps sont faciles.',
+          ),
         ],
       ),
       'mehdi',
@@ -124,7 +135,14 @@ List<SeedWorkout> seedWorkouts(DateTime at) {
         Goal.muscleGain,
         'photo-1618168220187-ef594ca55286',
         [
-          _r('squat', 4, 6, 180, load: '75-80 % 1RM', notes: 'Échauffement progressif.'),
+          _r(
+            'squat',
+            4,
+            6,
+            180,
+            load: '75-80 % 1RM',
+            notes: 'Échauffement progressif.',
+          ),
           _r('rdl', 3, 10, 120, tempo: '3-0-1'),
           _r('legpress', 3, 12, 90),
           _r('lunge', 3, 10, 90, notes: '10 pas par jambe.'),
@@ -268,7 +286,13 @@ List<SeedWorkout> seedWorkouts(DateTime at) {
         Goal.endurance,
         'photo-1706029831387-fd8bc3d27d01',
         [
-          _t('bike', 1, 600, 60, notes: 'Échauffement 10 min à allure modérée.'),
+          _t(
+            'bike',
+            1,
+            600,
+            60,
+            notes: 'Échauffement 10 min à allure modérée.',
+          ),
           _r('kbswing', 5, 15, 45, load: 'Kettlebell 12-20 kg'),
           _t('jumprope', 4, 60, 45),
           _r('burpee', 3, 12, 45),

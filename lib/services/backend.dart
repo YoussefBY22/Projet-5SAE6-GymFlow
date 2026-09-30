@@ -57,7 +57,12 @@ class Backend {
     required this.passwordIterations,
     PaymentGateway? payment,
   }) {
-    users = _repo(Collections.users, AppUser.fromJson, (u) => u.toJson(), (u) => u.id);
+    users = _repo(
+      Collections.users,
+      AppUser.fromJson,
+      (u) => u.toJson(),
+      (u) => u.id,
+    );
     credentials = _repo(
       Collections.credentials,
       Credential.fromJson,
@@ -207,6 +212,7 @@ class Backend {
 
   /// Itérations PBKDF2 (réduites dans les tests pour la rapidité).
   final int passwordIterations;
+
   /// Horloge injectable (tests des règles horaires).
   DateTime Function() clock;
   final DataBus bus = DataBus();

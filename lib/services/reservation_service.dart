@@ -122,7 +122,8 @@ class ReservationService {
   Future<void> cancel(String reservationId) async {
     final me = _b.requireUser();
     final r =
-        _b.reservations.byId(reservationId) ?? (throw const NotFoundException());
+        _b.reservations.byId(reservationId) ??
+        (throw const NotFoundException());
     if (r.userId != me.id) throw const PermissionDeniedException();
     if (!r.isActive) {
       throw const BusinessRuleException('Réservation déjà annulée.');
@@ -195,13 +196,16 @@ class ReservationService {
   Future<void> markAttendance(String reservationId, bool attended) async {
     final me = _b.requireRole(Backend.staff);
     final r =
-        _b.reservations.byId(reservationId) ?? (throw const NotFoundException());
+        _b.reservations.byId(reservationId) ??
+        (throw const NotFoundException());
     final c = _b.courses.byId(r.courseId) ?? (throw const NotFoundException());
     if (!_b.courseService.canManage(me, c)) {
       throw const PermissionDeniedException();
     }
     if (r.status != ReservationStatus.confirmed) {
-      throw const BusinessRuleException('Seuls les inscrits confirmés sont pointés.');
+      throw const BusinessRuleException(
+        'Seuls les inscrits confirmés sont pointés.',
+      );
     }
     if (c.startAt == null ||
         _b.now().isBefore(c.startAt!.subtract(const Duration(minutes: 15)))) {
@@ -217,14 +221,19 @@ class ReservationService {
   Future<void> rate(String reservationId, int stars, {String? comment}) async {
     final me = _b.requireUser();
     final r =
-        _b.reservations.byId(reservationId) ?? (throw const NotFoundException());
+        _b.reservations.byId(reservationId) ??
+        (throw const NotFoundException());
     if (r.userId != me.id) throw const PermissionDeniedException();
     final c = _b.courses.byId(r.courseId) ?? (throw const NotFoundException());
     if (c.statusAt(_b.now()) != CourseStatus.done) {
-      throw const BusinessRuleException('Vous pourrez noter ce cours une fois terminé.');
+      throw const BusinessRuleException(
+        'Vous pourrez noter ce cours une fois terminé.',
+      );
     }
     if (r.status != ReservationStatus.confirmed || r.attended == false) {
-      throw const BusinessRuleException('Seuls les participants peuvent noter.');
+      throw const BusinessRuleException(
+        'Seuls les participants peuvent noter.',
+      );
     }
     if (stars < 1 || stars > 5) {
       throw const ValidationException('Note : de 1 à 5 étoiles.');

@@ -17,7 +17,8 @@ class Fmt {
   static String dec1(num n) => _dec1.format(n);
 
   static String day(DateTime d) => DateFormat('EEEE d MMMM', 'fr_FR').format(d);
-  static String dayShort(DateTime d) => DateFormat('EEE d MMM', 'fr_FR').format(d);
+  static String dayShort(DateTime d) =>
+      DateFormat('EEE d MMM', 'fr_FR').format(d);
   static String date(DateTime d) => DateFormat('dd/MM/yyyy', 'fr_FR').format(d);
   static String time(DateTime d) => DateFormat('HH:mm', 'fr_FR').format(d);
   static String dateTime(DateTime d) =>

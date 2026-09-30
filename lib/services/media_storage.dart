@@ -48,8 +48,7 @@ class MediaStorage {
     );
     if (!await dir.exists()) await dir.create(recursive: true);
     final ext = p.extension(sourcePath).toLowerCase();
-    final name =
-        '${kind.name}_${DateTime.now().microsecondsSinceEpoch}$ext';
+    final name = '${kind.name}_${DateTime.now().microsecondsSinceEpoch}$ext';
     final copy = await source.copy(p.join(dir.path, name));
     return copy.path;
   }
