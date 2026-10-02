@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
@@ -22,6 +23,16 @@ class GymFlowApp extends StatelessWidget {
       // Mode clair uniquement : aucun thème sombre.
       theme: AppTheme.light(),
       themeMode: ThemeMode.light,
+      // Ordinateur : carrousels, bannière et présentation se font glisser
+      // aussi à la souris / au pavé tactile (pas seulement au doigt).
+      scrollBehavior: const MaterialScrollBehavior().copyWith(
+        dragDevices: {
+          PointerDeviceKind.touch,
+          PointerDeviceKind.mouse,
+          PointerDeviceKind.trackpad,
+          PointerDeviceKind.stylus,
+        },
+      ),
       locale: const Locale('fr', 'FR'),
       supportedLocales: const [Locale('fr', 'FR')],
       localizationsDelegates: const [

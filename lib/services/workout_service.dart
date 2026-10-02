@@ -14,11 +14,20 @@ class WorkoutService {
 
   // ------------------------- Workouts -------------------------
 
-  List<Workout> workouts({String query = '', Level? level, Goal? goal}) {
-    _b.requireUser();
+  /// Workouts du club + workouts personnels de l'utilisateur connecté
+  /// (un workout personnel n'est jamais visible des autres).
+  List<Workout> workouts({
+    String query = '',
+    Level? level,
+    Goal? goal,
+    bool personalOnly = false,
+  }) {
+    final me = _b.requireUser();
     final q = ExerciseService.normalize(query);
     return _b.workouts.where(
       (w) =>
+          (!w.isPrivate || w.authorId == me.id) &&
+          (!personalOnly || w.isPrivate) &&
           (level == null || w.level == level) &&
           (goal == null || w.goal == goal) &&
           (q.isEmpty ||
@@ -26,7 +35,12 @@ class WorkoutService {
     )..sort((a, b) => a.name.compareTo(b.name));
   }
 
-  Workout? workoutById(String id) => _b.workouts.byId(id);
+  /// Workout consultable par l'utilisateur connecté (null sinon).
+  Workout? workoutById(String id) {
+    final w = _b.workouts.byId(id);
+    if (w == null || !w.isPrivate) return w;
+    return w.authorId == _b.auth.currentUser?.id ? w : null;
+  }
 
   /// Exercices d'un workout dans l'ordre (ignorés s'ils ont été supprimés).
   List<(WorkoutItem, Exercise)> resolve(Workout w) => [
@@ -34,8 +48,9 @@ class WorkoutService {
       if (_b.exercises.byId(i.exerciseId) case final e?) (i, e),
   ];
 
-  bool canEditWorkout(AppUser u, Workout w) =>
-      u.isAdmin || (u.isCoach && w.authorId == u.id);
+  bool canEditWorkout(AppUser u, Workout w) => w.isPrivate
+      ? w.authorId == u.id
+      : u.isAdmin || (u.isCoach && w.authorId == u.id);
 
   bool canEditProgram(AppUser u, Program p) =>
       u.isAdmin || (u.isCoach && p.authorId == u.id);
@@ -50,7 +65,17 @@ class WorkoutService {
     String? coverImage,
     String focus = '',
   }) async {
-    final me = _b.requireRole(Backend.staff);
+    // Abonnés : workouts personnels (privés) ; staff : workouts du club.
+    final me = _b.requireUser();
+    final personal = me.isMember;
+    if (personal &&
+        _b.workouts.all
+                .where((w) => w.isPrivate && w.authorId == me.id)
+                .length >=
+            50 &&
+        id == null) {
+      throw const BusinessRuleException('Limite de 50 workouts personnels.');
+    }
     if (name.trim().length < 3) {
       throw const ValidationException('Nom du workout : 3 caractères minimum.');
     }
@@ -88,13 +113,14 @@ class WorkoutService {
         createdAt: _b.now(),
         coverImage: coverImage,
         focus: focus.trim(),
+        isPrivate: personal,
       );
     } else {
       final existing =
           _b.workouts.byId(id) ?? (throw const NotFoundException());
       if (!canEditWorkout(me, existing)) {
         throw const PermissionDeniedException(
-          'Un coach ne peut modifier que ses propres workouts.',
+          'Vous ne pouvez modifier que vos propres workouts.',
         );
       }
       w = existing.copyWith(
@@ -113,7 +139,7 @@ class WorkoutService {
   }
 
   Future<void> deleteWorkout(String id) async {
-    final me = _b.requireRole(Backend.staff);
+    final me = _b.requireUser();
     final w = _b.workouts.byId(id) ?? (throw const NotFoundException());
     if (!canEditWorkout(me, w)) throw const PermissionDeniedException();
     final usedIn = _b.programs.where(
@@ -169,9 +195,10 @@ class WorkoutService {
       throw const ValidationException('Durée : entre 1 et 52 semaines.');
     }
     for (final d in days) {
-      if (_b.workouts.byId(d.workoutId) == null) {
+      final w = _b.workouts.byId(d.workoutId);
+      if (w == null || w.isPrivate) {
         throw const ValidationException(
-          'Un workout sélectionné n\'existe plus.',
+          'Un workout sélectionné n\'existe plus ou est personnel.',
         );
       }
     }

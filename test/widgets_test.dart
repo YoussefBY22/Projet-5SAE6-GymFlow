@@ -45,6 +45,7 @@ void main() {
     );
     await tester.tap(find.byKey(const Key('login_submit')));
     await settle(tester, 2000);
+    await completeIntro(tester);
     expect(find.text('Bonjour, Nour !'), findsOneWidget);
     expect(find.text('Mon prochain cours'), findsOneWidget);
     expect(find.text('Accueil'), findsOneWidget); // BottomNavigationBar

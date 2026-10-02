@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../core/responsive.dart';
 import '../core/theme.dart';
 import 'animations.dart';
 
@@ -87,6 +88,18 @@ class ChipBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Grand écran : les filtres s'affichent tous, sur plusieurs lignes,
+    // alignés sur le contenu (pas de défilement horizontal à la souris).
+    if (isWide(context)) {
+      final pad = pagePadding(context, maxWidth: 1200, top: 4, bottom: 4);
+      return Padding(
+        padding: pad,
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: Wrap(spacing: Gap.s, runSpacing: Gap.xs, children: children),
+        ),
+      );
+    }
     return SizedBox(
       height: 48,
       child: ListView.separated(

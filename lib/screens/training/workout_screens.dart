@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/responsive.dart';
 import '../../core/routes.dart';
 import '../../core/theme.dart';
 import '../../core/validators.dart';
@@ -118,7 +119,7 @@ class WorkoutDetailScreen extends StatelessWidget {
                 ],
               ),
               SliverPadding(
-                padding: const EdgeInsets.all(Gap.m),
+                padding: pagePadding(context, maxWidth: 900, bottom: Gap.m),
                 sliver: SliverList.list(
                   children: [
                     Text(w.name, style: AppText.title(size: 26)),
@@ -411,11 +412,23 @@ class _WorkoutFormScreenState extends State<WorkoutFormScreen> {
           slivers: [
             // Champs non paresseux : tous restent montés pour la validation.
             SliverPadding(
-              padding: const EdgeInsets.all(Gap.m),
+              padding: pagePadding(context, maxWidth: 760, bottom: Gap.m),
               sliver: SliverToBoxAdapter(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    if (b.auth.currentUser?.isMember ?? false)
+                      const Padding(
+                        padding: EdgeInsets.only(bottom: Gap.m),
+                        child: GfCard(
+                          color: AppColors.cream,
+                          child: InfoRow(
+                            Icons.lock_outline,
+                            'Workout personnel : visible par vous seul. '
+                            'Vous pourrez partager les séances réalisées, si vous le souhaitez.',
+                          ),
+                        ),
+                      ),
                     TextFormField(
                       controller: _name,
                       decoration: const InputDecoration(
@@ -543,7 +556,7 @@ class _WorkoutFormScreenState extends State<WorkoutFormScreen> {
               },
             ),
             SliverPadding(
-              padding: const EdgeInsets.all(Gap.m),
+              padding: pagePadding(context, maxWidth: 760, bottom: Gap.m),
               sliver: SliverList.list(
                 children: [
                   OutlinedButton.icon(
@@ -874,7 +887,7 @@ class ProgramDetailScreen extends StatelessWidget {
                 ],
               ),
               SliverPadding(
-                padding: const EdgeInsets.all(Gap.m),
+                padding: pagePadding(context, maxWidth: 900, bottom: Gap.m),
                 sliver: SliverList.list(
                   children: [
                     Text(p.name, style: AppText.title(size: 24)),
@@ -1089,7 +1102,7 @@ class _ProgramFormScreenState extends State<ProgramFormScreen> {
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(Gap.m),
+          padding: pagePadding(context, maxWidth: 760, bottom: Gap.m),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [

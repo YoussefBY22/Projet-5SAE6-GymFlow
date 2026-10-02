@@ -164,6 +164,8 @@ void main() {
           password: 'Abcdefg1',
           gender: Gender.female,
           goal: Goal.fitness,
+          age: 25,
+          acceptTerms: true,
         ),
         throwsA(isA<ValidationException>()),
       );
@@ -174,6 +176,8 @@ void main() {
           password: 'court',
           gender: Gender.male,
           goal: Goal.fitness,
+          age: 25,
+          acceptTerms: true,
         ),
         throwsA(isA<ValidationException>()),
       );
@@ -183,8 +187,15 @@ void main() {
         password: 'Abcdefg1',
         gender: Gender.male,
         goal: Goal.endurance,
+        age: 25,
+        acceptTerms: true,
       );
       expect(u.role, UserRole.member);
+      // Consentement aux CGU enregistré et horodaté.
+      expect(b.privacy.hasAcceptedTerms(u), isTrue);
+      // Profil privé par défaut.
+      expect(u.privacy.profileVisible, isFalse);
+      expect(u.privacy.showSocialLinks, isFalse);
       expect(u.email, 'sami@test.tn');
       expect(u.subscription.type, SubscriptionType.trial);
       expect(u.subscription.daysLeft(testNow), 7);

@@ -224,6 +224,8 @@ class WorkoutCard extends StatelessWidget {
       subtitle:
           '${w.focus} · ${w.items.length} exercices · ~${w.estimatedMinutes} min',
       pills: [
+        if (w.isPrivate)
+          const Pill('Personnel', color: AppColors.red, icon: Icons.lock),
         Pill(w.level.label, color: levelColor(w.level)),
         Pill(w.goal.label, color: AppColors.gold),
       ],
@@ -490,7 +492,17 @@ class ActivityCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              GfAvatar(user, radius: 20),
+              // Le profil de l'auteur ne s'ouvre que s'il l'a rendu visible.
+              GestureDetector(
+                onTap: !mine && b.community.canOpenProfile(s.userId)
+                    ? () => Navigator.pushNamed(
+                        context,
+                        Routes.member,
+                        arguments: s.userId,
+                      )
+                    : null,
+                child: GfAvatar(user, radius: 20),
+              ),
               const SizedBox(width: Gap.s),
               Expanded(
                 child: Column(
@@ -507,6 +519,13 @@ class ActivityCard extends StatelessWidget {
                   ],
                 ),
               ),
+              if (mine)
+                Padding(
+                  padding: const EdgeInsets.only(right: 6),
+                  child: s.shared
+                      ? const Pill('Partagée', icon: Icons.public)
+                      : const Pill('Privée', icon: Icons.lock_outline),
+                ),
               if (s.prCount > 0)
                 Pill(
                   '${s.prCount} record${s.prCount > 1 ? 's' : ''}',
@@ -548,20 +567,25 @@ class ActivityCard extends StatelessWidget {
           const SizedBox(height: Gap.s),
           _MiniBars(session: s),
           const Divider(height: Gap.l),
-          Row(
-            children: [
-              KudosButton(session: s, enabled: !mine),
-              const SizedBox(width: Gap.s),
-              Expanded(
-                child: Text(
-                  s.kudos.isEmpty
-                      ? 'Soyez le premier à dire Bravo'
-                      : '${s.kudos.length} Bravo',
-                  style: AppText.label(),
+          if (s.shared)
+            Row(
+              children: [
+                KudosButton(session: s, enabled: !mine),
+                const SizedBox(width: Gap.s),
+                Expanded(
+                  child: Text(
+                    s.kudos.isEmpty
+                        ? (mine
+                              ? 'Pas encore de Bravo'
+                              : 'Soyez le premier à dire Bravo')
+                        : '${s.kudos.length} Bravo',
+                    style: AppText.label(),
+                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            )
+          else
+            const InfoRow(Icons.lock_outline, 'Visible par vous seul'),
         ],
       ),
     );

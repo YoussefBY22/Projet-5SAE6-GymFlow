@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/responsive.dart';
 import '../../core/routes.dart';
 import '../../core/theme.dart';
 import '../../models/enums.dart';
@@ -68,7 +69,16 @@ class _TrainingScreenState extends State<TrainingScreen>
           ],
         ),
       ),
-      floatingActionButton: user.canManageContent
+      floatingActionButton: !user.canManageContent && _tabs.index == 1
+          // Abonné : crée ses propres workouts (privés).
+          ? FloatingActionButton.extended(
+              key: const Key('my_workout_fab'),
+              heroTag: 'training_fab',
+              onPressed: () => Navigator.pushNamed(context, Routes.workoutForm),
+              icon: const Icon(Icons.add),
+              label: const Text('Mon workout'),
+            )
+          : user.canManageContent
           ? FloatingActionButton.extended(
               heroTag: 'training_fab',
               onPressed: _add,
@@ -109,10 +119,10 @@ class ProgramsTab extends StatelessWidget {
             message: 'Les programmes créés par les coachs apparaîtront ici.',
           );
         }
-        return ListView.separated(
-          padding: const EdgeInsets.fromLTRB(Gap.m, Gap.m, Gap.m, 96),
+        return ResponsiveList(
+          minTileWidth: 440,
+          maxWidth: 1200,
           itemCount: programs.length,
-          separatorBuilder: (_, _) => const SizedBox(height: Gap.m),
           itemBuilder: (_, i) => FadeSlideIn(
             index: i,
             child: ProgramCard(
@@ -136,6 +146,7 @@ class WorkoutsTab extends StatefulWidget {
 class _WorkoutsTabState extends State<WorkoutsTab> {
   Level? _level;
   Goal? _goal;
+  bool _mine = false;
 
   @override
   Widget build(BuildContext context) {
@@ -143,12 +154,24 @@ class _WorkoutsTabState extends State<WorkoutsTab> {
     return ListenableBuilder(
       listenable: b.bus,
       builder: (context, _) {
-        final workouts = b.workoutService.workouts(level: _level, goal: _goal);
+        final me = b.auth.currentUser;
+        final workouts = b.workoutService.workouts(
+          level: _level,
+          goal: _goal,
+          personalOnly: _mine,
+        );
         return Column(
           children: [
             const SizedBox(height: Gap.s),
             ChipBar(
               children: [
+                if (me != null && me.isMember)
+                  GfFilterChip(
+                    label: 'Mes workouts',
+                    icon: Icons.lock_outline,
+                    selected: _mine,
+                    onTap: () => setState(() => _mine = !_mine),
+                  ),
                 for (final l in Level.values)
                   GfFilterChip(
                     label: l.label,
@@ -167,20 +190,19 @@ class _WorkoutsTabState extends State<WorkoutsTab> {
             ),
             Expanded(
               child: workouts.isEmpty
-                  ? const EmptyState(
-                      icon: Icons.search_off,
-                      title: 'Aucun workout',
-                      message: 'Aucun workout ne correspond à ces filtres.',
+                  ? EmptyState(
+                      icon: _mine ? Icons.edit_note : Icons.search_off,
+                      title: _mine ? 'Aucun workout perso' : 'Aucun workout',
+                      message: _mine
+                          ? 'Composez votre propre séance avec « Mon workout » : '
+                                'elle reste visible par vous seul.'
+                          : 'Aucun workout ne correspond à ces filtres.',
                     )
-                  : ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(
-                        Gap.m,
-                        Gap.s,
-                        Gap.m,
-                        96,
-                      ),
+                  : ResponsiveList(
+                      minTileWidth: 380,
+                      maxWidth: 1200,
+                      top: Gap.s,
                       itemCount: workouts.length,
-                      separatorBuilder: (_, _) => const SizedBox(height: Gap.m),
                       itemBuilder: (_, i) => FadeSlideIn(
                         index: i,
                         child: WorkoutCard(workout: workouts[i]),
@@ -267,7 +289,7 @@ class _ExercisesTabState extends State<ExercisesTab> {
         return Column(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(Gap.m, Gap.m, Gap.m, 0),
+              padding: pagePadding(context, maxWidth: 1200, bottom: 0),
               child: TextField(
                 controller: _search,
                 // Recherche instantanée (cours S02.2 : onChanged / onSubmitted).
@@ -359,15 +381,12 @@ class _ExercisesTabState extends State<ExercisesTab> {
                         _favorites = false;
                       }),
                     )
-                  : ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(
-                        Gap.m,
-                        Gap.xs,
-                        Gap.m,
-                        96,
-                      ),
+                  : ResponsiveList(
+                      minTileWidth: 440,
+                      maxWidth: 1200,
+                      top: Gap.xs,
+                      spacing: Gap.s,
                       itemCount: list.length,
-                      separatorBuilder: (_, _) => const SizedBox(height: Gap.s),
                       itemBuilder: (_, i) => FadeSlideIn(
                         index: i,
                         child: ExerciseTile(exercise: list[i]),

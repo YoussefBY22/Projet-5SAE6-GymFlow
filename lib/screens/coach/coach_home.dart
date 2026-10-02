@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/responsive.dart';
 import '../../core/formatters.dart';
 import '../../core/routes.dart';
 import '../../core/theme.dart';
@@ -30,13 +31,13 @@ class CoachHomeScreen extends StatelessWidget {
           final me = b.auth.currentUser!;
           final stats = b.dashboard.coachStats();
           return ListView(
-            padding: const EdgeInsets.all(Gap.m),
+            padding: pagePadding(context, bottom: Gap.m),
             children: [
               Text('Bonjour ${me.firstName} !', style: AppText.title(size: 22)),
               Text(me.specialty ?? 'Coach GymFlow', style: AppText.label()),
               const SizedBox(height: Gap.m),
               GridView.count(
-                crossAxisCount: 2,
+                crossAxisCount: isWide(context) ? 4 : 2,
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 mainAxisSpacing: Gap.s,

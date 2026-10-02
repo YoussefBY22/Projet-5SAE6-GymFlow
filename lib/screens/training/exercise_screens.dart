@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/responsive.dart';
 import '../../core/errors.dart';
 import '../../core/routes.dart';
 import '../../core/theme.dart';
@@ -469,7 +470,7 @@ class _ExerciseFormScreenState extends State<ExerciseFormScreen> {
         child: Form(
           key: _formKey,
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(Gap.m),
+            padding: pagePadding(context, maxWidth: 760, bottom: Gap.m),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -724,7 +725,7 @@ class _WgerImportScreenState extends State<WgerImportScreen> {
                   );
                 }
                 return ListView.separated(
-                  padding: const EdgeInsets.all(Gap.m),
+                  padding: pagePadding(context, maxWidth: 900, bottom: Gap.m),
                   itemCount: list.length + (fromCache ? 1 : 0),
                   separatorBuilder: (_, _) => const SizedBox(height: Gap.s),
                   itemBuilder: (_, i) {

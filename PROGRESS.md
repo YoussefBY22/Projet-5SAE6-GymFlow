@@ -53,7 +53,23 @@ Cycle suivi pour chaque module : produit → UI/UX → développement → QA (fo
 
 ## QA
 - [x] `flutter analyze` : 0 problème
-- [x] `flutter test` : 99 tests verts (unitaires, SQLite réel, widgets, parcours complet)
+- [x] `flutter test` : 117 tests verts (unitaires, SQLite réel, widgets, parcours complet, confidentialité, version ordinateur)
 - [x] `flutter build apk --debug` : OK
 - [x] Revue visuelle écran par écran (prévisualisation 375 × 812) et corrections
-- [ ] Essai sur téléphone réel : aucun appareil branché pendant le développement (voir README)
+- [x] Essai sur téléphone réel (vivo V2332, Android 16) : APK release installé
+- [x] Revue visuelle de la version ordinateur (1440 × 900 et 1366 × 768)
+
+## V1 : communauté, partage et confidentialité (branche `GymFlow-V1`)
+- [x] Branche `GymFlow-V1` avec tout l'historique ; `main` vidée
+- [x] Réglages de confidentialité, tous désactivés par défaut, et historique des consentements
+- [x] Partage de séance avec accord (récapitulatif + détail), retrait possible
+- [x] Accueil : masquer l'activité des autres ; carte « Membres de la salle »
+- [x] Annuaire des membres visibles, profil public, réseaux sociaux (opt-in), signalement
+- [x] Modération par l'admin (masquer de la communauté)
+- [x] Présentation verticale au premier lancement + choix + CGU
+- [x] Inscription : âge (18 ans et plus) et acceptation des CGU obligatoires
+- [x] Workouts personnels des abonnés
+- [x] Export des données, suppression du compte avec anonymisation des commandes
+- [x] Version ordinateur (navigation latérale, colonnes, largeur lisible)
+- [x] `SECURITE_CONFIDENTIALITE.md` : cadre légal, mesures, limites, audit à venir
+- [ ] Audit de sécurité complet : après validation de la base de données par le professeur

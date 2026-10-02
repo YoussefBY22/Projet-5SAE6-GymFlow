@@ -172,6 +172,18 @@ class ShopOrder {
   double get total => lines.fold(0, (s, l) => s + l.total);
   int get itemCount => lines.fold(0, (s, l) => s + l.quantity);
 
+  /// Commande conservée pour la comptabilité mais détachée de la personne.
+  ShopOrder anonymized(String anonymousId) => ShopOrder(
+    id: id,
+    number: number,
+    userId: anonymousId,
+    lines: lines,
+    status: status,
+    paymentMethod: paymentMethod,
+    paymentRef: paymentRef,
+    createdAt: createdAt,
+  );
+
   ShopOrder copyWith({OrderStatus? status}) => ShopOrder(
     id: id,
     number: number,

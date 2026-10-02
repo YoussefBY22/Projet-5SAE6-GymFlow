@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
+import '../../core/responsive.dart';
 import '../../core/errors.dart';
 import '../../core/formatters.dart';
 import '../../core/routes.dart';
@@ -61,7 +62,7 @@ class _ShopScreenState extends State<ShopScreen> {
           return Column(
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(Gap.m, Gap.m, Gap.m, 0),
+                padding: pagePadding(context, maxWidth: 1200, bottom: 0),
                 child: TextField(
                   onChanged: (v) => setState(() => _query = v),
                   decoration: const InputDecoration(
@@ -96,11 +97,10 @@ class _ShopScreenState extends State<ShopScreen> {
                         message: 'Essayez une autre recherche.',
                       )
                     : GridView.builder(
-                        padding: const EdgeInsets.fromLTRB(
-                          Gap.m,
-                          Gap.s,
-                          Gap.m,
-                          Gap.xl,
+                        padding: pagePadding(
+                          context,
+                          maxWidth: 1200,
+                          top: Gap.s,
                         ),
                         gridDelegate:
                             const SliverGridDelegateWithMaxCrossAxisExtent(
@@ -401,7 +401,7 @@ class CartScreen extends StatelessWidget {
                   onAction: () => Navigator.pop(context),
                 )
               : ListView.separated(
-                  padding: const EdgeInsets.all(Gap.m),
+                  padding: pagePadding(context, maxWidth: 900, bottom: Gap.m),
                   itemCount: lines.length,
                   separatorBuilder: (_, _) => const SizedBox(height: Gap.s),
                   itemBuilder: (_, i) {
@@ -652,7 +652,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(Gap.m),
+          padding: pagePadding(context, maxWidth: 760, bottom: Gap.m),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -957,7 +957,7 @@ class OrdersScreen extends StatelessWidget {
                   message: 'Vos achats en boutique apparaîtront ici.',
                 )
               : ListView.separated(
-                  padding: const EdgeInsets.all(Gap.m),
+                  padding: pagePadding(context, maxWidth: 900, bottom: Gap.m),
                   itemCount: orders.length,
                   separatorBuilder: (_, _) => const SizedBox(height: Gap.s),
                   itemBuilder: (_, i) => FadeSlideIn(
@@ -1051,7 +1051,7 @@ class OrderDetailScreen extends StatelessWidget {
         return Scaffold(
           appBar: AppBar(title: Text('Reçu ${o.number}')),
           body: ListView(
-            padding: const EdgeInsets.all(Gap.m),
+            padding: pagePadding(context, maxWidth: 900, bottom: Gap.m),
             children: [
               GfCard(
                 child: Column(

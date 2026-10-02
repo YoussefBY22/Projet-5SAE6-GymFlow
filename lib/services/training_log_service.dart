@@ -1,5 +1,6 @@
 import '../core/errors.dart';
 import '../models/enums.dart';
+import '../models/privacy.dart';
 import '../models/session_log.dart';
 import '../models/workout.dart';
 import '../repositories/repository.dart';
@@ -13,11 +14,14 @@ class SessionResult {
 }
 
 /// API interne de l'historique des séances et du fil d'activités.
+///
+/// Confidentialité : une séance est **privée** à sa création. Elle n'apparaît
+/// sur le fil du club que si son auteur la partage explicitement.
 class TrainingLogService {
   TrainingLogService(this._b);
   final Backend _b;
 
-  /// Enregistre une séance terminée depuis le lecteur de séance.
+  /// Enregistre une séance terminée depuis le lecteur de séance (privée).
   Future<SessionResult> finishSession({
     required Workout workout,
     required DateTime startedAt,
@@ -52,30 +56,77 @@ class TrainingLogService {
     return SessionResult(log, records);
   }
 
+  /// Publie ou retire une séance du fil du club (auteur uniquement).
+  /// Chaque décision est tracée dans l'historique des consentements.
+  Future<SessionLog> setShared(String sessionId, bool shared) async {
+    final me = _b.requireUser();
+    final s = _b.sessions.byId(sessionId) ?? (throw const NotFoundException());
+    if (s.userId != me.id) throw const PermissionDeniedException();
+    if (s.shared == shared) return s;
+    final updated = await _b.sessions.save(
+      s.copyWith(
+        shared: shared,
+        sharedAt: shared ? _b.now() : null,
+        // Retirer une séance efface aussi les « Bravo » reçus.
+        kudos: shared ? s.kudos : const [],
+      ),
+    );
+    await _b.privacy.recordConsent(ConsentType.shareSession, shared);
+    _b.bus.emit();
+    return updated;
+  }
+
+  /// Historique : la personne elle-même ou la salle (super admin).
   List<SessionLog> historyOf(String userId) {
     final me = _b.requireUser();
-    if (me.id != userId && me.isMember) throw const PermissionDeniedException();
+    if (me.id != userId && !me.isAdmin) throw const PermissionDeniedException();
     return _b.sessions.where((s) => s.userId == userId)
       ..sort((a, b) => b.startedAt.compareTo(a.startedAt));
   }
 
-  SessionLog? byId(String id) => _b.sessions.byId(id);
+  /// Séance consultable : la sienne, une séance partagée, ou la salle.
+  SessionLog? byId(String id) {
+    final me = _b.requireUser();
+    final s = _b.sessions.byId(id);
+    if (s == null) return null;
+    if (s.userId == me.id || me.isAdmin) return s;
+    if (s.shared && (_b.users.byId(s.userId)?.active ?? false)) return s;
+    return null;
+  }
 
-  /// Fil d'activités du club (toutes les séances, les plus récentes d'abord).
-  List<SessionLog> feed({int limit = 30}) {
-    _b.requireUser();
-    final all = _b.sessions.all.toList()
-      ..sort((a, b) => b.startedAt.compareTo(a.startedAt));
+  /// Séances partagées d'un membre (profil public).
+  List<SessionLog> sharedSessionsOf(String userId) =>
+      _b.sessions.where((s) => s.userId == userId && s.shared)
+        ..sort((a, b) => b.startedAt.compareTo(a.startedAt));
+
+  /// Fil de l'accueil : ses propres séances (privées comprises, vues par
+  /// soi seul) et, si on le souhaite, les séances **partagées** des autres.
+  List<SessionLog> feed({int limit = 30, bool includeOthers = true}) {
+    final me = _b.requireUser();
+    final all =
+        _b.sessions.where((s) {
+          if (s.userId == me.id) return true;
+          if (!includeOthers || !s.shared) return false;
+          return _b.users.byId(s.userId)?.active ?? false;
+        })..sort(
+          (a, b) =>
+              (b.sharedAt ?? b.startedAt).compareTo(a.sharedAt ?? a.startedAt),
+        );
     return all.take(limit).toList();
   }
 
-  /// « Bravo » (kudos) : ajoute ou retire le sien, notifie l'auteur.
+  /// « Bravo » (kudos) sur une séance partagée : ajoute ou retire le sien.
   Future<SessionLog> toggleKudos(String sessionId) async {
     final me = _b.requireUser();
     final s = _b.sessions.byId(sessionId) ?? (throw const NotFoundException());
     if (s.userId == me.id) {
       throw const BusinessRuleException(
         'Vous ne pouvez pas vous féliciter vous-même… mais bravo quand même !',
+      );
+    }
+    if (!s.shared) {
+      throw const PermissionDeniedException(
+        'Cette séance n\'est pas partagée.',
       );
     }
     final kudos = [...s.kudos];

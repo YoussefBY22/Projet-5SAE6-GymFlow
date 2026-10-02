@@ -40,10 +40,12 @@ class _SplashScreenState extends State<SplashScreen>
       final prefs = await SharedPreferences.getInstance();
       final seen = prefs.getBool('onboarding_done') ?? false;
       if (!mounted) return;
-      final loggedIn = backend.auth.isLoggedIn;
+      final user = backend.auth.currentUser;
       Navigator.pushReplacementNamed(
         context,
-        loggedIn ? Routes.home : (seen ? Routes.login : Routes.onboarding),
+        user != null
+            ? Routes.afterLogin(user)
+            : (seen ? Routes.login : Routes.onboarding),
       );
     } catch (e) {
       if (mounted) setState(() => _error = friendlyError(e));
@@ -190,26 +192,34 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   SafeArea(
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(Gap.l, 0, Gap.l, 140),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            title,
-                            style: AppText.display(
-                              color: AppColors.white,
-                              size: 30,
-                            ),
+                      // Ordinateur : texte à largeur lisible.
+                      child: Align(
+                        alignment: Alignment.bottomLeft,
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 640),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                title,
+                                style: AppText.display(
+                                  color: AppColors.white,
+                                  size: 30,
+                                ),
+                              ),
+                              const SizedBox(height: Gap.m),
+                              Text(
+                                text,
+                                style: AppText.body(
+                                  color: AppColors.cream,
+                                  size: 16,
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: Gap.m),
-                          Text(
-                            text,
-                            style: AppText.body(
-                              color: AppColors.cream,
-                              size: 16,
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                     ),
                   ),

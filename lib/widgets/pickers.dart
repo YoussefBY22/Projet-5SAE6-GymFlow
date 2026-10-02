@@ -78,6 +78,7 @@ Future<String?> askText(
   String? hint,
   String? Function(String?)? validator,
   String initial = '',
+  bool obscure = false,
 }) async {
   final formKey = GlobalKey<FormState>();
   final controller = TextEditingController(text: initial);
@@ -90,6 +91,7 @@ Future<String?> askText(
         child: TextFormField(
           controller: controller,
           autofocus: true,
+          obscureText: obscure,
           decoration: InputDecoration(labelText: label, hintText: hint),
           validator: validator,
         ),

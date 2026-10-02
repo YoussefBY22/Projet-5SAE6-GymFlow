@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/formatters.dart';
+import '../../core/responsive.dart';
 import '../../core/routes.dart';
 import '../../core/theme.dart';
 import '../../core/validators.dart';
@@ -849,10 +850,12 @@ class SessionSummaryScreen extends StatelessWidget {
                 ],
                 const SizedBox(height: Gap.l),
                 Text(
-                  'Votre séance apparaît dans votre historique, votre progression et le fil du club.',
+                  'Votre séance est enregistrée dans votre historique et votre progression.',
                   textAlign: TextAlign.center,
                   style: AppText.body(color: AppColors.cream),
                 ),
+                const SizedBox(height: Gap.m),
+                ShareChoiceCard(sessionId: s.id),
                 const SizedBox(height: Gap.l),
                 ElevatedButton.icon(
                   key: const Key('summary_home'),
@@ -927,9 +930,9 @@ class SessionDetailScreen extends StatelessWidget {
           return Scaffold(
             appBar: AppBar(),
             body: const EmptyState(
-              icon: Icons.search_off,
-              title: 'Séance introuvable',
-              message: 'Elle a peut-être été supprimée.',
+              icon: Icons.lock_outline,
+              title: 'Séance indisponible',
+              message: 'Elle a été supprimée ou son auteur ne la partage pas.',
             ),
           );
         }
@@ -937,16 +940,45 @@ class SessionDetailScreen extends StatelessWidget {
         for (final set in s.sets) {
           (byExercise[set.exerciseName] ??= []).add(set);
         }
-        final kudosNames = s.kudos
-            .map((id) => b.users.byId(id)?.firstName)
-            .whereType<String>()
-            .toList();
+        final mine = s.userId == b.auth.currentUser?.id;
+        // Les prénoms des personnes qui ont dit Bravo ne sont montrés qu'à
+        // l'auteur de la séance.
+        final kudosNames = mine
+            ? s.kudos
+                  .map((id) => b.users.byId(id)?.firstName)
+                  .whereType<String>()
+                  .toList()
+            : <String>[];
         return Scaffold(
           appBar: AppBar(title: Text(s.title)),
           body: ListView(
-            padding: const EdgeInsets.all(Gap.m),
+            padding: pagePadding(context, maxWidth: 860),
             children: [
               ActivityCard(session: s),
+              if (mine) ...[
+                const SizedBox(height: Gap.s),
+                GfCard(
+                  padding: const EdgeInsets.symmetric(horizontal: Gap.m),
+                  child: SwitchListTile(
+                    key: const Key('session_share_switch'),
+                    contentPadding: EdgeInsets.zero,
+                    value: s.shared,
+                    onChanged: (v) => runAction(
+                      context,
+                      () => b.trainingLog.setShared(s.id, v),
+                      success: v
+                          ? 'Séance publiée sur le fil du club.'
+                          : 'Séance retirée du fil du club.',
+                    ),
+                    title: const Text('Partagée sur le fil du club'),
+                    subtitle: Text(
+                      s.shared
+                          ? 'Visible des autres membres. Désactivez pour la retirer.'
+                          : 'Privée : visible par vous seul.',
+                    ),
+                  ),
+                ),
+              ],
               if (kudosNames.isNotEmpty) ...[
                 const SizedBox(height: Gap.s),
                 InfoRow(
@@ -986,6 +1018,95 @@ class SessionDetailScreen extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+/// Choix explicite de partager une séance après l'avoir terminée
+/// (comme une publication : rien n'est publié sans accord).
+class ShareChoiceCard extends StatefulWidget {
+  const ShareChoiceCard({super.key, required this.sessionId});
+  final String sessionId;
+
+  @override
+  State<ShareChoiceCard> createState() => _ShareChoiceCardState();
+}
+
+class _ShareChoiceCardState extends State<ShareChoiceCard> {
+  bool? _decided;
+  bool _busy = false;
+
+  Future<void> _choose(bool share) async {
+    setState(() => _busy = true);
+    final ok = share
+        ? await runAction(
+            context,
+            () => Backend.I.trainingLog.setShared(widget.sessionId, true),
+          )
+        : true;
+    if (!mounted) return;
+    setState(() {
+      _busy = false;
+      if (ok) _decided = share;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final me = Backend.I.auth.currentUser!;
+    final Widget child;
+    if (_decided != null) {
+      child = InfoRow(
+        _decided! ? Icons.public : Icons.lock_outline,
+        _decided!
+            ? 'Séance partagée sur le fil du club. Vous pouvez la retirer depuis son détail.'
+            : 'Séance gardée privée. Vous pourrez la partager plus tard depuis son détail.',
+      );
+    } else if (!me.privacy.askToShareSessions) {
+      child = const InfoRow(
+        Icons.lock_outline,
+        'Séance privée (vos réglages ne proposent pas le partage).',
+      );
+    } else {
+      child = Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('Partager cette séance ?', style: AppText.subtitle()),
+          const SizedBox(height: 4),
+          Text(
+            'Les membres du club verront votre nom, votre photo et les '
+            'statistiques de la séance (pas vos mesures).',
+            style: AppText.label(),
+          ),
+          const SizedBox(height: Gap.m),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  key: const Key('keep_private'),
+                  onPressed: _busy ? null : () => _choose(false),
+                  child: const Text('Garder privée'),
+                ),
+              ),
+              const SizedBox(width: Gap.s),
+              Expanded(
+                child: ElevatedButton.icon(
+                  key: const Key('share_session'),
+                  onPressed: _busy ? null : () => _choose(true),
+                  icon: const Icon(Icons.public, size: 18),
+                  label: const Text('Partager'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      );
+    }
+    return GfCard(
+      child: AnimatedSwitcher(
+        duration: kAnim,
+        child: KeyedSubtree(key: ValueKey(_decided), child: child),
+      ),
     );
   }
 }

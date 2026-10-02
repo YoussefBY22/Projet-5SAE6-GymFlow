@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/responsive.dart';
 import '../../core/formatters.dart';
 import '../../core/routes.dart';
 import '../../core/theme.dart';
@@ -59,7 +60,7 @@ class ShopDashboardScreen extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(Gap.m, Gap.m, Gap.m, 96),
             children: [
               GridView.count(
-                crossAxisCount: 2,
+                crossAxisCount: isWide(context) ? 4 : 2,
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 mainAxisSpacing: Gap.s,
@@ -364,7 +365,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(Gap.m),
+          padding: pagePadding(context, maxWidth: 760, bottom: Gap.m),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -590,7 +591,11 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
                         message: 'Rien à traiter pour ce filtre.',
                       )
                     : ListView.separated(
-                        padding: const EdgeInsets.all(Gap.m),
+                        padding: pagePadding(
+                          context,
+                          maxWidth: 900,
+                          bottom: Gap.m,
+                        ),
                         itemCount: orders.length,
                         separatorBuilder: (_, _) =>
                             const SizedBox(height: Gap.s),

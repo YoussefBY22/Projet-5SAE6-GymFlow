@@ -67,3 +67,25 @@ Implémentés : favoris (exercices, workouts, programmes), série + objectif heb
 - Animations de cascade sans `Timer` (intervalle d'animation), minuteur de repos piloté par un seul `Timer.periodic` libéré au `dispose`.
 - Prévisualisation web (développement uniquement) : même code, données en mémoire (`kIsWeb`). Les images wger ne s'y affichent pas (CORS du serveur wger) mais s'affichent sur Android ; la miniature YouTube sert alors de repli.
 - `.claude/`, `build/`, `secrets.json` hors du dépôt.
+
+## Communauté, partage et confidentialité (V1)
+Détail complet, cadre légal et points d'audit : `SECURITE_CONFIDENTIALITE.md`.
+- **Privé par défaut, partage explicite** : profil, réseaux et séances sont invisibles à la création. Chaque séance terminée se partage par un geste (« Partager » ou « Garder privée »), comme une publication.
+- **Consentements tracés** (`ConsentRecord` : type, choix, date, version des textes) ; une nouvelle `Legal.version` redemande l'acceptation des CGU.
+- **18 ans minimum** pour l'inscription autonome (âge obligatoire) ; un mineur ne peut jamais être visible. Seuil choisi plus strict que le RGPD (13 à 16 ans) pour couvrir tous les marchés.
+- **Profil public minimal** (`PublicProfile`) : jamais l'âge, le poids, l'IMC, l'abonnement ni l'e-mail de connexion. Le poids et l'IMC sont traités comme des données de santé.
+- **Réseaux sociaux** : identifiants (Instagram, Snapchat) ou liens HTTPS limités aux domaines officiels (Facebook, LinkedIn) pour éviter les liens piégés ; confirmation avant d'ouvrir une application externe.
+- **Séance partagée** : le nom et la photo de l'auteur apparaissent dans le fil même si son profil complet est masqué (c'est annoncé au moment du partage). Retirer le partage efface les « Bravo ».
+- **Masquer l'activité des autres** : préférence `showClubFeed`, modifiable depuis l'accueil et depuis *Confidentialité*.
+- **Modération** : signalement (motif obligatoire, une fois par jour et par profil, admins notifiés, audit) ; l'admin peut masquer un profil, ce qui retire aussi ses séances partagées. Le membre ne peut pas lever cette mesure lui-même.
+- **Suppression du compte** : effacement complet, sauf les commandes conservées 10 ans pour la comptabilité mais **anonymisées**.
+- **Workouts personnels** : les abonnés peuvent créer des workouts privés (50 au maximum), invisibles des autres et non utilisables dans les programmes du club.
+- **Rôles SaaS** : la salle est responsable du traitement, l'éditeur est sous-traitant (contrat + DPA à signer, voir le document de sécurité).
+
+## Version ordinateur
+- Seuils : **900 px** (navigation latérale `NavigationRail` à la place de la barre du bas), **1280 px** (navigation déployée avec libellés).
+- La zone de contenu reçoit sa vraie largeur (`MediaQuery` recalculée sans la barre latérale) : les marges et le nombre de colonnes se calculent sur l'espace réellement disponible.
+- Contenu centré dans une largeur lisible (`pagePadding` : 1100 à 1240 px pour les listes, 900 px pour les détails, 600 à 760 px pour les formulaires).
+- Listes de cartes en rangées de 2 ou 3 colonnes sans perdre le chargement paresseux (`ResponsiveList`) ; indicateurs du tableau de bord sur 4 colonnes ; accueil abonné en 2 colonnes.
+- Filtres affichés sur plusieurs lignes (le défilement horizontal est peu pratique à la souris) ; glisser à la souris activé pour les carrousels ; présentation verticale pilotée par la molette et les flèches du clavier.
+- Les Hero des onglets masqués sont désactivés (`HeroMode`) : un même cours peut être présent dans deux onglets gardés en mémoire.

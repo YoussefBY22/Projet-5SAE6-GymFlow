@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/responsive.dart';
 import '../../core/config.dart';
 import '../../core/formatters.dart';
 import '../../core/routes.dart';
@@ -44,7 +45,7 @@ class AnnouncementsScreen extends StatelessWidget {
                   message: 'Les actualités du club apparaîtront ici.',
                 )
               : ListView.separated(
-                  padding: const EdgeInsets.all(Gap.m),
+                  padding: pagePadding(context, maxWidth: 900, bottom: Gap.m),
                   itemCount: list.length,
                   separatorBuilder: (_, _) => const SizedBox(height: Gap.m),
                   itemBuilder: (_, i) {
@@ -160,7 +161,7 @@ class _AnnouncementFormScreenState extends State<AnnouncementFormScreen> {
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(Gap.m),
+          padding: pagePadding(context, maxWidth: 760, bottom: Gap.m),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -243,7 +244,7 @@ class AboutScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Règlement & à propos')),
       body: ListView(
-        padding: const EdgeInsets.all(Gap.m),
+        padding: pagePadding(context, maxWidth: 900, bottom: Gap.m),
         children: [
           GfCard(
             color: AppColors.navy,
@@ -399,7 +400,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(Gap.m),
+          padding: pagePadding(context, maxWidth: 760, bottom: Gap.m),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [

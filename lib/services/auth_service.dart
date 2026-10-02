@@ -5,9 +5,11 @@ import 'package:flutter/foundation.dart';
 import '../core/config.dart';
 import '../core/errors.dart';
 import '../core/formatters.dart';
+import '../core/legal.dart';
 import '../core/security.dart';
 import '../core/validators.dart';
 import '../models/enums.dart';
+import '../models/privacy.dart';
 import '../models/user.dart';
 import '../repositories/repository.dart';
 import 'backend.dart';
@@ -155,8 +157,20 @@ class AuthService extends ChangeNotifier {
     required String password,
     required Gender gender,
     required Goal goal,
-    int? age,
+    required int age,
+    required bool acceptTerms,
   }) async {
+    if (!acceptTerms) {
+      throw const ValidationException(
+        'Acceptez les conditions d\'utilisation et la politique de confidentialité.',
+      );
+    }
+    if (age < Legal.minimumAge || age > 100) {
+      throw const ValidationException(
+        'L\'inscription en ligne est réservée aux personnes majeures. '
+        'Les mineurs s\'inscrivent à l\'accueil avec un représentant légal.',
+      );
+    }
     final errors = [
       Validators.name(fullName),
       Validators.email(email),
@@ -182,6 +196,15 @@ class AuthService extends ChangeNotifier {
         start: now,
         end: now.add(const Duration(days: 7)),
       ),
+      // Preuve du consentement aux CGU et à la politique (version datée).
+      consents: [
+        ConsentRecord(
+          type: ConsentType.terms,
+          granted: true,
+          at: now,
+          version: Legal.version,
+        ),
+      ],
     );
     await _b.users.save(user);
     await setPassword(user.id, password);

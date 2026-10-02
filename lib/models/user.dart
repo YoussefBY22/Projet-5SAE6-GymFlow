@@ -1,5 +1,6 @@
 import 'enums.dart';
 import 'json.dart';
+import 'privacy.dart';
 
 /// Abonnement d'un membre à la salle.
 class Subscription {
@@ -60,6 +61,10 @@ class AppUser {
     this.activeProgramId,
     this.lastLoginAt,
     this.specialty,
+    this.privacy = const PrivacySettings(),
+    this.social = const SocialLinks(),
+    this.consents = const [],
+    this.introVersion = 0,
   });
 
   final String id;
@@ -90,6 +95,23 @@ class AppUser {
 
   /// Spécialité affichée pour les coachs.
   final String? specialty;
+
+  /// Réglages de confidentialité (tout est désactivé par défaut).
+  final PrivacySettings privacy;
+
+  /// Réseaux sociaux facultatifs, affichés seulement si l'utilisateur
+  /// l'autorise.
+  final SocialLinks social;
+
+  /// Historique horodaté des consentements donnés ou retirés.
+  final List<ConsentRecord> consents;
+
+  /// Version du tour de présentation déjà vue (0 = jamais vue).
+  final int introVersion;
+
+  /// Majeur ou âge inconnu (les mineurs n'apparaissent jamais dans la
+  /// communauté).
+  bool get isAdult => age == null || age! >= 18;
 
   bool get isAdmin => role == UserRole.superAdmin;
   bool get isCoach => role == UserRole.coach;
@@ -126,6 +148,10 @@ class AppUser {
     bool clearActiveProgram = false,
     DateTime? lastLoginAt,
     String? specialty,
+    PrivacySettings? privacy,
+    SocialLinks? social,
+    List<ConsentRecord>? consents,
+    int? introVersion,
   }) {
     return AppUser(
       id: id,
@@ -150,6 +176,10 @@ class AppUser {
       createdAt: createdAt,
       lastLoginAt: lastLoginAt ?? this.lastLoginAt,
       specialty: specialty ?? this.specialty,
+      privacy: privacy ?? this.privacy,
+      social: social ?? this.social,
+      consents: consents ?? this.consents,
+      introVersion: introVersion ?? this.introVersion,
     );
   }
 
@@ -174,6 +204,10 @@ class AppUser {
     'createdAt': dateToJson(createdAt),
     'lastLoginAt': dateToJson(lastLoginAt),
     'specialty': specialty,
+    'privacy': privacy.toJson(),
+    'social': social.toJson(),
+    'consents': consents.map((c) => c.toJson()).toList(),
+    'introVersion': introVersion,
   };
 
   factory AppUser.fromJson(Json j) => AppUser(
@@ -201,6 +235,18 @@ class AppUser {
     createdAt: dateOr(j['createdAt'], DateTime(2026)),
     lastLoginAt: dateFromJson(j['lastLoginAt']),
     specialty: j['specialty'] as String?,
+    privacy: PrivacySettings.fromJson(
+      j['privacy'] == null
+          ? null
+          : Map<String, dynamic>.from(j['privacy'] as Map),
+    ),
+    social: SocialLinks.fromJson(
+      j['social'] == null
+          ? null
+          : Map<String, dynamic>.from(j['social'] as Map),
+    ),
+    consents: jsonList(j['consents']).map(ConsentRecord.fromJson).toList(),
+    introVersion: toInt(j['introVersion']),
   );
 }
 

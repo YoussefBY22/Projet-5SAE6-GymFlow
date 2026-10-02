@@ -226,11 +226,7 @@ class UserService {
         'Ce coach a encore des cours à venir : réaffectez-les d\'abord.',
       );
     }
-    for (final r in _b.reservations.where((r) => r.userId == userId)) {
-      await _b.reservations.delete(r.id);
-    }
-    await _b.credentials.delete(userId);
-    await _b.users.delete(userId);
+    await _b.privacy.eraseUser(u);
     await _b.audit.log(
       'Suppression',
       '${u.fullName} (${u.role.label})',

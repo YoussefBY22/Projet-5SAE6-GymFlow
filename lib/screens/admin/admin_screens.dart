@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/responsive.dart';
 import '../../core/formatters.dart';
 import '../../core/routes.dart';
 import '../../core/theme.dart';
@@ -38,13 +39,13 @@ class AdminDashboardScreen extends StatelessWidget {
           final topProducts = b.dashboard.topProducts();
           final revenue = b.dashboard.revenuePerWeek();
           return ListView(
-            padding: const EdgeInsets.all(Gap.m),
+            padding: pagePadding(context, bottom: Gap.m),
             children: [
               Text('Vue d\'ensemble du club', style: AppText.title(size: 22)),
               Text(Fmt.day(b.now()), style: AppText.label()),
               const SizedBox(height: Gap.m),
               GridView.count(
-                crossAxisCount: 2,
+                crossAxisCount: isWide(context) ? 4 : 2,
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 mainAxisSpacing: Gap.s,
@@ -311,7 +312,7 @@ class _UsersScreenState extends State<UsersScreen> {
           return Column(
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(Gap.m, Gap.m, Gap.m, 0),
+                padding: pagePadding(context, maxWidth: 1200, bottom: 0),
                 child: TextField(
                   onChanged: (v) => setState(() => _query = v),
                   decoration: const InputDecoration(
@@ -353,16 +354,12 @@ class _UsersScreenState extends State<UsersScreen> {
                         title: 'Aucun utilisateur',
                         message: 'Modifiez la recherche ou les filtres.',
                       )
-                    : ListView.separated(
-                        padding: const EdgeInsets.fromLTRB(
-                          Gap.m,
-                          Gap.s,
-                          Gap.m,
-                          96,
-                        ),
+                    : ResponsiveList(
+                        minTileWidth: 460,
+                        maxWidth: 1200,
+                        top: Gap.s,
+                        spacing: Gap.s,
                         itemCount: users.length,
-                        separatorBuilder: (_, _) =>
-                            const SizedBox(height: Gap.s),
                         itemBuilder: (_, i) => FadeSlideIn(
                           index: i,
                           child: _UserTile(user: users[i]),
@@ -468,7 +465,7 @@ class UserDetailScreen extends StatelessWidget {
         return Scaffold(
           appBar: AppBar(title: Text(u.fullName)),
           body: ListView(
-            padding: const EdgeInsets.all(Gap.m),
+            padding: pagePadding(context, maxWidth: 900, bottom: Gap.m),
             children: [
               GfCard(
                 child: Row(
@@ -592,6 +589,52 @@ class UserDetailScreen extends StatelessWidget {
                         ),
                     ],
                   ),
+                  const FormSection('Communauté'),
+                  GfCard(
+                    padding: const EdgeInsets.symmetric(horizontal: Gap.m),
+                    child: Column(
+                      children: [
+                        InfoRow(
+                          u.privacy.profileVisible
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined,
+                          u.privacy.profileVisible
+                              ? 'Le membre a choisi d\'être visible.'
+                              : 'Profil privé (choix du membre).',
+                        ),
+                        SwitchListTile(
+                          key: const Key('admin_hide_member'),
+                          contentPadding: EdgeInsets.zero,
+                          value: u.privacy.hiddenByAdmin,
+                          onChanged: (v) async {
+                            final ok = await confirm(
+                              context,
+                              title: v
+                                  ? 'Masquer ce membre de la communauté ?'
+                                  : 'Lever la mesure de modération ?',
+                              message: v
+                                  ? 'Son profil et ses séances partagées ne seront plus visibles. '
+                                        'Le membre est notifié et l\'action est tracée.'
+                                  : 'Le membre retrouvera ses propres réglages de visibilité.',
+                            );
+                            if (ok && context.mounted) {
+                              await runAction(
+                                context,
+                                () => b.community.setHiddenByAdmin(u.id, v),
+                                success: v
+                                    ? 'Membre masqué de la communauté.'
+                                    : 'Mesure levée.',
+                              );
+                            }
+                          },
+                          title: const Text('Masquer de la communauté'),
+                          subtitle: const Text(
+                            'Modération (ex. après un signalement).',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
                 const SizedBox(height: Gap.l),
                 OutlinedButton.icon(
@@ -691,7 +734,7 @@ class _NewCoachScreenState extends State<NewCoachScreen> {
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(Gap.m),
+          padding: pagePadding(context, maxWidth: 760, bottom: Gap.m),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -778,7 +821,7 @@ class AuditScreen extends StatelessWidget {
                   message: 'Les actions d\'administration apparaîtront ici.',
                 )
               : ListView.separated(
-                  padding: const EdgeInsets.all(Gap.m),
+                  padding: pagePadding(context, maxWidth: 900, bottom: Gap.m),
                   itemCount: entries.length,
                   separatorBuilder: (_, _) => const SizedBox(height: Gap.s),
                   itemBuilder: (_, i) {

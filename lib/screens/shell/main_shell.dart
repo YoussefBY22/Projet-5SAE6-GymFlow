@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/responsive.dart';
 import '../../core/routes.dart';
 import '../../core/theme.dart';
 import '../../models/enums.dart';
@@ -17,6 +18,10 @@ import '../training/training_screen.dart';
 
 /// Coquille principale : BottomNavigationBar + Drawer selon le rôle
 /// (cours S04). Les onglets gardent leur état grâce à IndexedStack.
+///
+/// Sur ordinateur / tablette paysage (≥ 900 px) : navigation latérale
+/// (NavigationRail, déployée avec libellés à partir de 1280 px) et le
+/// contenu reçoit la largeur réellement disponible.
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
 
@@ -63,13 +68,49 @@ class _MainShellState extends State<MainShell> {
           valueListenable: MainShell.tab,
           builder: (context, index, _) {
             final i = index.clamp(0, tabs.length - 1);
+            final stack = IndexedStack(
+              index: i,
+              children: [
+                // Seul l'onglet affiché anime ses Hero (un même cours peut
+                // être présent dans deux onglets gardés en mémoire).
+                for (var k = 0; k < tabs.length; k++)
+                  HeroMode(enabled: k == i, child: tabs[k].screen),
+              ],
+            );
+            if (isWide(context)) {
+              final extended = screenWidth(context) >= Breakpoints.extended;
+              return Scaffold(
+                key: _scaffoldKey,
+                drawer: const AppDrawer(),
+                body: Row(
+                  children: [
+                    _SideRail(
+                      tabs: tabs,
+                      index: i,
+                      extended: extended,
+                      onMenu: () => _scaffoldKey.currentState?.openDrawer(),
+                    ),
+                    const VerticalDivider(width: 1, color: AppColors.outline),
+                    Expanded(
+                      // Les écrans calculent leurs marges sur la largeur
+                      // réelle de la zone de contenu (sans la barre).
+                      child: LayoutBuilder(
+                        builder: (context, c) => MediaQuery(
+                          data: MediaQuery.of(
+                            context,
+                          ).copyWith(size: Size(c.maxWidth, c.maxHeight)),
+                          child: stack,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
             return Scaffold(
               key: _scaffoldKey,
               drawer: const AppDrawer(),
-              body: IndexedStack(
-                index: i,
-                children: [for (final t in tabs) t.screen],
-              ),
+              body: stack,
               bottomNavigationBar: BottomNavigationBar(
                 currentIndex: i,
                 onTap: (v) => MainShell.tab.value = v,
@@ -142,6 +183,71 @@ class _MainShellState extends State<MainShell> {
       ShopDashboardScreen(),
     ),
   ];
+}
+
+/// Barre de navigation latérale (grand écran).
+class _SideRail extends StatelessWidget {
+  const _SideRail({
+    required this.tabs,
+    required this.index,
+    required this.extended,
+    required this.onMenu,
+  });
+  final List<_Tab> tabs;
+  final int index;
+  final bool extended;
+  final VoidCallback onMenu;
+
+  @override
+  Widget build(BuildContext context) {
+    return NavigationRail(
+      key: const Key('side_rail'),
+      extended: extended,
+      minExtendedWidth: 232,
+      backgroundColor: AppColors.white,
+      indicatorColor: AppColors.cream,
+      selectedIndex: index,
+      onDestinationSelected: (v) => MainShell.tab.value = v,
+      labelType: extended
+          ? NavigationRailLabelType.none
+          : NavigationRailLabelType.all,
+      selectedIconTheme: const IconThemeData(color: AppColors.red),
+      unselectedIconTheme: const IconThemeData(color: AppColors.navy),
+      selectedLabelTextStyle: AppText.subtitle(size: 14, color: AppColors.red),
+      unselectedLabelTextStyle: AppText.body(size: 14),
+      leading: Padding(
+        padding: const EdgeInsets.symmetric(vertical: Gap.s),
+        child: extended
+            ? SizedBox(
+                width: 200,
+                child: Row(
+                  children: [
+                    IconButton(
+                      tooltip: 'Menu',
+                      icon: const Icon(Icons.menu, color: AppColors.navy),
+                      onPressed: onMenu,
+                    ),
+                    const SizedBox(width: Gap.xs),
+                    Text('GymFlow', style: AppText.title(size: 20)),
+                  ],
+                ),
+              )
+            : IconButton(
+                tooltip: 'Menu',
+                icon: const Icon(Icons.menu, color: AppColors.navy),
+                onPressed: onMenu,
+              ),
+      ),
+      destinations: [
+        for (final t in tabs)
+          NavigationRailDestination(
+            icon: Icon(t.icon),
+            selectedIcon: Icon(t.activeIcon),
+            label: Text(t.label),
+          ),
+      ],
+    );
+  }
 }
 
 class _Tab {
@@ -267,6 +373,12 @@ class AppDrawer extends StatelessWidget {
                     'Ma progression',
                     () => go(Routes.progress),
                   ),
+                if (user.isMember)
+                  _item(
+                    Icons.groups_outlined,
+                    'Membres de la salle',
+                    () => go(Routes.community),
+                  ),
                 _item(
                   Icons.receipt_long_outlined,
                   'Mes commandes',
@@ -327,6 +439,17 @@ class AppDrawer extends StatelessWidget {
                   'Paramètres',
                   () => go(Routes.settings),
                 ),
+                _item(
+                  Icons.shield_outlined,
+                  'Confidentialité & mes données',
+                  () => go(Routes.privacy),
+                ),
+                if (user.isMember)
+                  _item(
+                    Icons.swipe_up_outlined,
+                    'Découvrir GymFlow',
+                    () => go(Routes.intro),
+                  ),
                 _item(
                   Icons.info_outline,
                   'Règlement & à propos',

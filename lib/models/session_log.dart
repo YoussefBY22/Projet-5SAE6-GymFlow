@@ -54,6 +54,8 @@ class SessionLog {
     this.prCount = 0,
     this.kudos = const [],
     this.note = '',
+    this.shared = false,
+    this.sharedAt,
   });
 
   final String id;
@@ -72,12 +74,21 @@ class SessionLog {
   final List<String> kudos;
   final String note;
 
+  /// Séance publiée sur le fil du club par son auteur (jamais par défaut).
+  final bool shared;
+  final DateTime? sharedAt;
+
   double get totalVolume => sets.fold(0, (s, x) => s + x.volume);
   int get totalSets => sets.length;
   int get totalReps => sets.fold(0, (s, x) => s + x.reps);
   DateTime get endedAt => startedAt.add(Duration(seconds: durationSec));
 
-  SessionLog copyWith({List<String>? kudos, int? prCount}) => SessionLog(
+  SessionLog copyWith({
+    List<String>? kudos,
+    int? prCount,
+    bool? shared,
+    DateTime? sharedAt,
+  }) => SessionLog(
     id: id,
     userId: userId,
     workoutId: workoutId,
@@ -89,6 +100,8 @@ class SessionLog {
     prCount: prCount ?? this.prCount,
     kudos: kudos ?? this.kudos,
     note: note,
+    shared: shared ?? this.shared,
+    sharedAt: shared == false ? null : (sharedAt ?? this.sharedAt),
   );
 
   Json toJson() => {
@@ -103,6 +116,8 @@ class SessionLog {
     'prCount': prCount,
     'kudos': kudos,
     'note': note,
+    'shared': shared,
+    'sharedAt': dateToJson(sharedAt),
   };
 
   factory SessionLog.fromJson(Json j) => SessionLog(
@@ -117,6 +132,8 @@ class SessionLog {
     prCount: toInt(j['prCount']),
     kudos: stringList(j['kudos']),
     note: j['note'] as String? ?? '',
+    shared: j['shared'] as bool? ?? false,
+    sharedAt: dateFromJson(j['sharedAt']),
   );
 }
 

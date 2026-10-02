@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 
 import '../models/enums.dart';
+import '../models/user.dart';
 import '../screens/admin/admin_screens.dart';
 import '../screens/admin/shop_admin_screens.dart';
 import '../screens/auth/auth_screens.dart';
+import '../screens/auth/intro_tour.dart';
+import '../screens/community/community_screens.dart';
+import '../screens/privacy/privacy_screens.dart';
 import '../screens/auth/splash_onboarding.dart';
 import '../screens/courses/course_screens.dart';
 import '../screens/misc/misc_screens.dart';
@@ -71,6 +75,18 @@ class Routes {
   static const calculator = '/calculator';
   static const search = '/search';
 
+  static const intro = '/intro';
+  static const legal = '/legal';
+  static const privacy = '/privacy';
+  static const community = '/community';
+  static const member = '/member';
+
+  /// Après connexion : présentation + consentements si nécessaire.
+  static String afterLogin(AppUser u) {
+    final p = Backend.I.privacy;
+    return p.needsIntro(u) || !p.hasAcceptedTerms(u) ? intro : home;
+  }
+
   static const _staff = {UserRole.superAdmin, UserRole.coach};
   static const _admin = {UserRole.superAdmin};
   static const _member = {UserRole.member};
@@ -91,10 +107,8 @@ class Routes {
     ),
     wgerImport: _RouteDef((_) => const WgerImportScreen(), roles: _staff),
     workout: _RouteDef((a) => WorkoutDetailScreen(workoutId: a! as String)),
-    workoutForm: _RouteDef(
-      (a) => WorkoutFormScreen(workoutId: a as String?),
-      roles: _staff,
-    ),
+    // Abonnés : workouts personnels ; staff : workouts du club.
+    workoutForm: _RouteDef((a) => WorkoutFormScreen(workoutId: a as String?)),
     program: _RouteDef((a) => ProgramDetailScreen(programId: a! as String)),
     programForm: _RouteDef(
       (a) => ProgramFormScreen(programId: a as String?),
@@ -152,6 +166,11 @@ class Routes {
     about: _RouteDef((_) => const AboutScreen()),
     calculator: _RouteDef((_) => const CalculatorScreen()),
     search: _RouteDef((_) => const SearchScreen()),
+    intro: _RouteDef((_) => const IntroTourScreen()),
+    legal: _RouteDef((_) => const LegalScreen(), public: true),
+    privacy: _RouteDef((_) => const PrivacySettingsScreen()),
+    community: _RouteDef((_) => const CommunityScreen()),
+    member: _RouteDef((a) => MemberProfileScreen(userId: a! as String)),
   };
 
   /// Rôles autorisés pour une route (utilisé par les tests de droits).

@@ -77,3 +77,19 @@ Future<void> tapVisible(WidgetTester tester, Finder finder) async {
   await tester.tap(finder);
   await settle(tester, 600);
 }
+
+/// Présentation du premier lancement : va à la dernière page, accepte les
+/// conditions si besoin (aucun autre choix : tout reste privé) et termine.
+Future<void> completeIntro(
+  WidgetTester tester, {
+  bool acceptTerms = false,
+}) async {
+  expect(find.text('Passer'), findsOneWidget);
+  await tester.tap(find.text('Passer'));
+  await settle(tester, 1200);
+  if (acceptTerms) {
+    await tapVisible(tester, find.byKey(const Key('intro_terms')));
+  }
+  await tapVisible(tester, find.byKey(const Key('intro_start')));
+  await settle(tester, 1500);
+}

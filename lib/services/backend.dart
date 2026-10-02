@@ -17,6 +17,7 @@ import 'announcement_service.dart';
 import 'audit_service.dart';
 import 'auth_service.dart';
 import 'cart_service.dart';
+import 'community_service.dart';
 import 'course_service.dart';
 import 'dashboard_service.dart';
 import 'exercise_service.dart';
@@ -24,6 +25,7 @@ import 'media_storage.dart';
 import 'notification_service.dart';
 import 'order_service.dart';
 import 'payment/payment_gateway.dart';
+import 'privacy_service.dart';
 import 'platform/platform_services.dart';
 import 'product_service.dart';
 import 'progress_service.dart';
@@ -158,6 +160,8 @@ class Backend {
     dashboard = DashboardService(this);
     announcements = AnnouncementService(this);
     wger = WgerApi(this);
+    privacy = PrivacyService(this);
+    community = CommunityService(this);
     media = MediaStorage();
     this.payment = payment ?? PaymentGateway.fromConfig(httpClient);
   }
@@ -249,6 +253,8 @@ class Backend {
   late final DashboardService dashboard;
   late final AnnouncementService announcements;
   late final WgerApi wger;
+  late final PrivacyService privacy;
+  late final CommunityService community;
   late final MediaStorage media;
   late final PaymentGateway payment;
 

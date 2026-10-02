@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../core/errors.dart';
+import '../../core/legal.dart';
+import '../../core/responsive.dart';
 import '../../core/routes.dart';
 import '../../core/theme.dart';
 import '../../core/validators.dart';
@@ -18,17 +20,22 @@ class _AuthHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Ordinateur : carte arrondie centrée au lieu d'un bandeau collé en haut.
+    final wide = isWide(context);
     return Container(
       width: double.infinity,
+      margin: wide ? const EdgeInsets.only(top: Gap.xl) : EdgeInsets.zero,
       padding: EdgeInsets.fromLTRB(
         Gap.l,
         MediaQuery.paddingOf(context).top + Gap.l,
         Gap.l,
         Gap.xl,
       ),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.navy,
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
+        borderRadius: wide
+            ? BorderRadius.circular(28)
+            : const BorderRadius.vertical(bottom: Radius.circular(28)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -86,9 +93,13 @@ class _LoginScreenState extends State<LoginScreen> {
       _banner = null;
     });
     try {
-      await Backend.I.auth.login(_email.text, _password.text);
+      final user = await Backend.I.auth.login(_email.text, _password.text);
       if (!mounted) return;
-      Navigator.pushNamedAndRemoveUntil(context, Routes.home, (_) => false);
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        Routes.afterLogin(user),
+        (_) => false,
+      );
     } catch (e) {
       if (mounted) setState(() => _banner = friendlyError(e));
     } finally {
@@ -100,129 +111,135 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SingleChildScrollView(
-        child: Column(
-          children: [
-            const _AuthHeader(
-              title: 'Content de vous revoir',
-              subtitle:
-                  'Connectez-vous pour retrouver vos séances et vos cours.',
-            ),
-            Padding(
-              padding: const EdgeInsets.all(Gap.l),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    AnimatedSize(
-                      duration: const Duration(milliseconds: 250),
-                      child: _banner == null
-                          ? const SizedBox.shrink()
-                          : Container(
-                              margin: const EdgeInsets.only(bottom: Gap.m),
-                              padding: const EdgeInsets.all(Gap.m),
-                              decoration: BoxDecoration(
-                                color: AppColors.redSoft,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Row(
-                                children: [
-                                  const Icon(
-                                    Icons.error_outline,
-                                    color: AppColors.red,
-                                  ),
-                                  const SizedBox(width: Gap.s),
-                                  Expanded(
-                                    child: Text(
-                                      _banner!,
-                                      style: AppText.body(
-                                        color: AppColors.red,
-                                        size: 14,
+        child: MaxWidth(
+          maxWidth: 560,
+          child: Column(
+            children: [
+              const _AuthHeader(
+                title: 'Content de vous revoir',
+                subtitle:
+                    'Connectez-vous pour retrouver vos séances et vos cours.',
+              ),
+              Padding(
+                padding: const EdgeInsets.all(Gap.l),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      AnimatedSize(
+                        duration: const Duration(milliseconds: 250),
+                        child: _banner == null
+                            ? const SizedBox.shrink()
+                            : Container(
+                                margin: const EdgeInsets.only(bottom: Gap.m),
+                                padding: const EdgeInsets.all(Gap.m),
+                                decoration: BoxDecoration(
+                                  color: AppColors.redSoft,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.error_outline,
+                                      color: AppColors.red,
+                                    ),
+                                    const SizedBox(width: Gap.s),
+                                    Expanded(
+                                      child: Text(
+                                        _banner!,
+                                        style: AppText.body(
+                                          color: AppColors.red,
+                                          size: 14,
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
+                      ),
+                      TextFormField(
+                        key: const Key('login_email'),
+                        controller: _email,
+                        keyboardType: TextInputType.emailAddress,
+                        autofillHints: const [AutofillHints.email],
+                        textInputAction: TextInputAction.next,
+                        decoration: const InputDecoration(
+                          labelText: 'Adresse e-mail',
+                          prefixIcon: Icon(Icons.mail_outline),
+                        ),
+                        validator: Validators.email,
+                      ),
+                      const SizedBox(height: Gap.m),
+                      TextFormField(
+                        key: const Key('login_password'),
+                        controller: _password,
+                        obscureText: _obscure,
+                        autofillHints: const [AutofillHints.password],
+                        onFieldSubmitted: (_) => _submit(),
+                        decoration: InputDecoration(
+                          labelText: 'Mot de passe',
+                          prefixIcon: const Icon(Icons.lock_outline),
+                          suffixIcon: IconButton(
+                            tooltip: _obscure ? 'Afficher' : 'Masquer',
+                            icon: Icon(
+                              _obscure
+                                  ? Icons.visibility
+                                  : Icons.visibility_off,
                             ),
-                    ),
-                    TextFormField(
-                      key: const Key('login_email'),
-                      controller: _email,
-                      keyboardType: TextInputType.emailAddress,
-                      autofillHints: const [AutofillHints.email],
-                      textInputAction: TextInputAction.next,
-                      decoration: const InputDecoration(
-                        labelText: 'Adresse e-mail',
-                        prefixIcon: Icon(Icons.mail_outline),
-                      ),
-                      validator: Validators.email,
-                    ),
-                    const SizedBox(height: Gap.m),
-                    TextFormField(
-                      key: const Key('login_password'),
-                      controller: _password,
-                      obscureText: _obscure,
-                      autofillHints: const [AutofillHints.password],
-                      onFieldSubmitted: (_) => _submit(),
-                      decoration: InputDecoration(
-                        labelText: 'Mot de passe',
-                        prefixIcon: const Icon(Icons.lock_outline),
-                        suffixIcon: IconButton(
-                          tooltip: _obscure ? 'Afficher' : 'Masquer',
-                          icon: Icon(
-                            _obscure ? Icons.visibility : Icons.visibility_off,
+                            onPressed: () =>
+                                setState(() => _obscure = !_obscure),
                           ),
-                          onPressed: () => setState(() => _obscure = !_obscure),
                         ),
+                        validator: (v) => (v == null || v.isEmpty)
+                            ? 'Le mot de passe est obligatoire.'
+                            : null,
                       ),
-                      validator: (v) => (v == null || v.isEmpty)
-                          ? 'Le mot de passe est obligatoire.'
-                          : null,
-                    ),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton(
-                        onPressed: () =>
-                            Navigator.pushNamed(context, Routes.forgot),
-                        child: const Text('Mot de passe oublié ?'),
-                      ),
-                    ),
-                    const SizedBox(height: Gap.s),
-                    LoadingButton(
-                      key: const Key('login_submit'),
-                      label: 'Se connecter',
-                      loading: _loading,
-                      onPressed: _submit,
-                    ),
-                    const SizedBox(height: Gap.m),
-                    Wrap(
-                      alignment: WrapAlignment.center,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        Text(
-                          'Pas encore membre ?',
-                          style: AppText.body(color: AppColors.inkSoft),
-                        ),
-                        TextButton(
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
                           onPressed: () =>
-                              Navigator.pushNamed(context, Routes.register),
-                          child: const Text('Créer un compte'),
+                              Navigator.pushNamed(context, Routes.forgot),
+                          child: const Text('Mot de passe oublié ?'),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: Gap.m),
-                    DemoAccountsPanel(
-                      onPick: (a) => setState(() {
-                        _email.text = a.email;
-                        _password.text = a.password;
-                        _banner = null;
-                      }),
-                    ),
-                  ],
+                      ),
+                      const SizedBox(height: Gap.s),
+                      LoadingButton(
+                        key: const Key('login_submit'),
+                        label: 'Se connecter',
+                        loading: _loading,
+                        onPressed: _submit,
+                      ),
+                      const SizedBox(height: Gap.m),
+                      Wrap(
+                        alignment: WrapAlignment.center,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          Text(
+                            'Pas encore membre ?',
+                            style: AppText.body(color: AppColors.inkSoft),
+                          ),
+                          TextButton(
+                            onPressed: () =>
+                                Navigator.pushNamed(context, Routes.register),
+                            child: const Text('Créer un compte'),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: Gap.m),
+                      DemoAccountsPanel(
+                        onPick: (a) => setState(() {
+                          _email.text = a.email;
+                          _password.text = a.password;
+                          _banner = null;
+                        }),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -301,7 +318,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (!_accept) {
       showSnack(
         context,
-        'Acceptez le règlement de la salle pour continuer.',
+        'Acceptez les conditions d\'utilisation et la politique de confidentialité.',
         error: true,
       );
       return;
@@ -315,13 +332,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
         password: _password.text,
         gender: _gender,
         goal: _goal,
-        age: int.tryParse(_age.text.trim()),
+        age: int.parse(_age.text.trim()),
+        acceptTerms: _accept,
       ),
     );
     if (!mounted) return;
     setState(() => _loading = false);
+    // Nouveau compte : présentation de l'application et choix de visibilité.
     if (ok) {
-      Navigator.pushNamedAndRemoveUntil(context, Routes.home, (_) => false);
+      Navigator.pushNamedAndRemoveUntil(context, Routes.intro, (_) => false);
     }
   }
 
@@ -330,7 +349,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Créer un compte')),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(Gap.l),
+        padding: pagePadding(context, maxWidth: 600, top: Gap.l, bottom: Gap.l),
         child: Form(
           key: _formKey,
           child: Column(
@@ -397,15 +416,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 controller: _age,
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(
-                  labelText: 'Âge (facultatif)',
+                  labelText: 'Âge',
+                  helperText:
+                      'Inscription en ligne réservée aux personnes majeures',
                   prefixIcon: Icon(Icons.cake_outlined),
                 ),
-                validator: Validators.intRange(
-                  field: 'L\'âge',
-                  min: 12,
-                  max: 100,
-                  optional: true,
-                ),
+                validator: (v) {
+                  final base = Validators.intRange(
+                    field: 'L\'âge',
+                    min: 1,
+                    max: 100,
+                  )(v);
+                  if (base != null) return base;
+                  return int.parse(v!.trim()) < Legal.minimumAge
+                      ? 'Moins de 18 ans : inscription à l\'accueil avec un parent.'
+                      : null;
+                },
               ),
               const SizedBox(height: Gap.l),
               Text('Je suis', style: AppText.subtitle(size: 15)),
@@ -444,11 +470,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 value: _accept,
                 onChanged: (v) => setState(() => _accept = v ?? false),
                 title: Text(
-                  'J\'accepte le règlement de la salle',
+                  'J\'accepte les conditions d\'utilisation, la politique de '
+                  'confidentialité et le règlement de la salle',
                   style: AppText.body(size: 14),
                 ),
                 secondary: TextButton(
-                  onPressed: () => Navigator.pushNamed(context, Routes.about),
+                  onPressed: () => Navigator.pushNamed(context, Routes.legal),
                   child: const Text('Lire'),
                 ),
               ),
@@ -548,7 +575,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Mot de passe oublié')),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(Gap.l),
+        padding: pagePadding(context, maxWidth: 600, top: Gap.l, bottom: Gap.l),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [

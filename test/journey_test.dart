@@ -76,7 +76,14 @@ void main() {
       );
       await tester.tap(find.byKey(const Key('login_submit')));
       await settle(tester, 2000);
+
+      // Première connexion : présentation verticale puis choix (tout privé).
+      expect(find.text('Bienvenue dans GymFlow'), findsOneWidget);
+      await completeIntro(tester);
       expect(find.text('Bonjour, Nour !'), findsOneWidget);
+      final nour = b.users.byId('u_nour')!;
+      expect(nour.privacy.profileVisible, isFalse);
+      expect(b.privacy.needsIntro(nour), isFalse);
 
       // 2. Onglet Entraînement → Workouts → Full Body A.
       await tester.tap(find.text('Entraînement').last);
@@ -137,11 +144,24 @@ void main() {
       );
       expect(log.prCount, greaterThanOrEqualTo(1));
 
-      // 7. Retour à l'accueil : la séance apparaît dans le fil et l'objectif.
+      // 7. La séance est privée tant que l'abonnée n'a pas accepté de la
+      //    partager (consentement explicite, comme une publication).
+      expect(b.sessions.byId(log.id)!.shared, isFalse);
+      await tapVisible(tester, find.byKey(const Key('share_session')));
+      await settle(tester, 800);
+      expect(b.sessions.byId(log.id)!.shared, isTrue);
+
+      // 8. Retour à l'accueil : la séance apparaît dans le fil et l'objectif.
       await tapVisible(tester, find.byKey(const Key('summary_home')));
       await settle(tester, 2000);
       expect(find.text('Bonjour, Nour !'), findsOneWidget);
       expect(b.progress.sessionsThisWeek('u_nour'), 1);
+
+      // 9. L'activité des autres se masque d'un geste (préférence gardée).
+      await tapVisible(tester, find.byKey(const Key('feed_toggle')));
+      await settle(tester, 800);
+      expect(find.text('Mes séances'), findsOneWidget);
+      expect(b.users.byId('u_nour')!.privacy.showClubFeed, isFalse);
       await tapVisible(tester, find.text('Vous'));
       expect(find.text('Détail des séries'), findsOneWidget);
     },

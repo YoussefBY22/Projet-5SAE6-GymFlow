@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/responsive.dart';
 import '../../core/formatters.dart';
 import '../../core/routes.dart';
 import '../../core/theme.dart';
@@ -192,10 +193,12 @@ class _CourseList extends StatelessWidget {
       };
       return EmptyState(icon: icon, title: title, message: message);
     }
-    return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(Gap.m, Gap.s, Gap.m, 96),
+    return ResponsiveList(
+      minTileWidth: 400,
+      maxWidth: 1200,
+      top: Gap.s,
+      spacing: Gap.s,
       itemCount: courses.length,
-      separatorBuilder: (_, _) => const SizedBox(height: Gap.s),
       itemBuilder: (_, i) => FadeSlideIn(
         index: i,
         child: CourseCard(course: courses[i]),
@@ -489,7 +492,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                 ],
               ),
               SliverPadding(
-                padding: const EdgeInsets.all(Gap.m),
+                padding: pagePadding(context, maxWidth: 900, bottom: Gap.m),
                 sliver: SliverList.list(
                   children: [
                     Row(
@@ -788,7 +791,7 @@ class _CourseFormScreenState extends State<CourseFormScreen> {
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(Gap.m),
+          padding: pagePadding(context, maxWidth: 760, bottom: Gap.m),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -1006,7 +1009,7 @@ class AttendanceScreen extends StatelessWidget {
                   message: 'Les réservations apparaîtront ici.',
                 )
               : ListView(
-                  padding: const EdgeInsets.all(Gap.m),
+                  padding: pagePadding(context, maxWidth: 900, bottom: Gap.m),
                   children: [
                     if (!canMark)
                       const GfCard(
@@ -1127,7 +1130,7 @@ class NotificationsScreen extends StatelessWidget {
                       'Vos rappels, réservations et commandes apparaîtront ici.',
                 )
               : ListView.separated(
-                  padding: const EdgeInsets.all(Gap.m),
+                  padding: pagePadding(context, maxWidth: 900, bottom: Gap.m),
                   itemCount: list.length,
                   separatorBuilder: (_, _) => const SizedBox(height: Gap.s),
                   itemBuilder: (_, i) => FadeSlideIn(

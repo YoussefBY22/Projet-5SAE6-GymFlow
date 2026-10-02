@@ -3,7 +3,19 @@
 Application mobile Flutter de la salle de sport **GymFlow** (super admin, coachs, abonnés), style Strava, en français, devise TND.
 Données stockées localement (SQLite) : aucune configuration serveur n'est nécessaire, un jeu de démonstration réaliste est chargé au premier lancement.
 
-- `PROGRESS.md` : avancement par module · `DECISIONS.md` : choix et sources · `ASSETS.md` : origine et licence des médias.
+- `PROGRESS.md` : avancement par module · `DECISIONS.md` : choix et sources · `ASSETS.md` : origine et licence des médias · `SECURITE_CONFIDENTIALITE.md` : partage des données, consentements, conformité (Tunisie, UE) et points à auditer.
+
+Le code est sur la branche **`GymFlow-V1`** (la branche `main` est volontairement vide).
+
+### Nouveautés de la V1 « communauté et confidentialité »
+- **Tout est privé par défaut** : profil, réseaux sociaux et séances restent invisibles tant que le membre ne les partage pas.
+- **Partage avec accord** : à la fin d'une séance, *Partager* ou *Garder privée* (comme une publication). Le partage se retire à tout moment depuis le détail de la séance.
+- **Membres de la salle** : annuaire des membres qui ont choisi d'être visibles (photo, objectif, séances partagées et, s'ils l'acceptent, Instagram, Facebook, LinkedIn, Snapchat, e-mail). Signalement d'un profil, modération par l'admin.
+- **Accueil** : bouton *Masquer les autres* pour ne garder que ses propres séances dans le fil.
+- **Présentation** au premier lancement : pages verticales (glisser vers le haut) sur le partage, les workouts personnels, la communauté et les droits, puis les choix (tous désactivés par défaut).
+- **Workouts personnels** : un abonné compose ses propres séances (*Entraînement → Workouts → Mon workout*), visibles par lui seul.
+- **Mes données** : export JSON, historique des consentements, suppression du compte (*Menu → Confidentialité & mes données*).
+- **Version ordinateur** : au-delà de 900 px, navigation latérale (libellés à partir de 1280 px), contenu centré, listes en 2 ou 3 colonnes, accueil en 2 colonnes, filtres sur plusieurs lignes, glisser à la souris, présentation à la molette ou aux flèches.
 
 ## 1. Prérequis
 - Flutter **stable** (développé avec Flutter 3.44.3 / Dart 3.12.2), JDK 17.
@@ -41,6 +53,12 @@ flutter pub get
 flutter run -d <id_appareil>
 ```
 (l'application est installée automatiquement sur le téléphone ; `<id_appareil>` est donné par `flutter devices`).
+
+Sur ordinateur (navigateur, données de démonstration en mémoire, remises à zéro à chaque rechargement) :
+
+```bash
+flutter run -d chrome
+```
 
 APK de débogage (fichier `build/app/outputs/flutter-apk/app-debug.apk`, installable à la main) :
 
@@ -87,7 +105,9 @@ Un panneau « Comptes de démo » sur l'écran de connexion remplit le formulair
 | Abonné | hedi@gymflow.tn | Membre2026! | **Abonnement expiré** (réservation refusée) |
 | Désactivé | walid@gymflow.tn | Membre2026! | **Connexion refusée** |
 
-Parcours de démo conseillé : se connecter avec **Nour** → *Entraînement → Workouts → Full Body A* → **Lancer la séance** → valider des séries (minuteur de repos) → *Terminer* → récapitulatif → la séance apparaît dans le fil, le profil et la progression. Ensuite : réserver *Spinning Sunrise* (complet → liste d'attente), acheter en boutique.
+Confidentialité dans la démo : **Ahmed**, **Rami** et **Ines** sont visibles avec des réseaux (identifiants fictifs `gymflow.demo.*`, e-mails en `example.com`) ; **Leila** est visible sans réseaux ; tous les autres sont privés. Chaque abonné ne partage qu'une partie de ses séances. À la première connexion, chaque compte passe par la présentation (bouton *Passer* puis *C'est parti*).
+
+Parcours de démo conseillé : se connecter avec **Nour** → présentation → *Entraînement → Workouts → Full Body A* → **Lancer la séance** → valider des séries (minuteur de repos) → *Terminer* → récapitulatif → *Partager* (ou *Garder privée*) → la séance apparaît dans le fil, le profil et la progression. Puis *Membres de la salle* depuis l'accueil, et *Masquer les autres* sur le fil. Ensuite : réserver *Spinning Sunrise* (complet → liste d'attente), acheter en boutique.
 
 Réinitialiser les données : désinstaller l'application (ou *Paramètres Android → Applications → GymFlow → Stockage → Effacer les données*).
 
@@ -96,17 +116,21 @@ Réinitialiser les données : désinstaller l'application (ou *Paramètres Andro
 lib/
   main.dart, app.dart          # main() → runApp(), MaterialApp, routes
   core/      theme (palette, onColor), contrast (WCAG), routes (garde de rôle),
-             config, validators, security (PBKDF2), formatters, errors
+             config, validators, security (PBKDF2), formatters, errors,
+             legal (CGU, politique, versions), responsive (téléphone / ordinateur)
   models/    user, exercise, workout (workout + programme), session_log,
              course (cours + réservation), shop, misc (notification, audit, annonce)
   repositories/ data_store (interface + mémoire), sqlite_data_store, repository<T>
   services/  backend (point d'accès), auth, user, exercise, workout, training_log,
              progress, course, reservation, notification, product, cart, order,
              payment/ (Stripe test + simulé), wger_api, media_storage, dashboard,
-             announcement, audit, platform/ (notifications, agenda, stockage sécurisé),
+             announcement, audit, privacy (consentements, export, suppression),
+             community (annuaire, signalement, modération), platform/ (notifications, agenda, stockage sécurisé),
              seed/ (jeu de démonstration)
-  screens/   auth, shell (navigation par rôle + Drawer), home, coach, training,
-             courses, shop, profile, admin, misc
+  screens/   auth (dont intro_tour), shell (navigation par rôle : barre du bas ou
+             latérale + Drawer), home, coach, training, courses, shop, profile,
+             admin, community (annuaire, profil public), privacy (réglages, textes
+             légaux), misc
   widgets/   cartes, animations, graphiques, médias (YouTube, vidéo), sélecteurs…
 test/        règles métier, droits, sécurité, contraste, SQLite, widgets, parcours
 integration_test/  parcours complet sur téléphone

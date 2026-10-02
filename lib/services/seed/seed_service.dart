@@ -1,8 +1,11 @@
 import 'dart:math';
 
+import '../../core/legal.dart';
+
 import '../../models/course.dart';
 import '../../models/enums.dart';
 import '../../models/misc.dart';
+import '../../models/privacy.dart';
 import '../../models/session_log.dart';
 import '../../models/shop.dart';
 import '../../models/user.dart';
@@ -331,7 +334,9 @@ class SeedService {
       ),
     };
 
-    await _b.users.saveAll(users.values.map((e) => e.$1));
+    await _b.users.saveAll(
+      users.entries.map((e) => _withPrivacy(e.key, e.value.$1)),
+    );
     for (final e in users.entries) {
       _ids[e.key] = e.value.$1.id;
       await _b.auth.setPassword(e.value.$1.id, e.value.$2);
@@ -373,6 +378,73 @@ class SeedService {
       'Passez à l\'accueil pour le renouveler et continuer à réserver vos cours.',
       _day(-10, 9),
     );
+  }
+
+  /// Choix de confidentialité des comptes de démo. Les liens sociaux sont
+  /// fictifs (domaine example.com et identifiants « gymflow.demo… »).
+  AppUser _withPrivacy(String key, AppUser u) {
+    final consents = [
+      if (u.isMember)
+        ConsentRecord(
+          type: ConsentType.terms,
+          granted: true,
+          at: u.createdAt,
+          version: Legal.version,
+        ),
+    ];
+    ConsentRecord visible(bool social) => ConsentRecord(
+      type: social ? ConsentType.socialLinks : ConsentType.profileVisible,
+      granted: true,
+      at: u.createdAt.add(const Duration(days: 2)),
+      version: Legal.version,
+    );
+    switch (key) {
+      case 'ahmed':
+        return u.copyWith(
+          privacy: const PrivacySettings(
+            profileVisible: true,
+            showSocialLinks: true,
+          ),
+          social: const SocialLinks(
+            instagram: 'gymflow.demo.ahmed',
+            linkedin: 'https://www.linkedin.com/in/gymflow-demo-ahmed',
+            publicEmail: 'ahmed.gharbi@example.com',
+          ),
+          consents: [...consents, visible(false), visible(true)],
+        );
+      case 'rami':
+        return u.copyWith(
+          privacy: const PrivacySettings(
+            profileVisible: true,
+            showSocialLinks: true,
+          ),
+          social: const SocialLinks(
+            instagram: 'gymflow.demo.rami',
+            snapchat: 'gymflow.demo.rami',
+          ),
+          consents: [...consents, visible(false), visible(true)],
+        );
+      case 'ines':
+        return u.copyWith(
+          privacy: const PrivacySettings(
+            profileVisible: true,
+            showSocialLinks: true,
+          ),
+          social: const SocialLinks(
+            instagram: 'gymflow.demo.ines',
+            facebook: 'https://www.facebook.com/gymflow.demo.ines',
+            publicEmail: 'ines.kammoun@example.com',
+          ),
+          consents: [...consents, visible(false), visible(true)],
+        );
+      case 'leila':
+        return u.copyWith(
+          privacy: const PrivacySettings(profileVisible: true),
+          consents: [...consents, visible(false)],
+        );
+      default:
+        return u.copyWith(consents: consents);
+    }
   }
 
   Future<void> _note(
@@ -944,12 +1016,35 @@ class SeedService {
       for (final k in ['ahmed', 'leila', 'omar', 'ines', 'rami', 'salma'])
         _ids[k]!,
     ];
+    // Partage : chaque membre a choisi (ou non) de publier ses séances.
+    final shareRate = <String, double>{
+      _ids['ahmed']!: 0.8,
+      _ids['rami']!: 0.9,
+      _ids['ines']!: 0.7,
+      _ids['leila']!: 0.5,
+      _ids['salma']!: 0.3,
+    };
     for (final s in pending) {
       final records = _b.progress.detectRecords(s.userId, s.sets, s.startedAt);
-      final kudos = memberIds
-          .where((id) => id != s.userId && _rnd.nextDouble() < 0.3)
-          .toList();
-      await _b.sessions.save(s.copyWith(prCount: records.length, kudos: kudos));
+      final recent = s.startedAt.isAfter(
+        _now.subtract(const Duration(days: 4)),
+      );
+      final shared =
+          (s.userId == _ids['ahmed'] && recent) ||
+          _rnd.nextDouble() < (shareRate[s.userId] ?? 0);
+      final kudos = shared
+          ? memberIds
+                .where((id) => id != s.userId && _rnd.nextDouble() < 0.3)
+                .toList()
+          : <String>[];
+      await _b.sessions.save(
+        s.copyWith(
+          prCount: records.length,
+          kudos: kudos,
+          shared: shared,
+          sharedAt: shared ? s.endedAt : null,
+        ),
+      );
     }
 
     // Pesées hebdomadaires (tendance selon l'objectif).

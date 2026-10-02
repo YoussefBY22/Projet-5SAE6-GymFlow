@@ -142,3 +142,6 @@ Source : [Unsplash](https://unsplash.com) — **Licence Unsplash** (utilisation 
 
 Aucune photo de personne réelle pour les comptes : avatars à initiales colorées, ou photo prise par l'utilisateur via `image_picker`.
 
+## Réseaux sociaux de démonstration
+
+Les comptes de démo visibles utilisent des **identifiants fictifs** (`gymflow.demo.*`) et des e-mails en `example.com` (domaine réservé à la documentation, RFC 2606). Ils ne pointent vers aucune personne réelle.

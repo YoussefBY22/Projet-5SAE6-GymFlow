@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/responsive.dart';
 import '../../core/formatters.dart';
 import '../../core/routes.dart';
 import '../../core/theme.dart';
@@ -84,7 +85,7 @@ class _InfosTab extends StatelessWidget {
         : <(Reservation, Course)>[];
     final sub = user.subscription;
     return ListView(
-      padding: const EdgeInsets.all(Gap.m),
+      padding: pagePadding(context, bottom: Gap.m),
       children: [
         GfCard(
           child: Row(
@@ -232,7 +233,7 @@ class _InfosTab extends StatelessWidget {
           ),
           SectionHeader('Badges & succès'),
           GridView.count(
-            crossAxisCount: 3,
+            crossAxisCount: isWide(context) ? 6 : 3,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             mainAxisSpacing: Gap.s,
@@ -430,7 +431,7 @@ class _PurchasesTab extends StatelessWidget {
       }
     }
     return ListView(
-      padding: const EdgeInsets.all(Gap.m),
+      padding: pagePadding(context, bottom: Gap.m),
       children: [
         Text('Articles achetés', style: AppText.title(size: 18)),
         const SizedBox(height: Gap.s),
@@ -486,7 +487,7 @@ class ProgressView extends StatelessWidget {
     final records = p.recordsOf(user.id);
     final bmi = ProgressService.bmi(user.weightKg, user.heightCm);
     return ListView(
-      padding: const EdgeInsets.all(Gap.m),
+      padding: pagePadding(context, bottom: Gap.m),
       children: [
         GfCard(
           child: Row(
@@ -720,7 +721,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(Gap.m),
+          padding: pagePadding(context, maxWidth: 760, bottom: Gap.m),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -929,8 +930,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Paramètres')),
       body: ListView(
-        padding: const EdgeInsets.all(Gap.m),
+        padding: pagePadding(context, maxWidth: 760, bottom: Gap.m),
         children: [
+          Text('Confidentialité', style: AppText.title(size: 18)),
+          const SizedBox(height: Gap.s),
+          GfCard(
+            key: const Key('settings_privacy'),
+            onTap: () => Navigator.pushNamed(context, Routes.privacy),
+            child: const Row(
+              children: [
+                Icon(Icons.shield_outlined, color: AppColors.navy),
+                SizedBox(width: Gap.m),
+                Expanded(
+                  child: Text(
+                    'Visibilité, partage des séances, réseaux sociaux, '
+                    'export et suppression de mes données',
+                  ),
+                ),
+                Icon(Icons.chevron_right, color: AppColors.navy),
+              ],
+            ),
+          ),
+          const SizedBox(height: Gap.l),
           Text('Sécurité', style: AppText.title(size: 18)),
           const SizedBox(height: Gap.s),
           GfCard(

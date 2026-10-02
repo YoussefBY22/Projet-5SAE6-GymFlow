@@ -88,6 +88,7 @@ class Workout {
     required this.createdAt,
     this.coverImage,
     this.focus = '',
+    this.isPrivate = false,
   });
 
   final String id;
@@ -96,6 +97,9 @@ class Workout {
   final Level level;
   final Goal goal;
   final List<WorkoutItem> items;
+
+  /// Workout personnel d'un abonné : visible par son seul auteur.
+  final bool isPrivate;
   final String authorId;
   final DateTime createdAt;
   final String? coverImage;
@@ -134,6 +138,7 @@ class Workout {
     createdAt: createdAt,
     coverImage: coverImage ?? this.coverImage,
     focus: focus ?? this.focus,
+    isPrivate: isPrivate,
   );
 
   Json toJson() => {
@@ -142,6 +147,7 @@ class Workout {
     'description': description,
     'level': level.name,
     'goal': goal.name,
+    'isPrivate': isPrivate,
     'items': items.map((i) => i.toJson()).toList(),
     'authorId': authorId,
     'createdAt': dateToJson(createdAt),
@@ -156,6 +162,7 @@ class Workout {
     level: enumFrom(Level.values, j['level'], Level.beginner),
     goal: enumFrom(Goal.values, j['goal'], Goal.fitness),
     items: jsonList(j['items']).map(WorkoutItem.fromJson).toList(),
+    isPrivate: j['isPrivate'] as bool? ?? false,
     authorId: j['authorId'] as String? ?? '',
     createdAt: dateOr(j['createdAt'], DateTime(2026)),
     coverImage: j['coverImage'] as String?,
