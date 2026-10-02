@@ -322,9 +322,9 @@ class AppDrawer extends StatelessWidget {
   Widget build(BuildContext context) {
     final b = Backend.I;
     final user = b.auth.currentUser!;
-    void go(String route) {
+    void go(String route, [Object? argument]) {
       Navigator.pop(context);
-      Navigator.pushNamed(context, route);
+      Navigator.pushNamed(context, route, arguments: argument);
     }
 
     return Drawer(
@@ -463,7 +463,7 @@ class AppDrawer extends StatelessWidget {
                   _item(
                     Icons.swipe_up_outlined,
                     'Découvrir GymFlow',
-                    () => go(Routes.intro),
+                    () => go(Routes.intro, true),
                   ),
                 _item(
                   Icons.info_outline,

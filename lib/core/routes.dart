@@ -97,7 +97,8 @@ class Routes {
   /// (`null` = tout utilisateur connecté).
   static final Map<String, _RouteDef> _table = {
     splash: _RouteDef((_) => const SplashScreen(), public: true),
-    onboarding: _RouteDef((_) => const OnboardingScreen(), public: true),
+    // Même présentation verticale avant et après la connexion.
+    onboarding: _RouteDef((_) => const IntroTourScreen(), public: true),
     login: _RouteDef((_) => const LoginScreen(), public: true),
     register: _RouteDef((_) => const RegisterScreen(), public: true),
     forgot: _RouteDef((_) => const ForgotPasswordScreen(), public: true),
@@ -167,7 +168,8 @@ class Routes {
     about: _RouteDef((_) => const AboutScreen()),
     calculator: _RouteDef((_) => const CalculatorScreen()),
     search: _RouteDef((_) => const SearchScreen()),
-    intro: _RouteDef((_) => const IntroTourScreen()),
+    // `true` : présentation complète (menu « Découvrir GymFlow »).
+    intro: _RouteDef((a) => IntroTourScreen(fullTour: a == true)),
     legal: _RouteDef((_) => const LegalScreen(), public: true),
     privacy: _RouteDef((_) => const PrivacySettingsScreen()),
     community: _RouteDef((_) => const CommunityScreen()),

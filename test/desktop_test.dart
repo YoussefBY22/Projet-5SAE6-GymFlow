@@ -1,8 +1,9 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gymflow/app.dart';
 import 'package:gymflow/core/routes.dart';
+import 'package:gymflow/screens/auth/intro_tour.dart';
 import 'package:gymflow/widgets/common.dart';
 
 import 'helpers.dart';
@@ -92,4 +93,48 @@ void main() {
     await settle(tester, 800);
     expect(find.text('Crée tes propres workouts'), findsOneWidget);
   });
+
+  testWidgets(
+    'premier lancement sans compte : même présentation verticale, puis connexion',
+    (tester) async {
+      NetImage.networkEnabled = false;
+      tester.view.physicalSize = const Size(1440, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await makeBackend();
+      OnboardingFlag.seen = false;
+      await tester.pumpWidget(
+        const GymFlowApp(initialRoute: Routes.onboarding),
+      );
+      await settle(tester);
+      expect(find.text('Bienvenue dans GymFlow'), findsOneWidget);
+      await tester.tap(find.text('Passer'));
+      await settle(tester, 1200);
+      expect(find.text('Prêt à commencer ?'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('intro_login')));
+      await settle(tester, 1500);
+      expect(find.text('Content de vous revoir'), findsOneWidget);
+      expect(OnboardingFlag.seen, isTrue);
+    },
+  );
+
+  testWidgets(
+    'après la connexion, présentation déjà vue : directement les choix',
+    (tester) async {
+      NetImage.networkEnabled = false;
+      tester.view.physicalSize = const Size(1080, 2340);
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.reset);
+      final b = await makeBackend();
+      await loginAs(b, 'nour@gymflow.tn');
+      OnboardingFlag.seen = true;
+      addTearDown(() => OnboardingFlag.seen = false);
+      await tester.pumpWidget(const GymFlowApp(initialRoute: Routes.intro));
+      await settle(tester);
+      expect(find.text('Tes choix'), findsOneWidget);
+      await tapVisible(tester, find.byKey(const Key('intro_start')));
+      await settle(tester, 1500);
+      expect(find.text('Bonjour, Nour !'), findsOneWidget);
+    },
+  );
 }

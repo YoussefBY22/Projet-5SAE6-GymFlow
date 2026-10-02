@@ -83,9 +83,9 @@ Logo « GF » + haltère généré pour le projet (script Python/Pillow, palette
 
 **Total : 58 exercices**, 58 vidéos YouTube vérifiées, 3 vidéos MP4 wger.
 
-## Photos (cours, programmes, workouts, produits, annonces, onboarding)
+## Photos (cours, programmes, workouts, produits, annonces)
 
-Source : [Unsplash](https://unsplash.com) — **Licence Unsplash** (utilisation libre, commerciale ou non, sans autorisation ; photos Unsplash+ exclues). Chargées depuis `images.unsplash.com` (paramètres de redimensionnement), mises en cache par `cached_network_image`. Les 3 images d'onboarding sont embarquées dans `assets/images/`.
+Source : [Unsplash](https://unsplash.com) — **Licence Unsplash** (utilisation libre, commerciale ou non, sans autorisation ; photos Unsplash+ exclues). Chargées depuis `images.unsplash.com` (paramètres de redimensionnement), mises en cache par `cached_network_image`.
 
 | Photo (ID) | Photographe |
 |---|---|
@@ -134,9 +134,6 @@ Source : [Unsplash](https://unsplash.com) — **Licence Unsplash** (utilisation 
 | [photo-1747239069226-55382c570116](https://images.unsplash.com/photo-1747239069226-55382c570116) | Roxana Popovici |
 | [photo-1758875568800-29fb434c7b17](https://images.unsplash.com/photo-1758875568800-29fb434c7b17) | Vitaly Gariev |
 | [photo-1761035005546-62b8018b212a](https://images.unsplash.com/photo-1761035005546-62b8018b212a) | Christian Harb |
-| onboarding1.jpg (photo-1517836357463-d25dfeac3438) | Victor Freitas |
-| onboarding2.jpg (photo-1524594152303-9fd13543fe6e) | Danielle Cerullo |
-| onboarding3.jpg (photo-1571019613454-1cb2f99b2d8b) | Jonathan Borba |
 
 ## Avatars
 

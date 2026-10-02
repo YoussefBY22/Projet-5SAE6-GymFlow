@@ -4,6 +4,7 @@ import 'package:gymflow/services/backend.dart';
 import 'package:gymflow/services/payment/payment_gateway.dart';
 import 'package:gymflow/services/platform/platform_services.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Heure de référence des tests : mercredi 30 septembre 2026, 10 h.
 final testNow = DateTime(2026, 9, 30, 10);
@@ -12,6 +13,7 @@ final testNow = DateTime(2026, 9, 30, 10);
 /// contrôlée. Les itérations PBKDF2 sont réduites pour la rapidité.
 Future<Backend> makeBackend({DateTime? now, bool seed = true}) async {
   GoogleFonts.config.allowRuntimeFetching = false;
+  SharedPreferences.setMockInitialValues({});
   await initializeDateFormatting('fr_FR');
   var current = now ?? testNow;
   final b = await Backend.init(

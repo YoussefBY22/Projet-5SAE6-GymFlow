@@ -1,6 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/legal.dart';
 import '../../core/responsive.dart';
@@ -11,12 +12,35 @@ import '../../services/backend.dart';
 import '../../widgets/animations.dart';
 import '../../widgets/common.dart';
 
-/// Présentation verticale de l'application, montrée à la création du
-/// compte ou à la première connexion (et rejouable depuis le menu).
-/// On fait défiler du bas vers le haut ; la dernière page recueille les
-/// consentements, **tous désactivés par défaut**.
+/// Présentation déjà vue sur cet appareil (mémorisée localement).
+class OnboardingFlag {
+  OnboardingFlag._();
+  static const key = 'onboarding_done';
+  static bool seen = false;
+
+  /// Un échec du stockage local ne doit jamais bloquer l'utilisateur.
+  static Future<void> markSeen() async {
+    seen = true;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(key, true);
+    } catch (_) {}
+  }
+}
+
+/// Présentation verticale de l'application : la même partout (téléphone,
+/// ordinateur, web), au premier lancement comme après la connexion.
+/// On fait défiler du bas vers le haut.
+/// - Sans compte connecté : la dernière page propose de se connecter ou de
+///   créer un compte.
+/// - Connecté : la dernière page recueille les consentements, **tous
+///   désactivés par défaut**. Si la présentation a déjà été vue sur cet
+///   appareil, on arrive directement sur les choix (on peut remonter).
 class IntroTourScreen extends StatefulWidget {
-  const IntroTourScreen({super.key});
+  const IntroTourScreen({super.key, this.fullTour = false});
+
+  /// Rejouée depuis le menu : commence toujours au début.
+  final bool fullTour;
 
   @override
   State<IntroTourScreen> createState() => _IntroTourScreenState();
@@ -24,12 +48,26 @@ class IntroTourScreen extends StatefulWidget {
 
 class _IntroTourScreenState extends State<IntroTourScreen>
     with SingleTickerProviderStateMixin {
-  final _pager = PageController();
-  late final AnimationController _bounce = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 900),
-  )..repeat(reverse: true);
-  int _page = 0;
+  late final bool _guest =
+      !Backend.isReady || Backend.I.auth.currentUser == null;
+  late final PageController _pager = PageController(
+    initialPage: !_guest && OnboardingFlag.seen && !widget.fullTour
+        ? _slides.length
+        : 0,
+  );
+  late int _page = _pager.initialPage;
+  // Créé dès l'ouverture (et non à la demande) : l'écran peut s'ouvrir
+  // directement sur les choix, où la flèche animée n'est jamais affichée.
+  late final AnimationController _bounce;
+
+  @override
+  void initState() {
+    super.initState();
+    _bounce = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat(reverse: true);
+  }
 
   static const _slides = [
     (
@@ -134,6 +172,8 @@ class _IntroTourScreenState extends State<IntroTourScreen>
       onPageChanged: (i) => setState(() => _page = i),
       itemBuilder: (_, i) => i < _slides.length
           ? _Slide(data: _slides[i], index: i)
+          : _guest
+          ? const _GuestEndPage()
           : const _ChoicesPage(),
     );
     return Scaffold(
@@ -323,6 +363,73 @@ class _Slide extends StatelessWidget {
   }
 }
 
+/// Dernière page sans compte : se connecter ou créer un compte. Les choix
+/// de confidentialité sont proposés juste après la connexion.
+class _GuestEndPage extends StatelessWidget {
+  const _GuestEndPage();
+
+  Future<void> _go(BuildContext context, {required bool register}) async {
+    await OnboardingFlag.markSeen();
+    if (!context.mounted) return;
+    final nav = Navigator.of(context);
+    nav.pushReplacementNamed(Routes.login);
+    if (register) nav.pushNamed(Routes.register);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 560),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(Gap.m, Gap.xl, 40, Gap.l),
+          child: GfCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text('Prêt à commencer ?', style: AppText.title(size: 22)),
+                const SizedBox(height: 4),
+                Text(
+                  'Connecte-toi ou crée ton compte. Juste après, tu choisiras '
+                  'ce que tu partages : tout est désactivé par défaut.',
+                  style: AppText.body(size: 14, color: AppColors.inkSoft),
+                ),
+                const SizedBox(height: Gap.m),
+                const InfoRow(
+                  Icons.lock_outline,
+                  'Profil privé, séances privées, réseaux masqués tant que tu '
+                  'ne les actives pas.',
+                ),
+                const SizedBox(height: Gap.m),
+                LoadingButton(
+                  key: const Key('intro_login'),
+                  label: 'Se connecter',
+                  icon: Icons.login,
+                  loading: false,
+                  onPressed: () => _go(context, register: false),
+                ),
+                const SizedBox(height: Gap.s),
+                OutlinedButton.icon(
+                  key: const Key('intro_register'),
+                  onPressed: () => _go(context, register: true),
+                  icon: const Icon(Icons.person_add_alt),
+                  label: const Text('Créer un compte'),
+                ),
+                const SizedBox(height: Gap.s),
+                TextButton.icon(
+                  onPressed: () => Navigator.pushNamed(context, Routes.legal),
+                  icon: const Icon(Icons.description_outlined, size: 18),
+                  label: const Text('Conditions et confidentialité'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// Dernière page : consentements explicites (aucun pré-coché).
 class _ChoicesPage extends StatefulWidget {
   const _ChoicesPage();
@@ -364,6 +471,7 @@ class _ChoicesPageState extends State<_ChoicesPage> {
         ),
       );
       await b.privacy.completeIntro();
+      await OnboardingFlag.markSeen();
     });
     if (!mounted) return;
     setState(() => _saving = false);
