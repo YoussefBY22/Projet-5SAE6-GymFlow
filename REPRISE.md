@@ -13,22 +13,25 @@ Application Flutter d'une salle de sport (Super Admin / Coach / Abonné), style 
 |---|---|
 | Projet | `C:\Users\youss\Desktop\Projet Mobile Flutter\gymflow` |
 | Dépôt GitHub (public) | https://github.com/YoussefBY22/ProjetDevMobile-5SAE6-FAMY |
-| Code | branche **`GymFlow-V1`** |
-| `main` | **volontairement vide** (un seul commit vide) |
-| `gh-pages` | uniquement la version web compilée (publiée sur GitHub Pages) |
+| Code | branche **`GymFlow-V1`** (seule branche de travail) |
+| `main` | ne contient pas le code ; ne rien y pousser |
+| Version web compilée | dossier `docs/` de `GymFlow-V1` (servi par GitHub Pages : *Settings → Pages → Deploy from a branch → GymFlow-V1 / docs*) |
 | Version web en ligne | https://youssefby22.github.io/ProjetDevMobile-5SAE6-FAMY/ |
 | Téléphone de test | vivo V2332, Android 16, identifiant adb `10HE8DF73N0025Y` |
 | Flutter | `C:\Users\youss\flutter` (3.44.3, Dart 3.12.2), dans le PATH |
 | adb | `%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe` (hors PATH ; `flutter install` suffit) |
 
 Historique de `GymFlow-V1` (du plus récent au plus ancien) :
+- `5e6e0fc` Présentation verticale identique avant et après la connexion (l'ancienne présentation horizontale à 3 pages est supprimée)
+- `65b6ade` Fiche de reprise
 - `c9ba764` Bibliothèque collaborative, recherche bilingue, filtres mémorisés, favoris animés
 - `03ab050` Communauté, partage avec consentement, confidentialité, version ordinateur
 - `a87ba28` … `074ac98` Application de base (modules 6.1 à 6.6, tests, documentation)
 
 ## 3. Règles de travail convenues
 - **Aucune trace de Claude dans les commits** (pas de `Co-Authored-By`, pas de mention dans les messages). Auteur : `YoussefBY22 <youssef.benyoussef@esprit.tn>`.
-- **Pousser seulement sur demande explicite** de Youssef. Commits locaux autorisés.
+- **Pousser seulement sur demande explicite** de Youssef, et seulement sur `GymFlow-V1`. Commits locaux autorisés.
+- **Sur GitHub, ne faire que ce qui est demandé explicitement** : ne jamais créer de branche, de commit « explicatif » (ex. commit vide) ni de publication de sa propre initiative.
 - Ne pas remettre de code sur `main`.
 - Messages, textes de l'app et documentation en français.
 - Avant de livrer : `dart format lib test`, `flutter analyze` (0 problème), `flutter test` (tout vert).
@@ -36,6 +39,8 @@ Historique de `GymFlow-V1` (du plus récent au plus ancien) :
 
 ## 4. Ce que fait l'application aujourd'hui
 **Socle (modules 6.1 à 6.6)** : connexion / inscription (mots de passe PBKDF2, verrouillage après 5 échecs), profils, progression (IMC, courbes, records, série, badges), exercices / workouts / programmes avec vidéos, lecteur de séance (séries, minuteur de repos), cours (statuts, réservations, liste d'attente, présences, notes, rappels), boutique (panier, paiement, commandes), tableaux de bord admin et coach, annonces, recherche globale, notifications, journal d'audit.
+
+**Premier lancement (`5e6e0fc`)** : la même présentation verticale partout. Sans compte, la dernière page propose « Se connecter » / « Créer un compte » ; après la connexion, on arrive directement sur « Tes choix » si la présentation a déjà été vue sur l'appareil (menu « Découvrir GymFlow » pour la revoir en entier).
 
 **Communauté et confidentialité (`03ab050`)**
 - Tout est privé par défaut : profil, réseaux sociaux, séances. Chaque séance se partage par un geste (« Partager » ou « Garder privée »).
@@ -65,7 +70,7 @@ lib/screens/    auth, shell, home, training (dont review_screen), courses, shop,
                 profile, admin, community, privacy, misc
 lib/widgets/    filter_bar (filtres), flip (animation des favoris),
                 library_widgets (statut, publication, langue), cards…
-test/           135 tests (règles métier, droits, sécurité, confidentialité,
+test/           137 tests (règles métier, droits, sécurité, confidentialité,
                 bibliothèque, widgets, parcours complet, version ordinateur)
 ```
 Les contrôles d'accès sont dans les services (`requireUser`, `requireRole`, `LibraryService.canSee` / `canEdit`), pas seulement dans l'interface.
@@ -101,16 +106,13 @@ dart format lib test
 flutter analyze
 flutter test
 ```
-Republier la version web en ligne :
+Republier la version web en ligne (dossier `docs/`, puis commit et push sur `GymFlow-V1`) :
 ```
-flutter build web --release --base-href /ProjetDevMobile-5SAE6-FAMY/
-cd build\web
-ni .nojekyll
-git init -b gh-pages
-git add -A
+flutter build web --release --base-href /ProjetDevMobile-5SAE6-FAMY/ --output docs
+ni docs\.nojekyll -Force
+git add docs
 git commit -m "Mise à jour de la version web"
-git push -f https://github.com/YoussefBY22/ProjetDevMobile-5SAE6-FAMY.git gh-pages
-cd ..\..
+git push origin GymFlow-V1
 ```
 Pousser le code :
 ```
