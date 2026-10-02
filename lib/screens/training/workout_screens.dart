@@ -4,6 +4,7 @@ import '../../core/responsive.dart';
 import '../../core/routes.dart';
 import '../../core/theme.dart';
 import '../../core/validators.dart';
+import '../../models/content.dart';
 import '../../models/enums.dart';
 import '../../models/exercise.dart';
 import '../../models/workout.dart';
@@ -12,6 +13,7 @@ import '../../widgets/animations.dart';
 import '../../widgets/bits.dart';
 import '../../widgets/cards.dart';
 import '../../widgets/common.dart';
+import '../../widgets/library_widgets.dart';
 import '../../widgets/media.dart';
 import '../../widgets/pickers.dart';
 
@@ -45,6 +47,70 @@ SliverAppBar coverAppBar({
       ),
     ),
   );
+}
+
+/// Image de couverture : photo du téléphone ou adresse web (facultatif).
+class CoverField extends StatelessWidget {
+  const CoverField({super.key, required this.controller});
+  final TextEditingController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<TextEditingValue>(
+      valueListenable: controller,
+      builder: (context, v, _) {
+        final local = v.text.isNotEmpty && !v.text.startsWith('http');
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (v.text.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(right: Gap.s),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: NetImage(v.text, width: 56, height: 56),
+                ),
+              ),
+            Expanded(
+              child: local
+                  ? InputDecorator(
+                      decoration: const InputDecoration(
+                        labelText: 'Image de couverture',
+                      ),
+                      child: Text(
+                        'Photo du téléphone',
+                        style: AppText.body(size: 14),
+                      ),
+                    )
+                  : TextFormField(
+                      controller: controller,
+                      decoration: const InputDecoration(
+                        labelText: 'Image de couverture (adresse web)',
+                        helperText: 'Facultatif',
+                      ),
+                      validator: Validators.url,
+                    ),
+            ),
+            const SizedBox(width: Gap.xs),
+            IconButton.filledTonal(
+              tooltip: 'Choisir une photo',
+              onPressed: () async {
+                final path = await pickImageFile(context);
+                if (path != null) controller.text = path;
+              },
+              icon: const Icon(Icons.add_photo_alternate_outlined),
+            ),
+            if (v.text.isNotEmpty)
+              IconButton(
+                tooltip: 'Retirer l\'image',
+                onPressed: controller.clear,
+                icon: const Icon(Icons.close, color: AppColors.red),
+              ),
+          ],
+        );
+      },
+    );
+  }
 }
 
 /// Menu Modifier / Supprimer réservé au propriétaire (ou à l'admin).
@@ -83,6 +149,7 @@ class WorkoutDetailScreen extends StatelessWidget {
           );
         }
         final me = b.auth.currentUser!;
+        final lang = b.library.contentLang;
         final items = b.workoutService.resolve(w);
         return Scaffold(
           body: CustomScrollView(
@@ -122,9 +189,11 @@ class WorkoutDetailScreen extends StatelessWidget {
                 padding: pagePadding(context, maxWidth: 900, bottom: Gap.m),
                 sliver: SliverList.list(
                   children: [
-                    Text(w.name, style: AppText.title(size: 26)),
+                    Text(w.nameIn(lang), style: AppText.title(size: 26)),
+                    AuthorLine(item: w),
                     const SizedBox(height: 4),
-                    Text(w.focus, style: AppText.label(size: 14)),
+                    if (w.focus.isNotEmpty)
+                      Text(w.focus, style: AppText.label(size: 14)),
                     const SizedBox(height: Gap.s),
                     Wrap(
                       spacing: 6,
@@ -167,7 +236,9 @@ class WorkoutDetailScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: Gap.m),
-                    Text(w.description, style: AppText.body()),
+                    PublicationPanel(item: w),
+                    const SizedBox(height: Gap.m),
+                    Text(w.descriptionIn(lang), style: AppText.body()),
                     const SizedBox(height: Gap.l),
                     Text(
                       'Déroulé de la séance',
@@ -279,7 +350,7 @@ class _WorkoutItemTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  exercise.name,
+                  exercise.nameIn(Backend.I.library.contentLang),
                   style: AppText.subtitle(size: 14),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -322,6 +393,9 @@ class _WorkoutFormScreenState extends State<WorkoutFormScreen> {
   final _description = TextEditingController();
   final _focus = TextEditingController();
   final _cover = TextEditingController();
+  final _altName = TextEditingController();
+  final _altDescription = TextEditingController();
+  String _lang = ContentLang.fr;
   Level _level = Level.beginner;
   Goal _goal = Goal.fitness;
   final List<WorkoutItem> _items = [];
@@ -343,12 +417,22 @@ class _WorkoutFormScreenState extends State<WorkoutFormScreen> {
       _level = w.level;
       _goal = w.goal;
       _items.addAll(w.items);
+      _lang = w.lang;
+      _altName.text = w.altName ?? '';
+      _altDescription.text = w.altDescription ?? '';
     }
   }
 
   @override
   void dispose() {
-    for (final c in [_name, _description, _focus, _cover]) {
+    for (final c in [
+      _name,
+      _description,
+      _focus,
+      _cover,
+      _altName,
+      _altDescription,
+    ]) {
       c.dispose();
     }
     super.dispose();
@@ -389,6 +473,9 @@ class _WorkoutFormScreenState extends State<WorkoutFormScreen> {
         goal: _goal,
         items: _items,
         coverImage: _cover.text.trim().isEmpty ? null : _cover.text.trim(),
+        lang: _lang,
+        altName: _altName.text,
+        altDescription: _altDescription.text,
       ),
       success: 'Workout enregistré.',
     );
@@ -424,20 +511,30 @@ class _WorkoutFormScreenState extends State<WorkoutFormScreen> {
                           color: AppColors.cream,
                           child: InfoRow(
                             Icons.lock_outline,
-                            'Workout personnel : visible par vous seul. '
-                            'Vous pourrez partager les séances réalisées, si vous le souhaitez.',
+                            'Workout personnel : visible par vous seul. Vous '
+                            'pourrez le proposer à la publication ; un coach le '
+                            'validera avant qu\'il soit visible par tous.',
                           ),
                         ),
                       ),
+                    LanguageSection(
+                      lang: _lang,
+                      kind: ContentKind.workout,
+                      onLang: (l) => setState(() => _lang = l),
+                    ),
+                    const SizedBox(height: Gap.m),
                     TextFormField(
+                      key: const Key('workout_name'),
                       controller: _name,
-                      decoration: const InputDecoration(
-                        labelText: 'Nom (ex. Push Day)',
+                      decoration: InputDecoration(
+                        labelText: _lang == ContentLang.en
+                            ? 'Name (e.g. Push Day)'
+                            : 'Nom (ex. Push Day)',
                       ),
                       validator: Validators.text(
                         field: 'Le nom',
                         min: 3,
-                        max: 60,
+                        max: 80,
                       ),
                     ),
                     const SizedBox(height: Gap.m),
@@ -467,6 +564,13 @@ class _WorkoutFormScreenState extends State<WorkoutFormScreen> {
                       ),
                     ),
                     const SizedBox(height: Gap.m),
+                    TranslationFields(
+                      lang: _lang,
+                      name: _altName,
+                      description: _altDescription,
+                      kind: ContentKind.workout,
+                    ),
+                    const SizedBox(height: Gap.m),
                     Row(
                       children: [
                         Expanded(
@@ -491,14 +595,7 @@ class _WorkoutFormScreenState extends State<WorkoutFormScreen> {
                       ],
                     ),
                     const SizedBox(height: Gap.m),
-                    TextFormField(
-                      controller: _cover,
-                      decoration: const InputDecoration(
-                        labelText:
-                            'Image de couverture (adresse web, facultatif)',
-                      ),
-                      validator: Validators.url,
-                    ),
+                    CoverField(controller: _cover),
                     FormSection(
                       'Exercices (${_items.length}) — maintenez pour réordonner',
                     ),
@@ -534,7 +631,8 @@ class _WorkoutFormScreenState extends State<WorkoutFormScreen> {
                           ),
                         ),
                         title: Text(
-                          e?.name ?? 'Exercice supprimé',
+                          e?.nameIn(b.library.contentLang) ??
+                              'Exercice supprimé',
                           style: AppText.subtitle(size: 14),
                         ),
                         subtitle: Text(
@@ -595,12 +693,15 @@ class _ExercisePickerState extends State<_ExercisePicker> {
 
   @override
   Widget build(BuildContext context) {
-    final list = Backend.I.exerciseService.list().where((e) {
-      final q = _q.toLowerCase();
-      return q.isEmpty ||
-          e.name.toLowerCase().contains(q) ||
-          e.primaryMuscle.label.toLowerCase().contains(q);
-    }).toList();
+    final b = Backend.I;
+    final me = b.auth.currentUser!;
+    final lang = b.library.contentLang;
+    // Recherche bilingue ; un workout du club n'utilise que des exercices
+    // publiés.
+    final list = b.library
+        .exercises(query: _q)
+        .where((e) => !me.canManageContent || e.isPublished)
+        .toList();
     return SizedBox(
       height: MediaQuery.sizeOf(context).height * 0.8,
       child: Column(
@@ -611,8 +712,23 @@ class _ExercisePickerState extends State<_ExercisePicker> {
               autofocus: true,
               onChanged: (v) => setState(() => _q = v),
               decoration: const InputDecoration(
-                hintText: 'Rechercher un exercice',
+                hintText: 'Rechercher (ex. squat, bench press, dos…)',
                 prefixIcon: Icon(Icons.search),
+              ),
+            ),
+          ),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: Gap.s),
+              child: TextButton.icon(
+                key: const Key('picker_new_exercise'),
+                onPressed: () async {
+                  await Navigator.pushNamed(context, Routes.exerciseForm);
+                  if (mounted) setState(() {});
+                },
+                icon: const Icon(Icons.add),
+                label: const Text('Créer un nouvel exercice'),
               ),
             ),
           ),
@@ -628,8 +744,13 @@ class _ExercisePickerState extends State<_ExercisePicker> {
                     child: ExerciseImage(list[i], cacheWidth: 150),
                   ),
                 ),
-                title: Text(list[i].name),
-                subtitle: Text(list[i].primaryMuscle.label),
+                title: Text(list[i].nameIn(lang)),
+                subtitle: Text(
+                  [
+                    list[i].primaryMuscle.label,
+                    if (!list[i].isPublished) 'Personnel',
+                  ].join(' · '),
+                ),
                 onTap: () => Navigator.pop(context, list[i]),
               ),
             ),
@@ -851,7 +972,7 @@ class ProgramDetailScreen extends StatelessWidget {
         final me = b.auth.currentUser!;
         final following = me.activeProgramId == p.id;
         final today = b.now().weekday;
-        final author = b.users.byId(p.authorId);
+        final lang = b.library.contentLang;
         return Scaffold(
           body: CustomScrollView(
             slivers: [
@@ -890,7 +1011,8 @@ class ProgramDetailScreen extends StatelessWidget {
                 padding: pagePadding(context, maxWidth: 900, bottom: Gap.m),
                 sliver: SliverList.list(
                   children: [
-                    Text(p.name, style: AppText.title(size: 24)),
+                    Text(p.nameIn(lang), style: AppText.title(size: 24)),
+                    AuthorLine(item: p),
                     const SizedBox(height: Gap.s),
                     Wrap(
                       spacing: 6,
@@ -907,11 +1029,15 @@ class ProgramDetailScreen extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: Gap.m),
-                    Text(p.description, style: AppText.body()),
+                    PublicationPanel(item: p),
+                    const SizedBox(height: Gap.m),
+                    Text(p.descriptionIn(lang), style: AppText.body()),
                     const SizedBox(height: Gap.s),
-                    InfoRow(Icons.fitness_center, 'Matériel : ${p.equipment}'),
-                    if (author != null)
-                      InfoRow(Icons.sports, 'Conçu par ${author.fullName}'),
+                    if (p.equipment.isNotEmpty)
+                      InfoRow(
+                        Icons.fitness_center,
+                        'Matériel : ${p.equipment}',
+                      ),
                     const SizedBox(height: Gap.l),
                     Text('Ma semaine type', style: AppText.title(size: 18)),
                     const SizedBox(height: Gap.s),
@@ -958,7 +1084,7 @@ class ProgramDetailScreen extends StatelessWidget {
                                   ),
                                   Expanded(
                                     child: Text(
-                                      w?.name ?? 'Repos / récupération',
+                                      w?.nameIn(lang) ?? 'Repos / récupération',
                                       style: AppText.body(
                                         size: 14,
                                         color: w == null
@@ -1028,6 +1154,9 @@ class _ProgramFormScreenState extends State<ProgramFormScreen> {
   final _weeks = TextEditingController(text: '6');
   final _equipment = TextEditingController();
   final _cover = TextEditingController();
+  final _altName = TextEditingController();
+  final _altDescription = TextEditingController();
+  String _lang = ContentLang.fr;
   Level _level = Level.beginner;
   Goal _goal = Goal.fitness;
   final Map<int, String?> _days = {for (var d = 1; d <= 7; d++) d: null};
@@ -1052,12 +1181,23 @@ class _ProgramFormScreenState extends State<ProgramFormScreen> {
       for (final d in p.days) {
         _days[d.weekday] = d.workoutId;
       }
+      _lang = p.lang;
+      _altName.text = p.altName ?? '';
+      _altDescription.text = p.altDescription ?? '';
     }
   }
 
   @override
   void dispose() {
-    for (final c in [_name, _description, _weeks, _equipment, _cover]) {
+    for (final c in [
+      _name,
+      _description,
+      _weeks,
+      _equipment,
+      _cover,
+      _altName,
+      _altDescription,
+    ]) {
       c.dispose();
     }
     super.dispose();
@@ -1082,6 +1222,9 @@ class _ProgramFormScreenState extends State<ProgramFormScreen> {
             if (e.value != null)
               ProgramDay(weekday: e.key, workoutId: e.value!),
         ],
+        lang: _lang,
+        altName: _altName.text,
+        altDescription: _altDescription.text,
       ),
       success: 'Programme enregistré.',
     );
@@ -1092,7 +1235,20 @@ class _ProgramFormScreenState extends State<ProgramFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final workouts = Backend.I.workoutService.workouts();
+    final b = Backend.I;
+    final me = b.auth.currentUser!;
+    final lang = b.library.contentLang;
+    // Programme du club : workouts publiés ; abonné : publiés + les siens.
+    final workouts = b.library
+        .workouts()
+        .where((w) => !me.canManageContent || w.isPublished)
+        .toList();
+    for (final id in _days.values.whereType<String>()) {
+      if (workouts.every((w) => w.id != id)) {
+        final w = b.workoutService.workoutById(id);
+        if (w != null) workouts.add(w);
+      }
+    }
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -1106,12 +1262,34 @@ class _ProgramFormScreenState extends State<ProgramFormScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              TextFormField(
-                controller: _name,
-                decoration: const InputDecoration(
-                  labelText: 'Nom du programme',
+              if (!me.canManageContent)
+                const Padding(
+                  padding: EdgeInsets.only(bottom: Gap.m),
+                  child: GfCard(
+                    color: AppColors.cream,
+                    child: InfoRow(
+                      Icons.lock_outline,
+                      'Programme personnel : visible par vous seul. '
+                      'Composez-le avec les workouts du club ou les vôtres, '
+                      'puis proposez-le si vous voulez le partager.',
+                    ),
+                  ),
                 ),
-                validator: Validators.text(field: 'Le nom', min: 3, max: 60),
+              LanguageSection(
+                lang: _lang,
+                kind: ContentKind.program,
+                onLang: (l) => setState(() => _lang = l),
+              ),
+              const SizedBox(height: Gap.m),
+              TextFormField(
+                key: const Key('program_name'),
+                controller: _name,
+                decoration: InputDecoration(
+                  labelText: _lang == ContentLang.en
+                      ? 'Program name'
+                      : 'Nom du programme',
+                ),
+                validator: Validators.text(field: 'Le nom', min: 3, max: 80),
               ),
               const SizedBox(height: Gap.m),
               TextFormField(
@@ -1123,6 +1301,13 @@ class _ProgramFormScreenState extends State<ProgramFormScreen> {
                   max: 500,
                   optional: true,
                 ),
+              ),
+              const SizedBox(height: Gap.m),
+              TranslationFields(
+                lang: _lang,
+                name: _altName,
+                description: _altDescription,
+                kind: ContentKind.program,
               ),
               const SizedBox(height: Gap.m),
               Row(
@@ -1170,19 +1355,17 @@ class _ProgramFormScreenState extends State<ProgramFormScreen> {
                     child: TextFormField(
                       controller: _equipment,
                       decoration: const InputDecoration(labelText: 'Matériel'),
-                      validator: Validators.text(field: 'Le matériel', max: 60),
+                      validator: Validators.text(
+                        field: 'Le matériel',
+                        max: 60,
+                        optional: true,
+                      ),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: Gap.m),
-              TextFormField(
-                controller: _cover,
-                decoration: const InputDecoration(
-                  labelText: 'Image de couverture (adresse web, facultatif)',
-                ),
-                validator: Validators.url,
-              ),
+              CoverField(controller: _cover),
               const FormSection('Planning de la semaine'),
               for (var d = 1; d <= 7; d++)
                 Padding(
@@ -1199,7 +1382,12 @@ class _ProgramFormScreenState extends State<ProgramFormScreen> {
                       for (final w in workouts)
                         DropdownMenuItem<String?>(
                           value: w.id,
-                          child: Text(w.name),
+                          child: Text(
+                            w.isPublished
+                                ? w.nameIn(lang)
+                                : '${w.nameIn(lang)} (personnel)',
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                     ],
                     onChanged: (v) => setState(() => _days[d] = v),

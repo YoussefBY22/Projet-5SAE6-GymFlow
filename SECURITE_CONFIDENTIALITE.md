@@ -85,11 +85,24 @@ Ce partage des rôles est la première protection contre une mise en cause : l'�
 
 **Couverture de tests** : `test/privacy_test.dart` (15 tests : réglages par défaut, consentements datés, mineurs, CGU obligatoires, modération, réseaux et liens piégés, séances privées et partagées, signalement, workouts personnels, export sans secret, suppression avec anonymisation) et `test/desktop_test.dart`.
 
+## 5 bis. Contenus créés par les membres (exercices, workouts, programmes)
+
+| Risque | Mesure |
+|---|---|
+| Consigne dangereuse publiée (charge, posture) | Rien n'est public sans **validation d'un coach ou de l'admin** ; refus motivé ; le staff peut modifier ou retirer un contenu publié ; rappel « ne remplace pas l'avis d'un coach » dans les CGU. |
+| Atteinte aux droits d'auteur (vidéo, photo d'un tiers) | À la proposition, l'auteur déclare avoir les droits (CGU) ; le coach vérifie les médias ; contenu retirable. |
+| Fuite de contenus privés | Contrôle d'accès dans les services (`LibraryService.canSee`) : un contenu non publié n'est visible que de son auteur (et du staff quand il est proposé). La recherche globale respecte la même règle (testé). |
+| Exposition de l'auteur | Signature limitée à « Prénom N. » ; aucune autre donnée de profil. |
+| Effacement du compte | Créations non publiées supprimées ; créations publiées conservées et anonymisées, comme annoncé avant la proposition et dans les CGU. |
+| Traçabilité | Proposition, publication et refus inscrits au journal d'audit ; l'auteur est notifié de chaque décision. |
+
+À prévoir en SaaS : stockage serveur des médias envoyés (aujourd'hui fichiers locaux de l'appareil), analyse antivirus et limites de taille côté serveur, modération des images.
+
 ## 6. Textes affichés dans l'application
 
 - **Présentation** au premier lancement (et après une nouvelle version des textes) : 5 pages verticales (glisser vers le haut sur téléphone, molette ou flèches sur ordinateur), puis une page de choix où **tout est désactivé**. L'acceptation des CGU et de la politique est obligatoire ; elle est déjà cochée seulement si le membre l'a acceptée lors de son inscription.
 - **Politique de confidentialité** (11 sections) et **conditions d'utilisation** (7 sections) dans `lib/core/legal.dart`, accessibles sans être connecté (*Lire*), depuis la présentation et depuis *Confidentialité*.
-- **Version des textes** : `Legal.version`. Si elle change, le consentement aux CGU est redemandé à la connexion suivante.
+- **Version des textes** : `Legal.version` (actuellement `2026-10-b`, ajout de la clause sur les créations des membres). Si elle change, le consentement aux CGU est redemandé à la connexion suivante.
 - **Durées de conservation** affichées : compte pendant l'abonnement + 3 ans d'inactivité ; séances, pesées et réservations supprimées avec le compte ; commandes 10 ans, anonymisées ; journal d'audit 1 an.
 
 ## 7. Documents à préparer avant de vendre (hors code)

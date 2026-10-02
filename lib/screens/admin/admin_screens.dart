@@ -6,12 +6,14 @@ import '../../core/routes.dart';
 import '../../core/theme.dart';
 import '../../core/validators.dart';
 import '../../models/enums.dart';
+import '../../models/prefs.dart';
 import '../../models/user.dart';
 import '../../services/backend.dart';
 import '../../widgets/animations.dart';
 import '../../widgets/bits.dart';
 import '../../widgets/charts.dart';
 import '../../widgets/common.dart';
+import '../../widgets/filter_bar.dart';
 import '../../widgets/pickers.dart';
 import '../coach/coach_home.dart';
 import '../shell/main_shell.dart';
@@ -282,9 +284,67 @@ class UsersScreen extends StatefulWidget {
 }
 
 class _UsersScreenState extends State<UsersScreen> {
-  String _query = '';
-  UserRole? _role;
-  bool? _active;
+  static const _listKey = 'users';
+  final _query = TextEditingController();
+  late FilterValues _filters = Backend.I.library.savedFilters(_listKey);
+
+  @override
+  void dispose() {
+    _query.dispose();
+    super.dispose();
+  }
+
+  void _setFilters(FilterValues f) {
+    setState(() => _filters = f);
+    Backend.I.library.saveFilters(_listKey, f);
+  }
+
+  List<AppUser> _results(FilterValues f) {
+    final now = Backend.I.now();
+    return Backend.I.userService.list(query: _query.text).where((u) {
+      if (f.isActive('role') && !f.has('role', u.role.name)) return false;
+      if (f.isActive('status') &&
+          !f.has('status', u.active ? 'active' : 'inactive')) {
+        return false;
+      }
+      if (f.isActive('subscription')) {
+        if (!u.isMember) return false;
+        final ok = u.subscription.isActiveAt(now) ? 'valid' : 'expired';
+        if (!f.has('subscription', ok)) return false;
+      }
+      return true;
+    }).toList();
+  }
+
+  static final _groups = [
+    FilterGroup(
+      id: 'role',
+      title: 'Rôle',
+      icon: Icons.badge_outlined,
+      options: [
+        for (final r in UserRole.values)
+          FilterOption(r.name, r.label, icon: r.icon),
+      ],
+    ),
+    const FilterGroup(
+      id: 'status',
+      title: 'Compte',
+      icon: Icons.toggle_on_outlined,
+      options: [
+        FilterOption('active', 'Actif'),
+        FilterOption('inactive', 'Désactivé'),
+      ],
+    ),
+    const FilterGroup(
+      id: 'subscription',
+      title: 'Abonnement',
+      icon: Icons.card_membership,
+      options: [
+        FilterOption('valid', 'En cours'),
+        FilterOption('expired', 'Expiré'),
+      ],
+    ),
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -304,49 +364,19 @@ class _UsersScreenState extends State<UsersScreen> {
       body: ListenableBuilder(
         listenable: b.bus,
         builder: (context, _) {
-          final users = b.userService.list(
-            role: _role,
-            active: _active,
-            query: _query,
-          );
+          final users = _results(_filters);
           return Column(
             children: [
-              Padding(
-                padding: pagePadding(context, maxWidth: 1200, bottom: 0),
-                child: TextField(
-                  onChanged: (v) => setState(() => _query = v),
-                  decoration: const InputDecoration(
-                    hintText: 'Nom ou e-mail',
-                    prefixIcon: Icon(Icons.search),
-                  ),
-                ),
+              FilterSearchBar(
+                groups: _groups,
+                values: _filters,
+                onChanged: _setFilters,
+                resultCount: (f) => _results(f).length,
+                hint: 'Nom ou e-mail',
+                query: _query,
+                onQuery: (_) => setState(() {}),
               ),
-              const SizedBox(height: Gap.s),
-              ChipBar(
-                children: [
-                  for (final r in UserRole.values)
-                    GfFilterChip(
-                      label: r.label,
-                      icon: r.icon,
-                      selected: _role == r,
-                      onTap: () =>
-                          setState(() => _role = _role == r ? null : r),
-                    ),
-                  GfFilterChip(
-                    label: 'Actifs',
-                    selected: _active == true,
-                    onTap: () =>
-                        setState(() => _active = _active == true ? null : true),
-                  ),
-                  GfFilterChip(
-                    label: 'Désactivés',
-                    selected: _active == false,
-                    onTap: () => setState(
-                      () => _active = _active == false ? null : false,
-                    ),
-                  ),
-                ],
-              ),
+              const SizedBox(height: Gap.xs),
               Expanded(
                 child: users.isEmpty
                     ? const EmptyState(

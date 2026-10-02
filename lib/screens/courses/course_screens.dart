@@ -8,17 +8,21 @@ import '../../core/validators.dart';
 import '../../models/course.dart';
 import '../../models/enums.dart';
 import '../../models/misc.dart';
+import '../../models/prefs.dart';
 import '../../services/backend.dart';
 import '../../services/course_service.dart';
 import '../../widgets/animations.dart';
 import '../../widgets/bits.dart';
 import '../../widgets/cards.dart';
 import '../../widgets/common.dart';
+import '../../widgets/filter_bar.dart';
 import '../../widgets/pickers.dart';
 import '../shell/main_shell.dart';
-import '../training/workout_screens.dart' show coverAppBar, weekdayNames;
+import '../training/workout_screens.dart' show coverAppBar;
 
-/// Liste des cours : TabBar par statut + filtres (coach, catégorie, jour).
+/// Liste des cours : onglets par statut, recherche et bouton « Filtres »
+/// (quand, jour, moment, discipline, coach, niveau, places), mémorisés
+/// avec le compte.
 class CoursesScreen extends StatefulWidget {
   const CoursesScreen({super.key});
 
@@ -28,61 +32,133 @@ class CoursesScreen extends StatefulWidget {
 
 class _CoursesScreenState extends State<CoursesScreen>
     with SingleTickerProviderStateMixin {
+  static const _listKey = 'courses';
   late final List<CourseView> _views;
   late final TabController _tabs;
-  String? _coachId;
-  CourseCategory? _category;
-  int? _weekday;
+  final _query = TextEditingController();
+  late FilterValues _filters;
 
   @override
   void initState() {
     super.initState();
-    final me = Backend.I.auth.currentUser!;
+    final b = Backend.I;
+    final me = b.auth.currentUser!;
     _views = me.isMember
         ? CourseView.values
         : [CourseView.upcoming, CourseView.toPlan, CourseView.done];
-    _tabs = TabController(length: _views.length, vsync: this);
+    _tabs = TabController(length: _views.length, vsync: this)
+      ..addListener(() {
+        if (!_tabs.indexIsChanging) setState(() {});
+      });
+    _filters = b.library.savedFilters(_listKey);
   }
 
   @override
   void dispose() {
     _tabs.dispose();
+    _query.dispose();
     super.dispose();
   }
 
-  Future<void> _pickCoach() async {
-    final coaches = Backend.I.userService.coaches();
-    final picked = await showModalBottomSheet<String?>(
-      context: context,
-      builder: (ctx) => SafeArea(
-        child: ListView(
-          shrinkWrap: true,
-          children: [
-            ListTile(
-              title: const Text('Tous les coachs'),
-              onTap: () => Navigator.pop(ctx),
-            ),
-            for (final c in coaches)
-              ListTile(
-                leading: GfAvatar(c),
-                title: Text(c.fullName),
-                subtitle: Text(c.specialty ?? ''),
-                onTap: () => Navigator.pop(ctx, c.id),
-              ),
-          ],
-        ),
+  void _setFilters(FilterValues f) {
+    setState(() => _filters = f);
+    Backend.I.library.saveFilters(_listKey, f);
+  }
+
+  List<Course> _results(CourseView v, FilterValues f) =>
+      Backend.I.courseService.search(view: v, query: _query.text, filters: f);
+
+  List<FilterGroup> _groups() {
+    final b = Backend.I;
+    final now = b.now();
+    final today = DateTime(now.year, now.month, now.day);
+    const short = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+    String nextDate(int d) {
+      final date = today.add(Duration(days: (d - today.weekday + 7) % 7));
+      return d == today.weekday ? 'auj.' : Fmt.dayShort(date);
+    }
+
+    return [
+      const FilterGroup(
+        id: 'when',
+        title: 'Quand ?',
+        icon: Icons.event,
+        single: true,
+        options: [
+          FilterOption('today', 'Aujourd\'hui', icon: Icons.today),
+          FilterOption('tomorrow', 'Demain'),
+          FilterOption('week', 'Cette semaine'),
+          FilterOption('nextweek', 'Semaine prochaine'),
+          FilterOption('weekend', 'Le week-end'),
+        ],
       ),
-    );
-    setState(() => _coachId = picked);
+      FilterGroup(
+        id: 'weekday',
+        title: 'Jour de la semaine',
+        icon: Icons.calendar_view_week,
+        help:
+            'Ex. « tous mes mardis et jeudis ». Date du prochain jour '
+            'indiquée sous chaque jour.',
+        grid: true,
+        options: [
+          for (var d = 1; d <= 7; d++)
+            FilterOption('$d', short[d - 1], caption: nextDate(d)),
+        ],
+      ),
+      const FilterGroup(
+        id: 'time',
+        title: 'Moment de la journée',
+        icon: Icons.schedule,
+        options: [
+          FilterOption('morning', 'Matin', icon: Icons.wb_twilight),
+          FilterOption('noon', 'Midi', icon: Icons.wb_sunny_outlined),
+          FilterOption('afternoon', 'Après-midi', icon: Icons.light_mode),
+          FilterOption('evening', 'Soir', icon: Icons.nights_stay_outlined),
+        ],
+      ),
+      FilterGroup(
+        id: 'category',
+        title: 'Discipline',
+        icon: Icons.sports_gymnastics,
+        options: [
+          for (final c in CourseCategory.values)
+            FilterOption(c.name, c.label, icon: c.icon),
+        ],
+      ),
+      FilterGroup(
+        id: 'coach',
+        title: 'Coach',
+        icon: Icons.sports,
+        options: [
+          for (final c in b.userService.coaches())
+            FilterOption(c.id, c.fullName),
+        ],
+      ),
+      FilterGroup(
+        id: 'level',
+        title: 'Niveau',
+        icon: Icons.signal_cellular_alt,
+        options: [for (final l in Level.values) FilterOption(l.name, l.label)],
+      ),
+      const FilterGroup(
+        id: 'spots',
+        title: 'Disponibilité',
+        icon: Icons.event_seat_outlined,
+        options: [
+          FilterOption(
+            'available',
+            'Places disponibles',
+            icon: Icons.check_circle_outline,
+          ),
+        ],
+      ),
+    ];
   }
 
   @override
   Widget build(BuildContext context) {
     final b = Backend.I;
     final me = b.auth.currentUser!;
-    final coachName = _coachId == null
-        ? null
-        : b.users.byId(_coachId!)?.firstName;
     return Scaffold(
       appBar: AppBar(
         leading: const ShellMenuButton(),
@@ -103,71 +179,69 @@ class _CoursesScreenState extends State<CoursesScreen>
               label: const Text('Cours'),
             )
           : null,
-      body: Column(
-        children: [
-          const SizedBox(height: Gap.s),
-          ChipBar(
-            children: [
-              GfFilterChip(
-                label: coachName ?? 'Coach',
-                icon: Icons.sports,
-                selected: _coachId != null,
-                onTap: _pickCoach,
-              ),
-              for (var d = 1; d <= 7; d++)
-                GfFilterChip(
-                  label: weekdayNames[d - 1].substring(0, 3),
-                  selected: _weekday == d,
-                  onTap: () =>
-                      setState(() => _weekday = _weekday == d ? null : d),
-                ),
-            ],
-          ),
-          ChipBar(
-            children: [
-              for (final c in CourseCategory.values)
-                GfFilterChip(
-                  label: c.label,
-                  icon: c.icon,
-                  selected: _category == c,
-                  onTap: () =>
-                      setState(() => _category = _category == c ? null : c),
-                ),
-            ],
-          ),
-          Expanded(
-            child: ListenableBuilder(
-              listenable: b.bus,
-              builder: (context, _) => TabBarView(
+      body: ListenableBuilder(
+        listenable: b.bus,
+        builder: (context, _) => Column(
+          children: [
+            FilterSearchBar(
+              groups: _groups(),
+              values: _filters,
+              onChanged: _setFilters,
+              resultCount: (f) => _results(_views[_tabs.index], f).length,
+              hint: 'Yoga, HIIT, coach, salle…',
+              query: _query,
+              onQuery: (_) => setState(() {}),
+            ),
+            const SizedBox(height: Gap.xs),
+            Expanded(
+              child: TabBarView(
                 controller: _tabs,
                 children: [
                   for (final v in _views)
                     _CourseList(
-                      courses: b.courseService.list(
-                        view: v,
-                        coachId: _coachId,
-                        category: _category,
-                        weekday: _weekday,
-                      ),
+                      courses: _results(v, _filters),
                       view: v,
+                      filtered:
+                          _filters.activeCount > 0 || _query.text.isNotEmpty,
+                      onClear: () {
+                        _query.clear();
+                        _setFilters({});
+                      },
                     ),
                 ],
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 }
 
 class _CourseList extends StatelessWidget {
-  const _CourseList({required this.courses, required this.view});
+  const _CourseList({
+    required this.courses,
+    required this.view,
+    this.filtered = false,
+    this.onClear,
+  });
   final List<Course> courses;
   final CourseView view;
+  final bool filtered;
+  final VoidCallback? onClear;
 
   @override
   Widget build(BuildContext context) {
+    if (courses.isEmpty && filtered) {
+      return EmptyState(
+        icon: Icons.filter_alt_off_outlined,
+        title: 'Aucun cours',
+        message:
+            'Aucun cours ne correspond à votre recherche ou à vos filtres.',
+        action: 'Tout effacer',
+        onAction: onClear,
+      );
+    }
     if (courses.isEmpty) {
       final (icon, title, message) = switch (view) {
         CourseView.myBookings => (

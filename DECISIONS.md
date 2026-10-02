@@ -89,3 +89,28 @@ Détail complet, cadre légal et points d'audit : `SECURITE_CONFIDENTIALITE.md`.
 - Listes de cartes en rangées de 2 ou 3 colonnes sans perdre le chargement paresseux (`ResponsiveList`) ; indicateurs du tableau de bord sur 4 colonnes ; accueil abonné en 2 colonnes.
 - Filtres affichés sur plusieurs lignes (le défilement horizontal est peu pratique à la souris) ; glisser à la souris activé pour les carrousels ; présentation verticale pilotée par la molette et les flèches du clavier.
 - Les Hero des onglets masqués sont désactivés (`HeroMode`) : un même cours peut être présent dans deux onglets gardés en mémoire.
+
+## Bibliothèque collaborative (créations des membres)
+- **Un seul cycle de vie** pour exercices, workouts et programmes (`Publication` : privé → en attente → publié / refusé avec motif), géré par `LibraryService`. Contenu du staff publié directement.
+- **Visibilité** : publié pour tous ; privé pour l'auteur seul ; en attente visible aussi du staff (pour le valider). Contrôle dans les services (`canSee`), pas seulement dans l'interface. La recherche globale n'affiche plus que le contenu visible.
+- **Dépendances** : proposer un workout propose aussi les exercices personnels qu'il utilise ; un programme, ses workouts et leurs exercices. La validation les publie ensemble (jamais un workout public qui pointe vers un exercice privé) ; un refus les remet en privé.
+- **Après publication**, l'auteur abonné ne peut plus modifier seul (le contenu appartient à la bibliothèque de la salle, d'autres membres l'utilisent) ; il peut le **dupliquer**. Un coach modère le contenu publié par les membres. L'auteur est affiché « Prénom N. ».
+- Limite de 100 créations non publiées par type et par abonné. À la suppression d'un compte : créations non publiées effacées, publiées conservées et anonymisées (« Ancien membre »), comme annoncé dans les CGU (`Legal.version` = 2026-10-b : le nouveau texte est redemandé).
+
+## Recherche bilingue plutôt que traduction de toute l'interface
+- Le besoin : un anglophone qui cherche « bench press » doit trouver *Développé couché*. Une traduction automatique mot à mot ne suffit pas (« traction » ≠ « traction » en anglais, c'est « pull-up »).
+- Solution retenue, en trois couches :
+  1. **Glossaire FR ↔ EN du sport** (`core/search.dart`) : mouvements, muscles, matériel, objectifs, niveaux. La requête est étendue à ses équivalents dans l'autre langue, ce qui marche même pour un contenu saisi sans traduction.
+  2. **Noms anglais vérifiés** pour tout le contenu du club (`seed_translations.dart`) et « autres appellations » (DC, OHP, RDL…). L'import wger conserve aussi le nom anglais.
+  3. **Langue de saisie choisie au début** de chaque formulaire + traduction facultative, encouragée (« aidera d'autres membres à trouver votre workout »).
+- Affichage : bouton FR / EN (préférence du compte) pour les noms et descriptions des contenus, avec repli sur la langue d'origine. La traduction complète de l'interface (menus, boutons) n'est pas faite : c'est un chantier séparé (`flutter gen-l10n`, fichiers ARB), à lancer si la salle cible un public anglophone.
+- Normalisation (accents, ponctuation, pluriels simples) ; les mots de 3 lettres ou moins doivent correspondre à un mot entier (« run » ne trouve pas « crunch »).
+
+## Filtres
+- Un seul composant (`FilterSearchBar` + feuille `showFilterSheet`) : recherche + bouton *Filtres* avec pastille, groupes titrés, aperçu du nombre de résultats avant d'appliquer, étiquettes supprimables et *Tout effacer*. Il remplace les rangées de boutons à faire défiler, peu lisibles.
+- Dans un groupe les choix s'additionnent (OU), entre groupes ils se combinent (ET). « Matériel disponible » est un filtre d'inclusion : seuls les workouts faisables avec le matériel coché sont affichés.
+- Mémorisés **dans le compte** (`AppUser.prefs`), pas dans le téléphone : ils survivent à la déconnexion et suivent l'utilisateur. La recherche texte, elle, n'est pas mémorisée.
+
+## Favoris en tête et animation
+- Tri : favoris (le plus récent en premier), puis programme suivi, puis pertinence de la recherche, puis ordre alphabétique dans la langue d'affichage.
+- Animation « FLIP » (`widgets/flip.dart`) : positions mémorisées avant le changement, chaque carte glisse vers sa nouvelle place ; la carte mise en favori vole au-dessus des autres (copie dans l'overlay, ombre et léger grossissement). Si la liste est très défilée, elle remonte en haut pour montrer la carte. Pas de dépendance ajoutée.

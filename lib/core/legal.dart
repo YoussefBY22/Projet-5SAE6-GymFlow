@@ -11,7 +11,7 @@ class Legal {
 
   /// Version des CGU et de la politique : tout changement de version
   /// redemande le consentement.
-  static const String version = '2026-10';
+  static const String version = '2026-10-b';
 
   /// Version du tour de présentation (le revoir après une évolution majeure).
   static const int introVersion = 1;
@@ -127,6 +127,19 @@ class Legal {
           'aux droits d\'autrui, et d\'utiliser les informations des autres '
           'membres à des fins commerciales ou de harcèlement. Tout profil peut '
           'être signalé ; la salle peut le masquer ou suspendre le compte.',
+    ),
+    (
+      'Exercices, workouts et programmes créés par les membres',
+      'Vos créations restent privées tant que vous ne les proposez pas. En '
+          'proposant une création, vous déclarez en être l\'auteur (ou avoir le '
+          'droit d\'utiliser ses photos et vidéos) et vous autorisez la salle, '
+          'gratuitement et pour la durée du service, à la proposer à ses '
+          'membres. Un coach ou l\'administrateur la vérifie avant publication '
+          'et peut la refuser, la modifier pour la sécurité des pratiquants ou '
+          'la retirer. Une création publiée est signée par votre prénom et '
+          'l\'initiale de votre nom ; si vous supprimez votre compte, elle reste '
+          'disponible de façon anonyme. Les consignes publiées par des membres '
+          'ne remplacent pas l\'avis d\'un coach.',
     ),
     (
       'Santé',

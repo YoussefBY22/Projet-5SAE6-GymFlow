@@ -1,5 +1,7 @@
 import '../core/errors.dart';
+import '../core/search.dart';
 import '../models/enums.dart';
+import '../models/prefs.dart';
 import '../models/shop.dart';
 import '../repositories/repository.dart';
 import 'backend.dart';
@@ -25,6 +27,36 @@ class ProductService {
       if (a.inStock != b.inStock) return a.inStock ? -1 : 1;
       return a.name.compareTo(b.name);
     });
+  }
+
+  /// Recherche + filtres de la boutique : `category`, `price`
+  /// (lt20, 20_50, 50_100, gt100 DT), `stock` (in), `promo` (only).
+  List<Product> search({String query = '', FilterValues filters = const {}}) {
+    final f = filters;
+    final v = Search.expand(query);
+    bool priceOk(double p) => f
+        .of('price')
+        .any(
+          (k) => switch (k) {
+            'lt20' => p < 20,
+            '20_50' => p >= 20 && p <= 50,
+            '50_100' => p > 50 && p <= 100,
+            'gt100' => p > 100,
+            _ => true,
+          },
+        );
+    return list().where((p) {
+      if (f.isActive('category') && !f.has('category', p.category.name)) {
+        return false;
+      }
+      if (f.isActive('price') && !priceOk(p.effectivePrice)) return false;
+      if (f.has('stock', 'in') && !p.inStock) return false;
+      if (f.has('promo', 'only') && !p.onPromo) return false;
+      return Search.matches(
+        v,
+        '${p.name} ${p.category.label} ${p.description}',
+      );
+    }).toList();
   }
 
   List<Product> featured() =>

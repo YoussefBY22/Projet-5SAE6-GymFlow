@@ -18,10 +18,19 @@ class WgerExercise {
     required this.equipment,
     required this.images,
     required this.license,
+    this.lang = 'fr',
+    this.altName,
+    this.altDescription,
   });
 
   final int id;
   final String name;
+
+  /// Langue du nom principal et traduction anglaise/française si wger la
+  /// fournit (recherche bilingue).
+  final String lang;
+  final String? altName;
+  final String? altDescription;
   final String description;
   final String category;
   final List<String> muscles;
@@ -41,12 +50,17 @@ class WgerExercise {
       return null;
     }
 
-    final t =
-        pick(12) ??
-        pick(2) ??
-        (translations.isEmpty ? null : translations.first);
+    final fr = pick(12);
+    final en = pick(2);
+    final t = fr ?? en ?? (translations.isEmpty ? null : translations.first);
+    final alt = fr != null ? en : null;
+    final altName = (alt?['name'] as String?)?.trim();
+    final altDescription = stripHtml(alt?['description'] as String? ?? '');
     return WgerExercise(
       id: j['id'] as int,
+      lang: fr != null ? 'fr' : 'en',
+      altName: altName == null || altName.isEmpty ? null : altName,
+      altDescription: altDescription.isEmpty ? null : altDescription,
       name: (t?['name'] as String? ?? 'Exercice ${j['id']}').trim(),
       description: stripHtml(t?['description'] as String? ?? ''),
       category: ((j['category'] as Map?)?['name'] as String?) ?? '',
@@ -209,6 +223,11 @@ class WgerApi {
           ),
       ],
       wgerId: w.id,
+      lang: w.lang,
+      altName: w.altName == null || w.altName!.length > 80 ? null : w.altName,
+      altDescription: w.altDescription == null || w.altDescription!.length > 600
+          ? null
+          : w.altDescription,
     );
   }
 }

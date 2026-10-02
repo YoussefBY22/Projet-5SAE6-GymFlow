@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gymflow/core/errors.dart';
 import 'package:gymflow/core/routes.dart';
+import 'package:gymflow/models/content.dart';
 import 'package:gymflow/models/enums.dart';
 
 import 'helpers.dart';
@@ -15,7 +16,10 @@ void main() {
       UserRole.superAdmin,
       UserRole.coach,
     });
-    expect(Routes.rolesFor(Routes.exerciseForm), {
+    // Création ouverte à tous (contenu privé pour un abonné) ; la
+    // validation des propositions est réservée au staff.
+    expect(Routes.rolesFor(Routes.exerciseForm), isNull);
+    expect(Routes.rolesFor(Routes.review), {
       UserRole.superAdmin,
       UserRole.coach,
     });
@@ -39,15 +43,19 @@ void main() {
       () => b.userService.setActive('u_ahmed', false),
       throwsA(isA<PermissionDeniedException>()),
     );
+    // Un abonné peut créer un exercice, mais il reste privé (jamais
+    // publié sans validation d'un coach ou de l'admin).
+    final own = await b.exerciseService.create(
+      name: 'Test',
+      primaryMuscle: Muscle.abs,
+      equipment: Equipment.mat,
+      level: Level.beginner,
+      type: ExerciseType.strength,
+      description: 'Description de test.',
+    );
+    expect(own.publication.status, ContentStatus.private);
     expect(
-      () => b.exerciseService.create(
-        name: 'Test',
-        primaryMuscle: Muscle.abs,
-        equipment: Equipment.mat,
-        level: Level.beginner,
-        type: ExerciseType.strength,
-        description: 'Description de test.',
-      ),
+      () => b.library.approve(ContentKind.exercise, own.id),
       throwsA(isA<PermissionDeniedException>()),
     );
     expect(

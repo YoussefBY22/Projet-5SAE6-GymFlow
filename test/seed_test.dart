@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gymflow/models/content.dart';
 import 'package:gymflow/models/enums.dart';
 
 import 'helpers.dart';
@@ -38,8 +39,8 @@ void main() {
     expect(b.sessions.where((s) => s.userId == 'u_nour'), isEmpty);
     expect(b.sessions.where((s) => s.userId == 'u_ahmed'), isNotEmpty);
 
-    // Chaque exercice a au moins une vidéo (YouTube ou fichier).
-    for (final e in b.exercises.all) {
+    // Chaque exercice du club a au moins une vidéo (YouTube ou fichier).
+    for (final e in b.exercises.all.where((e) => e.isPublished)) {
       expect(e.mainVideo, isNotNull, reason: e.name);
     }
   });

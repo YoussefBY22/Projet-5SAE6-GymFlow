@@ -16,11 +16,15 @@ class FadeSlideIn extends StatefulWidget {
     required this.child,
     this.index = 0,
     this.offset = 24,
+    this.animate = true,
   });
 
   final Widget child;
   final int index;
   final double offset;
+
+  /// `false` : affiché directement (ex. carte déplacée lors d'un tri).
+  final bool animate;
 
   @override
   State<FadeSlideIn> createState() => _FadeSlideInState();
@@ -34,7 +38,7 @@ class _FadeSlideInState extends State<FadeSlideIn>
   late final AnimationController _c = AnimationController(
     vsync: this,
     duration: Duration(milliseconds: 420 + _delayMs),
-  )..forward();
+  )..forward(from: widget.animate ? 0 : 1);
   late final Animation<double> _t = CurvedAnimation(
     parent: _c,
     curve: Interval(_delayMs / (420 + _delayMs), 1, curve: kCurve),

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/formatters.dart';
 import '../core/routes.dart';
 import '../core/theme.dart';
+import '../models/content.dart';
 import '../models/course.dart';
 import '../models/enums.dart';
 import '../models/exercise.dart';
@@ -13,6 +14,8 @@ import '../services/backend.dart';
 import 'animations.dart';
 import 'bits.dart';
 import 'common.dart';
+import 'flip.dart';
+import 'library_widgets.dart';
 import 'media.dart';
 
 /// Couleur associée à un niveau (texte blanc lisible sur chacune).
@@ -37,8 +40,11 @@ class FavoriteButton extends StatelessWidget {
         final fav = b.userService.isFavorite(id);
         return IconButton(
           tooltip: fav ? 'Retirer des favoris' : 'Ajouter aux favoris',
-          onPressed: () =>
-              runAction(context, () => b.userService.toggleFavorite(id)),
+          onPressed: () {
+            // Liste animée : la carte remonte en tête (ou redescend).
+            FlipScope.maybeOf(context)?.capture(focus: id);
+            runAction(context, () => b.userService.toggleFavorite(id));
+          },
           icon: AnimatedSwitcher(
             duration: const Duration(milliseconds: 250),
             transitionBuilder: (c, a) => ScaleTransition(scale: a, child: c),
@@ -96,7 +102,7 @@ class ExerciseTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  e.name,
+                  e.nameIn(Backend.I.library.contentLang),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: AppText.subtitle(size: 15),
@@ -113,6 +119,7 @@ class ExerciseTile extends StatelessWidget {
                   spacing: 6,
                   runSpacing: 4,
                   children: [
+                    ...libraryPills(e),
                     Pill(e.level.label, color: levelColor(e.level)),
                     Pill(e.type.label),
                     if (e.mainVideo != null)
@@ -220,12 +227,11 @@ class WorkoutCard extends StatelessWidget {
     return CoverCard(
       image: w.coverImage,
       heroTag: 'w_${w.id}',
-      title: w.name,
+      title: w.nameIn(Backend.I.library.contentLang),
       subtitle:
           '${w.focus} · ${w.items.length} exercices · ~${w.estimatedMinutes} min',
       pills: [
-        if (w.isPrivate)
-          const Pill('Personnel', color: AppColors.red, icon: Icons.lock),
+        ...libraryPills(w),
         Pill(w.level.label, color: levelColor(w.level)),
         Pill(w.goal.label, color: AppColors.gold),
       ],
@@ -248,12 +254,13 @@ class ProgramCard extends StatelessWidget {
       image: p.coverImage,
       heroTag: 'p_${p.id}',
       height: 190,
-      title: p.name,
+      title: p.nameIn(Backend.I.library.contentLang),
       subtitle:
-          '${p.daysPerWeek} j/semaine · ${p.weeks} semaines · ${p.equipment}',
+          '${p.daysPerWeek} j/semaine · ${p.weeks} semaines${p.equipment.isEmpty ? '' : ' · ${p.equipment}'}',
       pills: [
         if (active)
           const Pill('Mon programme', color: AppColors.red, icon: Icons.flag),
+        ...libraryPills(p),
         Pill(p.level.label, color: levelColor(p.level)),
         Pill(p.goal.label, color: AppColors.gold),
       ],

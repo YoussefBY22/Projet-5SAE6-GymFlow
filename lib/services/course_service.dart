@@ -1,7 +1,9 @@
 import '../core/errors.dart';
+import '../core/search.dart';
 import '../core/formatters.dart';
 import '../models/course.dart';
 import '../models/enums.dart';
+import '../models/prefs.dart';
 import '../models/user.dart';
 import '../repositories/repository.dart';
 import 'backend.dart';
@@ -67,6 +69,89 @@ class CourseService {
           : da.compareTo(db);
     });
     return result;
+  }
+
+  /// Recherche + filtres de l'écran Cours (mémorisés avec le compte).
+  /// Groupes : `when` (aujourd'hui, demain, cette semaine, semaine
+  /// prochaine, week-end), `weekday` (1-7), `time` (matin, midi,
+  /// après-midi, soir), `category`, `coach`, `level`, `spots` (places).
+  List<Course> search({
+    CourseView view = CourseView.upcoming,
+    String query = '',
+    FilterValues filters = const {},
+  }) {
+    final now = _b.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final weekStart = today.subtract(Duration(days: today.weekday - 1));
+    final nextWeek = weekStart.add(const Duration(days: 7));
+    final variants = Search.expand(query);
+    final f = filters;
+    bool inRange(DateTime d, DateTime from, DateTime to) =>
+        !d.isBefore(from) && d.isBefore(to);
+    return list(view: view).where((c) {
+      final at = c.startAt;
+      if (f.isActive('when')) {
+        if (at == null) return false;
+        final ok = f
+            .of('when')
+            .any(
+              (w) => switch (w) {
+                'today' => inRange(
+                  at,
+                  today,
+                  today.add(const Duration(days: 1)),
+                ),
+                'tomorrow' => inRange(
+                  at,
+                  today.add(const Duration(days: 1)),
+                  today.add(const Duration(days: 2)),
+                ),
+                'week' => inRange(at, today, nextWeek),
+                'nextweek' => inRange(
+                  at,
+                  nextWeek,
+                  nextWeek.add(const Duration(days: 7)),
+                ),
+                'weekend' => at.weekday >= 6,
+                _ => true,
+              },
+            );
+        if (!ok) return false;
+      }
+      if (f.isActive('weekday') &&
+          (at == null || !f.has('weekday', '${at.weekday}'))) {
+        return false;
+      }
+      if (f.isActive('time')) {
+        if (at == null) return false;
+        final h = at.hour;
+        final slot = h < 12
+            ? 'morning'
+            : h < 14
+            ? 'noon'
+            : h < 18
+            ? 'afternoon'
+            : 'evening';
+        if (!f.has('time', slot)) return false;
+      }
+      if (f.isActive('category') && !f.has('category', c.category.name)) {
+        return false;
+      }
+      if (f.isActive('coach') && !f.has('coach', c.coachId)) return false;
+      if (f.isActive('level') && !f.has('level', c.level.name)) return false;
+      if (f.has('spots', 'available') && confirmedCount(c.id) >= c.capacity) {
+        return false;
+      }
+      if (variants.isNotEmpty) {
+        final coach = _b.users.byId(c.coachId)?.fullName ?? '';
+        return Search.matches(
+          variants,
+          '${c.title} ${c.description} ${c.category.label} $coach ${c.room} '
+          '${c.level.label}',
+        );
+      }
+      return true;
+    }).toList();
   }
 
   /// Cours à venir d'un coach (dashboard coach).

@@ -1,5 +1,6 @@
 import 'enums.dart';
 import 'json.dart';
+import 'prefs.dart';
 import 'privacy.dart';
 
 /// Abonnement d'un membre à la salle.
@@ -65,6 +66,7 @@ class AppUser {
     this.social = const SocialLinks(),
     this.consents = const [],
     this.introVersion = 0,
+    this.prefs = const UiPrefs(),
   });
 
   final String id;
@@ -109,6 +111,9 @@ class AppUser {
   /// Version du tour de présentation déjà vue (0 = jamais vue).
   final int introVersion;
 
+  /// Préférences d'affichage (filtres mémorisés, langue des contenus).
+  final UiPrefs prefs;
+
   /// Majeur ou âge inconnu (les mineurs n'apparaissent jamais dans la
   /// communauté).
   bool get isAdult => age == null || age! >= 18;
@@ -152,6 +157,7 @@ class AppUser {
     SocialLinks? social,
     List<ConsentRecord>? consents,
     int? introVersion,
+    UiPrefs? prefs,
   }) {
     return AppUser(
       id: id,
@@ -180,6 +186,7 @@ class AppUser {
       social: social ?? this.social,
       consents: consents ?? this.consents,
       introVersion: introVersion ?? this.introVersion,
+      prefs: prefs ?? this.prefs,
     );
   }
 
@@ -208,6 +215,7 @@ class AppUser {
     'social': social.toJson(),
     'consents': consents.map((c) => c.toJson()).toList(),
     'introVersion': introVersion,
+    'prefs': prefs.toJson(),
   };
 
   factory AppUser.fromJson(Json j) => AppUser(
@@ -247,6 +255,7 @@ class AppUser {
     ),
     consents: jsonList(j['consents']).map(ConsentRecord.fromJson).toList(),
     introVersion: toInt(j['introVersion']),
+    prefs: UiPrefs.fromJson(j['prefs']),
   );
 }
 

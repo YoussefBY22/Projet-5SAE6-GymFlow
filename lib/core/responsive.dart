@@ -74,6 +74,7 @@ class ResponsiveList extends StatelessWidget {
     this.top = Gap.m,
     this.bottom = 96,
     this.spacing = Gap.m,
+    this.controller,
   });
 
   final int itemCount;
@@ -84,6 +85,7 @@ class ResponsiveList extends StatelessWidget {
   final double top;
   final double bottom;
   final double spacing;
+  final ScrollController? controller;
 
   @override
   Widget build(BuildContext context) {
@@ -94,6 +96,7 @@ class ResponsiveList extends StatelessWidget {
         final cols = (usable / minTileWidth).floor().clamp(1, maxColumns);
         final rows = (itemCount / cols).ceil();
         return ListView.separated(
+          controller: controller,
           padding: EdgeInsets.fromLTRB(side, top, side, bottom),
           itemCount: rows,
           separatorBuilder: (_, _) => SizedBox(height: spacing),

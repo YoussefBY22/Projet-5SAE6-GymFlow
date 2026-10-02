@@ -7,6 +7,9 @@ import '../../core/routes.dart';
 import '../../core/theme.dart';
 import '../../core/validators.dart';
 import '../../models/enums.dart';
+import '../../models/content.dart';
+import '../../models/exercise.dart';
+import '../../models/workout.dart';
 import '../../services/backend.dart';
 import '../../services/exercise_service.dart';
 import '../../services/progress_service.dart';
@@ -581,14 +584,18 @@ class _SearchScreenState extends State<SearchScreen> {
     final q = ExerciseService.normalize(_q);
     bool match(String s) =>
         q.length >= 2 && ExerciseService.normalize(s).contains(q);
-    final exercises = b.exercises.all
-        .where((e) => match('${e.name} ${e.primaryMuscle.label}'))
-        .take(8)
-        .toList();
-    final workouts = b.workouts.all
-        .where((w) => match('${w.name} ${w.focus}'))
-        .toList();
-    final programs = b.programs.all.where((p) => match(p.name)).toList();
+    // Bibliothèque : recherche bilingue, contenus visibles seulement
+    // (jamais les créations privées des autres membres).
+    final searching = q.length >= 2;
+    final exercises = searching
+        ? b.library.exercises(query: _q).take(8).toList()
+        : <Exercise>[];
+    final workouts = searching
+        ? b.library.workouts(query: _q).take(8).toList()
+        : <Workout>[];
+    final programs = searching
+        ? b.library.programs(query: _q).take(6).toList()
+        : <Program>[];
     final courses = b.courses.all
         .where((c) => match('${c.title} ${c.category.label}') && !c.cancelled)
         .take(8)
@@ -679,7 +686,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 section('Exercices', Icons.fitness_center, [
                   for (final e in exercises)
                     tile(
-                      e.name,
+                      e.nameIn(b.library.contentLang),
                       e.primaryMuscle.label,
                       exerciseThumb(e),
                       Routes.exercise,
@@ -688,12 +695,18 @@ class _SearchScreenState extends State<SearchScreen> {
                 ]),
                 section('Workouts', Icons.list_alt, [
                   for (final w in workouts)
-                    tile(w.name, w.focus, w.coverImage, Routes.workout, w.id),
+                    tile(
+                      w.nameIn(b.library.contentLang),
+                      w.focus,
+                      w.coverImage,
+                      Routes.workout,
+                      w.id,
+                    ),
                 ]),
                 section('Programmes', Icons.calendar_view_week, [
                   for (final p in programs)
                     tile(
-                      p.name,
+                      p.nameIn(b.library.contentLang),
                       '${p.daysPerWeek} j/sem.',
                       p.coverImage,
                       Routes.program,

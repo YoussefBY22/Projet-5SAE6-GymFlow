@@ -8,6 +8,7 @@ import '../../core/formatters.dart';
 import '../../core/routes.dart';
 import '../../core/theme.dart';
 import '../../models/enums.dart';
+import '../../models/prefs.dart';
 import '../../models/shop.dart';
 import '../../services/backend.dart';
 import '../../services/payment/payment_gateway.dart';
@@ -15,6 +16,7 @@ import '../../widgets/animations.dart';
 import '../../widgets/bits.dart';
 import '../../widgets/cards.dart';
 import '../../widgets/common.dart';
+import '../../widgets/filter_bar.dart';
 import '../shell/main_shell.dart';
 
 /// Achat direct depuis la fiche produit (sans passer par le panier).
@@ -33,8 +35,58 @@ class ShopScreen extends StatefulWidget {
 }
 
 class _ShopScreenState extends State<ShopScreen> {
-  String _query = '';
-  ProductCategory? _category;
+  static const _listKey = 'shop';
+  final _query = TextEditingController();
+  late FilterValues _filters = Backend.I.library.savedFilters(_listKey);
+
+  @override
+  void dispose() {
+    _query.dispose();
+    super.dispose();
+  }
+
+  void _setFilters(FilterValues f) {
+    setState(() => _filters = f);
+    Backend.I.library.saveFilters(_listKey, f);
+  }
+
+  List<Product> _results(FilterValues f) =>
+      Backend.I.productService.search(query: _query.text, filters: f);
+
+  static final _groups = [
+    FilterGroup(
+      id: 'category',
+      title: 'Catégorie',
+      icon: Icons.category_outlined,
+      options: [
+        for (final c in ProductCategory.values)
+          FilterOption(c.name, c.label, icon: c.icon),
+      ],
+    ),
+    const FilterGroup(
+      id: 'price',
+      title: 'Prix',
+      icon: Icons.payments_outlined,
+      options: [
+        FilterOption('lt20', 'Moins de 20 DT'),
+        FilterOption('20_50', '20 à 50 DT'),
+        FilterOption('50_100', '50 à 100 DT'),
+        FilterOption('gt100', 'Plus de 100 DT'),
+      ],
+    ),
+    const FilterGroup(
+      id: 'promo',
+      title: 'Bons plans',
+      icon: Icons.local_offer_outlined,
+      options: [FilterOption('only', 'En promotion', icon: Icons.sell)],
+    ),
+    const FilterGroup(
+      id: 'stock',
+      title: 'Disponibilité',
+      icon: Icons.inventory_2_outlined,
+      options: [FilterOption('in', 'En stock', icon: Icons.check)],
+    ),
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -55,46 +107,29 @@ class _ShopScreenState extends State<ShopScreen> {
       body: ListenableBuilder(
         listenable: b.bus,
         builder: (context, _) {
-          final products = b.productService.list(
-            query: _query,
-            category: _category,
-          );
+          final products = _results(_filters);
           return Column(
             children: [
-              Padding(
-                padding: pagePadding(context, maxWidth: 1200, bottom: 0),
-                child: TextField(
-                  onChanged: (v) => setState(() => _query = v),
-                  decoration: const InputDecoration(
-                    hintText: 'Rechercher un produit',
-                    prefixIcon: Icon(Icons.search),
-                  ),
-                ),
-              ),
-              const SizedBox(height: Gap.s),
-              ChipBar(
-                children: [
-                  GfFilterChip(
-                    label: 'Tout',
-                    selected: _category == null,
-                    onTap: () => setState(() => _category = null),
-                  ),
-                  for (final c in ProductCategory.values)
-                    GfFilterChip(
-                      label: c.label,
-                      icon: c.icon,
-                      selected: _category == c,
-                      onTap: () =>
-                          setState(() => _category = _category == c ? null : c),
-                    ),
-                ],
+              FilterSearchBar(
+                groups: _groups,
+                values: _filters,
+                onChanged: _setFilters,
+                resultCount: (f) => _results(f).length,
+                hint: 'Rechercher un produit',
+                query: _query,
+                onQuery: (_) => setState(() {}),
               ),
               Expanded(
                 child: products.isEmpty
-                    ? const EmptyState(
+                    ? EmptyState(
                         icon: Icons.search_off,
                         title: 'Aucun produit',
-                        message: 'Essayez une autre recherche.',
+                        message:
+                            'Essayez une autre recherche ou d\'autres filtres.',
+                        action: _filters.activeCount > 0
+                            ? 'Tout effacer'
+                            : null,
+                        onAction: () => _setFilters({}),
                       )
                     : GridView.builder(
                         padding: pagePadding(

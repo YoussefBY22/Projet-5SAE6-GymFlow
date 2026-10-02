@@ -21,6 +21,7 @@ import 'community_service.dart';
 import 'course_service.dart';
 import 'dashboard_service.dart';
 import 'exercise_service.dart';
+import 'library_service.dart';
 import 'media_storage.dart';
 import 'notification_service.dart';
 import 'order_service.dart';
@@ -148,6 +149,7 @@ class Backend {
     userService = UserService(this);
     audit = AuditService(this);
     notifications = NotificationService(this);
+    library = LibraryService(this);
     exerciseService = ExerciseService(this);
     workoutService = WorkoutService(this);
     trainingLog = TrainingLogService(this);
@@ -203,7 +205,10 @@ class Backend {
     _instance = b;
     await store.open();
     await b.reload();
-    if (seed) await SeedService(b).seedIfEmpty();
+    if (seed) {
+      await SeedService(b).seedIfEmpty();
+      await SeedService(b).upgrade();
+    }
     await b.auth.restoreSession();
     return b;
   }
@@ -241,6 +246,7 @@ class Backend {
   late final UserService userService;
   late final AuditService audit;
   late final NotificationService notifications;
+  late final LibraryService library;
   late final ExerciseService exerciseService;
   late final WorkoutService workoutService;
   late final TrainingLogService trainingLog;

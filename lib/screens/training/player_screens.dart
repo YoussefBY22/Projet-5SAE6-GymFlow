@@ -11,6 +11,7 @@ import '../../core/validators.dart';
 import '../../models/exercise.dart';
 import '../../models/session_log.dart';
 import '../../models/workout.dart';
+import '../../models/content.dart';
 import '../../services/backend.dart';
 import '../../services/platform/platform_services.dart';
 import '../../services/training_log_service.dart';
@@ -273,7 +274,7 @@ class _SessionPlayerScreenState extends State<SessionPlayerScreen> {
               }
             },
           ),
-          title: Text(_workout.name),
+          title: Text(_workout.nameIn(Backend.I.library.contentLang)),
           actions: [
             IconButton(
               key: const Key('pause_button'),
@@ -338,7 +339,10 @@ class _SessionPlayerScreenState extends State<SessionPlayerScreen> {
                     ).copyWith(fontWeight: FontWeight.w700, letterSpacing: 1),
                   ),
                   const SizedBox(height: 4),
-                  Text(ex.name, style: AppText.title(size: 24)),
+                  Text(
+                    ex.nameIn(Backend.I.library.contentLang),
+                    style: AppText.title(size: 24),
+                  ),
                   const SizedBox(height: Gap.m),
                   if (video != null)
                     MediaView(video)

@@ -53,7 +53,7 @@ Cycle suivi pour chaque module : produit → UI/UX → développement → QA (fo
 
 ## QA
 - [x] `flutter analyze` : 0 problème
-- [x] `flutter test` : 117 tests verts (unitaires, SQLite réel, widgets, parcours complet, confidentialité, version ordinateur)
+- [x] `flutter test` : 135 tests verts (unitaires, SQLite réel, widgets, parcours complet, confidentialité, version ordinateur, bibliothèque)
 - [x] `flutter build apk --debug` : OK
 - [x] Revue visuelle écran par écran (prévisualisation 375 × 812) et corrections
 - [x] Essai sur téléphone réel (vivo V2332, Android 16) : APK release installé
@@ -73,3 +73,16 @@ Cycle suivi pour chaque module : produit → UI/UX → développement → QA (fo
 - [x] Version ordinateur (navigation latérale, colonnes, largeur lisible)
 - [x] `SECURITE_CONFIDENTIALITE.md` : cadre légal, mesures, limites, audit à venir
 - [ ] Audit de sécurité complet : après validation de la base de données par le professeur
+
+## V1.1 : bibliothèque collaborative, recherche bilingue, filtres
+- [x] Création par les abonnés : exercices (médias), workouts, programmes, privés par défaut
+- [x] Proposition → validation ou refus motivé par un coach / l'admin, file « Propositions à valider »
+- [x] Copie personnelle de n'importe quel contenu visible
+- [x] Recherche bilingue FR ↔ EN (glossaire + noms anglais du contenu + traduction facultative)
+- [x] Langue de saisie au début des formulaires ; affichage des noms en FR ou EN
+- [x] Filtres en feuille, mémorisés avec le compte : Programmes, Workouts, Exercices, Cours, Boutique, Utilisateurs
+- [x] Cours : Quand ?, jours en tuiles datées, moment de la journée, discipline, coach, niveau, places
+- [x] Favoris en tête avec animation
+- [x] Photo de couverture depuis le téléphone pour workouts et programmes
+- [x] CGU : clause sur les créations des membres (version 2026-10-b)
+- [ ] Traduction complète de l'interface en anglais (hors périmètre, voir DECISIONS.md)

@@ -7,6 +7,15 @@ Données stockées localement (SQLite) : aucune configuration serveur n'est néc
 
 Le code est sur la branche **`GymFlow-V1`** (la branche `main` est volontairement vide).
 
+### Bibliothèque collaborative, recherche bilingue et filtres
+- **Chacun crée ses contenus** : exercices (photos, vidéos du téléphone, liens YouTube), workouts et programmes, depuis le bouton *Mon exercice / Mon workout / Mon programme* de l'onglet Entraînement. Ils sont **privés** (visibles par leur auteur seul).
+- **Publication modérée** : *Proposer à la publication* → un coach ou l'admin **accepte** (visible de tous, dans la liste correspondante) ou **refuse avec un motif** (l'auteur corrige et repropose). Les éléments personnels utilisés (exercices d'un workout…) sont proposés avec lui. File *Propositions à valider* (menu et icône de l'onglet Entraînement) pour le staff.
+- *Copier pour personnaliser* : n'importe quel contenu visible devient une copie personnelle modifiable.
+- **Recherche bilingue** : « bench press » trouve *Développé couché*, « pull-up » trouve *Tractions*, « chest » trouve les exercices de pectoraux ; un workout est trouvé par les exercices qu'il contient. Glossaire FR ↔ EN du sport + noms anglais de tout le contenu du club + traduction facultative à la création (langue de saisie choisie au début). Bouton **FR / EN** pour afficher les noms dans la langue voulue.
+- **Filtres en feuille** (bouton *Filtres* avec le nombre de filtres actifs, aperçu « Voir N résultats », étiquettes supprimables) sur Programmes, Workouts, Exercices, Cours, Boutique et Utilisateurs. Ils sont **mémorisés avec le compte** : retrouvés après une déconnexion.
+- **Cours** : *Quand ?* (aujourd'hui, demain, cette semaine…), *Jour de la semaine* en tuiles datées, *Moment de la journée*, discipline, coach, niveau, places disponibles.
+- **Favoris en tête** : un favori remonte en haut de la liste avec une animation (la carte se soulève et glisse à sa nouvelle place), le plus récent en premier.
+
 ### Nouveautés de la V1 « communauté et confidentialité »
 - **Tout est privé par défaut** : profil, réseaux sociaux et séances restent invisibles tant que le membre ne les partage pas.
 - **Partage avec accord** : à la fin d'une séance, *Partager* ou *Garder privée* (comme une publication). Le partage se retire à tout moment depuis le détail de la séance.
@@ -104,6 +113,8 @@ Un panneau « Comptes de démo » sur l'écran de connexion remplit le formulair
 | Abonnés | leila@, omar@, ines@, rami@, salma@gymflow.tn | Membre2026! | Profils variés |
 | Abonné | hedi@gymflow.tn | Membre2026! | **Abonnement expiré** (réservation refusée) |
 | Désactivé | walid@gymflow.tn | Membre2026! | **Connexion refusée** |
+
+Créations de démo : *Circuit gainage express* d'Ines (publié), *Bras d'acier* de Rami (en attente : à valider avec un compte coach), *Cardio rapide* de Leila (refusé, avec motif), *Mon push maison* et l'exercice *Pompes diamant* d'Ahmed (privés).
 
 Confidentialité dans la démo : **Ahmed**, **Rami** et **Ines** sont visibles avec des réseaux (identifiants fictifs `gymflow.demo.*`, e-mails en `example.com`) ; **Leila** est visible sans réseaux ; tous les autres sont privés. Chaque abonné ne partage qu'une partie de ses séances. À la première connexion, chaque compte passe par la présentation (bouton *Passer* puis *C'est parti*).
 

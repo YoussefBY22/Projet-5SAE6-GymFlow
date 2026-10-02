@@ -5,6 +5,7 @@ import '../../core/errors.dart';
 import '../../core/routes.dart';
 import '../../core/theme.dart';
 import '../../core/validators.dart';
+import '../../models/content.dart';
 import '../../models/enums.dart';
 import '../../models/exercise.dart';
 import '../../services/backend.dart';
@@ -13,6 +14,7 @@ import '../../widgets/animations.dart';
 import '../../widgets/bits.dart';
 import '../../widgets/cards.dart';
 import '../../widgets/common.dart';
+import '../../widgets/library_widgets.dart';
 import '../../widgets/media.dart';
 import '../../widgets/pickers.dart';
 
@@ -39,6 +41,7 @@ class ExerciseDetailScreen extends StatelessWidget {
           );
         }
         final me = b.auth.currentUser!;
+        final lang = b.library.contentLang;
         final canEdit = b.exerciseService.canEdit(me, e);
         final videos = e.media.where((m) => m.kind != MediaKind.image).toList();
         return Scaffold(
@@ -109,7 +112,11 @@ class ExerciseDetailScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(e.name, style: AppText.title(size: 24)),
+                      Text(e.nameIn(lang), style: AppText.title(size: 24)),
+                      AuthorLine(
+                        item: e,
+                        extra: e.wgerId != null ? 'données wger.de' : null,
+                      ),
                       const SizedBox(height: Gap.s),
                       Wrap(
                         spacing: 6,
@@ -127,7 +134,9 @@ class ExerciseDetailScreen extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: Gap.m),
-                      Text(e.description, style: AppText.body()),
+                      PublicationPanel(item: e),
+                      const SizedBox(height: Gap.m),
+                      Text(e.descriptionIn(lang), style: AppText.body()),
                       if (videos.isNotEmpty) ...[
                         const SizedBox(height: Gap.l),
                         Text('Vidéos', style: AppText.title(size: 18)),
@@ -261,11 +270,6 @@ class ExerciseDetailScreen extends StatelessWidget {
                           ),
                         ),
                       ],
-                      const SizedBox(height: Gap.l),
-                      Text(
-                        'Ajouté par ${b.users.byId(e.authorId)?.fullName ?? 'GymFlow'}${e.wgerId != null ? ' · données wger.de' : ''}',
-                        style: AppText.label(size: 12),
-                      ),
                       const SizedBox(height: Gap.xl),
                     ],
                   ),
@@ -279,7 +283,8 @@ class ExerciseDetailScreen extends StatelessWidget {
   }
 }
 
-/// Création / modification d'un exercice (admin et coachs).
+/// Création / modification d'un exercice : publié directement pour le
+/// staff, personnel (privé, publiable après validation) pour un abonné.
 class ExerciseFormScreen extends StatefulWidget {
   const ExerciseFormScreen({super.key, this.exerciseId});
   final String? exerciseId;
@@ -295,6 +300,10 @@ class _ExerciseFormScreenState extends State<ExerciseFormScreen> {
   final _steps = TextEditingController();
   final _mistakes = TextEditingController();
   final _breathing = TextEditingController();
+  final _altName = TextEditingController();
+  final _altDescription = TextEditingController();
+  final _aliases = TextEditingController();
+  String _lang = ContentLang.fr;
   Muscle _muscle = Muscle.chest;
   final Set<Muscle> _secondary = {};
   Equipment _equipment = Equipment.dumbbell;
@@ -323,12 +332,25 @@ class _ExerciseFormScreenState extends State<ExerciseFormScreen> {
       _level = e.level;
       _type = e.type;
       _media.addAll(e.media);
+      _lang = e.lang;
+      _altName.text = e.altName ?? '';
+      _altDescription.text = e.altDescription ?? '';
+      _aliases.text = e.aliases.join(', ');
     }
   }
 
   @override
   void dispose() {
-    for (final c in [_name, _description, _steps, _mistakes, _breathing]) {
+    for (final c in [
+      _name,
+      _description,
+      _steps,
+      _mistakes,
+      _breathing,
+      _altName,
+      _altDescription,
+      _aliases,
+    ]) {
       c.dispose();
     }
     super.dispose();
@@ -336,6 +358,12 @@ class _ExerciseFormScreenState extends State<ExerciseFormScreen> {
 
   List<String> _lines(TextEditingController c) => c.text
       .split('\n')
+      .map((s) => s.trim())
+      .where((s) => s.isNotEmpty)
+      .toList();
+
+  List<String> _aliasList() => _aliases.text
+      .split(',')
       .map((s) => s.trim())
       .where((s) => s.isNotEmpty)
       .toList();
@@ -434,6 +462,10 @@ class _ExerciseFormScreenState extends State<ExerciseFormScreen> {
           mistakes: _lines(_mistakes),
           breathing: _breathing.text,
           media: _media,
+          lang: _lang,
+          altName: _altName.text,
+          altDescription: _altDescription.text,
+          aliases: _aliasList(),
         );
       } else {
         await s.update(
@@ -449,6 +481,11 @@ class _ExerciseFormScreenState extends State<ExerciseFormScreen> {
             mistakes: _lines(_mistakes),
             breathing: _breathing.text.trim(),
             media: _media,
+            lang: _lang,
+            altName: _altName.text,
+            altDescription: _altDescription.text,
+            clearTranslation: true,
+            aliases: _aliasList(),
           ),
         );
       }
@@ -474,10 +511,32 @@ class _ExerciseFormScreenState extends State<ExerciseFormScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                if (!(Backend.I.auth.currentUser?.canManageContent ?? false))
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: Gap.m),
+                    child: GfCard(
+                      color: AppColors.cream,
+                      child: InfoRow(
+                        Icons.lock_outline,
+                        'Exercice personnel : visible par vous seul. Vous '
+                        'pourrez le proposer à la publication ; un coach le '
+                        'validera avant qu\'il soit visible par tous.',
+                      ),
+                    ),
+                  ),
+                LanguageSection(
+                  lang: _lang,
+                  kind: ContentKind.exercise,
+                  onLang: (l) => setState(() => _lang = l),
+                ),
+                const SizedBox(height: Gap.m),
                 TextFormField(
+                  key: const Key('exercise_name'),
                   controller: _name,
-                  decoration: const InputDecoration(
-                    labelText: 'Nom de l\'exercice',
+                  decoration: InputDecoration(
+                    labelText: _lang == ContentLang.en
+                        ? 'Exercise name (in English)'
+                        : 'Nom de l\'exercice',
                   ),
                   validator: Validators.text(field: 'Le nom', min: 3, max: 80),
                 ),
@@ -547,6 +606,29 @@ class _ExerciseFormScreenState extends State<ExerciseFormScreen> {
                     field: 'La description',
                     min: 10,
                     max: 600,
+                  ),
+                ),
+                const SizedBox(height: Gap.m),
+                TranslationFields(
+                  lang: _lang,
+                  name: _altName,
+                  description: _altDescription,
+                  kind: ContentKind.exercise,
+                  extra: Padding(
+                    padding: const EdgeInsets.only(top: Gap.s),
+                    child: TextFormField(
+                      controller: _aliases,
+                      decoration: const InputDecoration(
+                        labelText: 'Autres appellations (facultatif)',
+                        helperText:
+                            'Séparées par des virgules : ex. DC, bench, chest press',
+                      ),
+                      validator: Validators.text(
+                        field: 'Les appellations',
+                        max: 200,
+                        optional: true,
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(height: Gap.m),

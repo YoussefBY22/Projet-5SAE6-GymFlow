@@ -5,6 +5,7 @@ import '../core/legal.dart';
 import '../core/security.dart';
 import '../core/validators.dart';
 import '../models/enums.dart';
+import '../models/content.dart';
 import '../models/privacy.dart';
 import '../models/user.dart';
 import 'backend.dart';
@@ -182,11 +183,19 @@ class PrivacyService {
         for (final n in _b.notificationsRepo.where((n) => n.userId == me.id))
           n.toJson(),
       ],
-      'workouts_personnels': [
-        for (final w in _b.workouts.where(
-          (w) => w.isPrivate && w.authorId == me.id,
-        ))
+      // Créations (exercices, workouts, programmes), quel que soit leur
+      // statut de publication.
+      'mes_exercices': [
+        for (final e in _b.exercises.where((e) => e.authorId == me.id))
+          e.toJson(),
+      ],
+      'mes_workouts': [
+        for (final w in _b.workouts.where((w) => w.authorId == me.id))
           w.toJson(),
+      ],
+      'mes_programmes': [
+        for (final p in _b.programs.where((p) => p.authorId == me.id))
+          p.toJson(),
       ],
     };
     return const JsonEncoder.withIndent('  ').convert(data);
@@ -242,10 +251,29 @@ class PrivacyService {
     for (final n in _b.notificationsRepo.where((n) => n.userId == u.id)) {
       await _b.notificationsRepo.delete(n.id);
     }
-    for (final w in _b.workouts.where(
-      (w) => w.isPrivate && w.authorId == u.id,
-    )) {
-      await _b.workouts.delete(w.id);
+    // Créations non publiées : supprimées. Créations publiées (cédées à la
+    // salle lors de la proposition) : conservées mais anonymisées.
+    final heir = u.canManageContent ? '' : 'ancien-membre';
+    for (final p in _b.programs.where((p) => p.authorId == u.id)) {
+      if (p.isPublished) {
+        await _b.programs.save(p.copyWith(authorId: heir));
+      } else {
+        await _b.programs.delete(p.id);
+      }
+    }
+    for (final w in _b.workouts.where((w) => w.authorId == u.id)) {
+      if (w.isPublished) {
+        await _b.workouts.save(w.copyWith(authorId: heir));
+      } else {
+        await _b.workouts.delete(w.id);
+      }
+    }
+    for (final e in _b.exercises.where((e) => e.authorId == u.id)) {
+      if (e.isPublished) {
+        await _b.exercises.save(e.copyWith(authorId: heir));
+      } else {
+        await _b.exercises.delete(e.id);
+      }
     }
     for (final o in _b.orders.where((o) => o.userId == u.id)) {
       await _b.orders.save(o.anonymized(_anonymousId(u.id)));

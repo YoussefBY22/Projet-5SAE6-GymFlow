@@ -1,3 +1,4 @@
+import 'content.dart';
 import 'enums.dart';
 import 'json.dart';
 
@@ -23,7 +24,7 @@ class MediaItem {
   );
 }
 
-class Exercise {
+class Exercise implements LibraryItem {
   const Exercise({
     required this.id,
     required this.name,
@@ -40,9 +41,16 @@ class Exercise {
     this.breathing = '',
     this.media = const [],
     this.wgerId,
+    this.lang = ContentLang.fr,
+    this.altName,
+    this.altDescription,
+    this.aliases = const [],
+    this.publication = const Publication(),
   });
 
+  @override
   final String id;
+  @override
   final String name;
   final Muscle primaryMuscle;
   final List<Muscle> secondaryMuscles;
@@ -54,11 +62,36 @@ class Exercise {
   final List<String> mistakes;
   final String breathing;
   final List<MediaItem> media;
+  @override
   final String authorId;
+  @override
   final DateTime createdAt;
 
   /// Identifiant wger si l'exercice a été importé depuis l'API.
   final int? wgerId;
+
+  /// Langue de saisie (`fr` ou `en`) et traduction facultative.
+  @override
+  final String lang;
+  @override
+  final String? altName;
+  final String? altDescription;
+
+  /// Autres appellations (« bench », « DC »…) pour la recherche.
+  final List<String> aliases;
+  @override
+  final Publication publication;
+
+  @override
+  ContentKind get kind => ContentKind.exercise;
+
+  /// Description dans la langue demandée (repli sur la langue de saisie).
+  String descriptionIn(String language) =>
+      language != lang && (altDescription?.isNotEmpty ?? false)
+      ? altDescription!
+      : description;
+
+  bool get hasVideo => media.any((m) => m.kind != MediaKind.image);
 
   List<MediaItem> get images =>
       media.where((m) => m.kind == MediaKind.image).toList();
@@ -72,6 +105,7 @@ class Exercise {
   }
 
   Exercise copyWith({
+    String? id,
     String? name,
     Muscle? primaryMuscle,
     List<Muscle>? secondaryMuscles,
@@ -83,9 +117,17 @@ class Exercise {
     List<String>? mistakes,
     String? breathing,
     List<MediaItem>? media,
+    String? lang,
+    String? altName,
+    String? altDescription,
+    bool clearTranslation = false,
+    List<String>? aliases,
+    Publication? publication,
+    String? authorId,
+    DateTime? createdAt,
   }) {
     return Exercise(
-      id: id,
+      id: id ?? this.id,
       name: name ?? this.name,
       primaryMuscle: primaryMuscle ?? this.primaryMuscle,
       secondaryMuscles: secondaryMuscles ?? this.secondaryMuscles,
@@ -97,9 +139,16 @@ class Exercise {
       mistakes: mistakes ?? this.mistakes,
       breathing: breathing ?? this.breathing,
       media: media ?? this.media,
-      authorId: authorId,
-      createdAt: createdAt,
+      authorId: authorId ?? this.authorId,
+      createdAt: createdAt ?? this.createdAt,
       wgerId: wgerId,
+      lang: lang ?? this.lang,
+      altName: clearTranslation ? altName : (altName ?? this.altName),
+      altDescription: clearTranslation
+          ? altDescription
+          : (altDescription ?? this.altDescription),
+      aliases: aliases ?? this.aliases,
+      publication: publication ?? this.publication,
     );
   }
 
@@ -119,6 +168,11 @@ class Exercise {
     'authorId': authorId,
     'createdAt': dateToJson(createdAt),
     'wgerId': wgerId,
+    'lang': lang,
+    'altName': altName,
+    'altDescription': altDescription,
+    'aliases': aliases,
+    'publication': publication.toJson(),
   };
 
   factory Exercise.fromJson(Json j) => Exercise(
@@ -139,5 +193,14 @@ class Exercise {
     authorId: j['authorId'] as String? ?? '',
     createdAt: dateOr(j['createdAt'], DateTime(2026)),
     wgerId: toIntOrNull(j['wgerId']),
+    lang: ContentLang.normalize(j['lang'] as String?),
+    altName: j['altName'] as String?,
+    altDescription: j['altDescription'] as String?,
+    aliases: stringList(j['aliases']),
+    publication: Publication.fromJson(
+      j['publication'] == null
+          ? null
+          : Map<String, dynamic>.from(j['publication'] as Map),
+    ),
   );
 }

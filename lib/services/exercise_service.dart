@@ -1,9 +1,12 @@
 import '../core/errors.dart';
+import '../core/search.dart';
+import '../models/content.dart';
 import '../models/enums.dart';
 import '../models/exercise.dart';
 import '../models/user.dart';
 import '../repositories/repository.dart';
 import 'backend.dart';
+import 'library_service.dart';
 
 /// Filtres de la bibliothèque d'exercices.
 class ExerciseFilter {
@@ -23,37 +26,34 @@ class ExerciseFilter {
 }
 
 /// API interne des exercices (CRUD + recherche).
-/// Admin : tout ; coach : crée et modifie ses exercices ; abonné : lecture.
+/// Admin : tout ; coach : ses exercices et la modération du contenu publié
+/// par les abonnés ; abonné : ses exercices personnels (privés, publiables
+/// après validation).
 class ExerciseService {
   ExerciseService(this._b);
   final Backend _b;
 
   List<Exercise> list([ExerciseFilter f = const ExerciseFilter()]) {
     final me = _b.requireUser();
-    final q = normalize(f.query);
-    return _b.exercises.where((e) {
-      if (f.muscle != null &&
-          e.primaryMuscle != f.muscle &&
-          !e.secondaryMuscles.contains(f.muscle)) {
-        return false;
-      }
-      if (f.level != null && e.level != f.level) return false;
-      if (f.equipment != null && e.equipment != f.equipment) return false;
-      if (f.favoritesOnly && !me.favoriteIds.contains(e.id)) return false;
-      if (q.isNotEmpty &&
-          !normalize(
-            '${e.name} ${e.primaryMuscle.label} ${e.equipment.label}',
-          ).contains(q)) {
-        return false;
-      }
-      return true;
-    })..sort((a, b) => a.name.compareTo(b.name));
+    return _b.library.exercises(
+      query: f.query,
+      filters: {
+        if (f.muscle != null) LibraryFilters.muscle: {f.muscle!.name},
+        if (f.level != null) LibraryFilters.level: {f.level!.name},
+        if (f.equipment != null) LibraryFilters.equipment: {f.equipment!.name},
+        if (f.favoritesOnly) LibraryFilters.favorites: {'only'},
+      },
+    )..removeWhere((e) => !_b.library.canSee(me, e));
   }
 
-  Exercise? byId(String id) => _b.exercises.byId(id);
+  /// Exercice consultable par l'utilisateur connecté (null sinon).
+  Exercise? byId(String id) {
+    final e = _b.exercises.byId(id);
+    if (e == null) return null;
+    return _b.library.canSee(_b.auth.currentUser, e) ? e : null;
+  }
 
-  bool canEdit(AppUser user, Exercise e) =>
-      user.isAdmin || (user.isCoach && e.authorId == user.id);
+  bool canEdit(AppUser user, Exercise e) => _b.library.canEdit(user, e);
 
   Future<Exercise> create({
     required String name,
@@ -68,11 +68,17 @@ class ExerciseService {
     String breathing = '',
     List<MediaItem> media = const [],
     int? wgerId,
+    String lang = ContentLang.fr,
+    String? altName,
+    String? altDescription,
+    List<String> aliases = const [],
   }) async {
-    final me = _b.requireRole(Backend.staff);
+    final me = _b.requireUser();
+    _b.library.checkPersonalLimit(me, ContentKind.exercise);
     _validate(name, description);
+    final key = Search.normalize(name);
     if (_b.exercises.all.any(
-      (e) => e.name.toLowerCase() == name.trim().toLowerCase(),
+      (e) => _b.library.canSee(me, e) && Search.normalize(e.name) == key,
     )) {
       throw const ValidationException('Un exercice porte déjà ce nom.');
     }
@@ -92,6 +98,14 @@ class ExerciseService {
       authorId: me.id,
       createdAt: _b.now(),
       wgerId: wgerId,
+      lang: ContentLang.normalize(lang),
+      altName: _opt(altName),
+      altDescription: _opt(altDescription),
+      aliases: _clean(aliases),
+      // Staff : publié directement. Abonné : privé jusqu'à validation.
+      publication: me.canManageContent
+          ? const Publication()
+          : Publication.personal,
     );
     await _b.exercises.save(e);
     _b.bus.emit();
@@ -99,12 +113,12 @@ class ExerciseService {
   }
 
   Future<Exercise> update(Exercise updated) async {
-    final me = _b.requireRole(Backend.staff);
+    final me = _b.requireUser();
     final existing =
         _b.exercises.byId(updated.id) ?? (throw const NotFoundException());
     if (!canEdit(me, existing)) {
       throw const PermissionDeniedException(
-        'Un coach ne peut modifier que ses propres exercices.',
+        'Vous ne pouvez modifier que vos propres exercices.',
       );
     }
     _validate(updated.name, updated.description);
@@ -112,6 +126,13 @@ class ExerciseService {
       updated.copyWith(
         steps: _clean(updated.steps),
         mistakes: _clean(updated.mistakes),
+        aliases: _clean(updated.aliases),
+        altName: _opt(updated.altName),
+        altDescription: _opt(updated.altDescription),
+        clearTranslation: true,
+        // Le statut de publication ne se change pas par une modification.
+        publication: existing.publication,
+        authorId: existing.authorId,
       ),
     );
     _b.bus.emit();
@@ -119,21 +140,27 @@ class ExerciseService {
   }
 
   Future<void> delete(String id) async {
-    final me = _b.requireRole(Backend.staff);
+    final me = _b.requireUser();
     final e = _b.exercises.byId(id) ?? (throw const NotFoundException());
     if (!canEdit(me, e)) throw const PermissionDeniedException();
     final usedIn = _b.workouts.where(
       (w) => w.items.any((i) => i.exerciseId == id),
     );
     if (usedIn.isNotEmpty) {
+      final visible = usedIn.where((w) => _b.library.canSee(me, w)).toList();
       throw BusinessRuleException(
-        'Exercice utilisé dans ${usedIn.length} workout(s) : '
-        '${usedIn.map((w) => w.name).join(', ')}.',
+        'Exercice utilisé dans ${usedIn.length} workout(s)'
+        '${visible.isEmpty ? '' : ' : ${visible.map((w) => w.name).join(', ')}'}.',
       );
     }
     await _b.exercises.delete(id);
     await _b.audit.log('Suppression d\'exercice', e.name, targetId: id);
     _b.bus.emit();
+  }
+
+  static String? _opt(String? s) {
+    final v = s?.trim() ?? '';
+    return v.isEmpty ? null : v;
   }
 
   void _validate(String name, String description) {
@@ -149,15 +176,5 @@ class ExerciseService {
       list.map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
 
   /// Minuscule sans accents pour une recherche tolérante.
-  static String normalize(String s) {
-    const from = 'àâäáãéèêëíìîïóòôöõúùûüçñ';
-    const to = 'aaaaaeeeeiiiiooooouuuucn';
-    final lower = s.toLowerCase().trim();
-    final buf = StringBuffer();
-    for (final ch in lower.split('')) {
-      final i = from.indexOf(ch);
-      buf.write(i >= 0 ? to[i] : ch);
-    }
-    return buf.toString();
-  }
+  static String normalize(String s) => Search.normalize(s);
 }

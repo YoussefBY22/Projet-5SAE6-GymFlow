@@ -16,6 +16,7 @@ import '../screens/shell/main_shell.dart';
 import '../screens/shop/shop_screens.dart';
 import '../screens/training/exercise_screens.dart';
 import '../screens/training/player_screens.dart';
+import '../screens/training/review_screen.dart';
 import '../screens/training/workout_screens.dart';
 import '../services/backend.dart';
 import '../services/training_log_service.dart';
@@ -80,6 +81,7 @@ class Routes {
   static const privacy = '/privacy';
   static const community = '/community';
   static const member = '/member';
+  static const review = '/review';
 
   /// Après connexion : présentation + consentements si nécessaire.
   static String afterLogin(AppUser u) {
@@ -101,19 +103,18 @@ class Routes {
     forgot: _RouteDef((_) => const ForgotPasswordScreen(), public: true),
     home: _RouteDef((_) => const MainShell()),
     exercise: _RouteDef((a) => ExerciseDetailScreen(exerciseId: a! as String)),
+    // Tout utilisateur crée ses contenus (privés pour un abonné) ; le
+    // service vérifie qui peut modifier quoi.
     exerciseForm: _RouteDef(
       (a) => ExerciseFormScreen(exerciseId: a as String?),
-      roles: _staff,
     ),
     wgerImport: _RouteDef((_) => const WgerImportScreen(), roles: _staff),
     workout: _RouteDef((a) => WorkoutDetailScreen(workoutId: a! as String)),
     // Abonnés : workouts personnels ; staff : workouts du club.
     workoutForm: _RouteDef((a) => WorkoutFormScreen(workoutId: a as String?)),
     program: _RouteDef((a) => ProgramDetailScreen(programId: a! as String)),
-    programForm: _RouteDef(
-      (a) => ProgramFormScreen(programId: a as String?),
-      roles: _staff,
-    ),
+    programForm: _RouteDef((a) => ProgramFormScreen(programId: a as String?)),
+    review: _RouteDef((_) => const ReviewScreen(), roles: _staff),
     player: _RouteDef((a) => SessionPlayerScreen(workoutId: a! as String)),
     summary: _RouteDef(
       (a) => SessionSummaryScreen(result: a! as SessionResult),

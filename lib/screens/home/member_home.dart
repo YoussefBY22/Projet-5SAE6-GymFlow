@@ -7,6 +7,7 @@ import '../../core/responsive.dart';
 import '../../core/routes.dart';
 import '../../core/theme.dart';
 import '../../models/user.dart';
+import '../../models/content.dart';
 import '../../services/backend.dart';
 import '../../widgets/animations.dart';
 import '../../widgets/auto_banner.dart';
@@ -377,9 +378,10 @@ class _ProgramCard extends StatelessWidget {
             )
           : CoverCard(
               image: program.$2.coverImage,
-              title: 'Reprendre : ${program.$2.name}',
+              title:
+                  'Reprendre : ${program.$2.nameIn(Backend.I.library.contentLang)}',
               subtitle:
-                  '${program.$1.name} · ${program.$3 == now.weekday ? 'aujourd\'hui' : 'prochaine séance'}',
+                  '${program.$1.nameIn(Backend.I.library.contentLang)} · ${program.$3 == now.weekday ? 'aujourd\'hui' : 'prochaine séance'}',
               pills: const [
                 Pill('Mon programme', color: AppColors.red, icon: Icons.flag),
               ],

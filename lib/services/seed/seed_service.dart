@@ -2,8 +2,10 @@ import 'dart:math';
 
 import '../../core/legal.dart';
 
+import '../../models/content.dart';
 import '../../models/course.dart';
 import '../../models/enums.dart';
+import '../../models/exercise.dart';
 import '../../models/misc.dart';
 import '../../models/privacy.dart';
 import '../../models/session_log.dart';
@@ -12,6 +14,7 @@ import '../../models/user.dart';
 import '../../models/workout.dart';
 import '../backend.dart';
 import 'seed_exercises.dart';
+import 'seed_translations.dart';
 import 'seed_workouts.dart';
 
 /// Compte de démonstration affiché sur l'écran de connexion.
@@ -93,6 +96,27 @@ class SeedService {
     if (_b.users.count > 0) return;
     await seed();
     await _b.store.setMeta(_seedKey, _seedVersion);
+    await _b.store.setMeta(_i18nKey, _i18nVersion);
+  }
+
+  static const _i18nKey = 'content_i18n';
+  static const _i18nVersion = '1';
+
+  /// Mise à niveau d'une base déjà remplie (application déjà installée) :
+  /// noms anglais des contenus de démonstration et exemples de créations
+  /// des membres.
+  Future<void> upgrade() async {
+    if (await _b.store.getMeta(_i18nKey) == _i18nVersion) return;
+    if (_b.users.count > 0) {
+      _now = _b.now();
+      _today = DateTime(_now.year, _now.month, _now.day);
+      await _translateContent();
+      if (_b.users.byId('u_ines') != null &&
+          _b.workouts.byId('w_ines_core') == null) {
+        await _seedMemberCreations();
+      }
+    }
+    await _b.store.setMeta(_i18nKey, _i18nVersion);
   }
 
   DateTime _day(int offset, [int hour = 0, int minute = 0]) =>
@@ -103,8 +127,10 @@ class SeedService {
     _today = DateTime(_now.year, _now.month, _now.day);
     await _seedUsers();
     await _seedContent();
+    await _translateContent();
     await _seedCourses();
     await _seedHistory();
+    await _seedMemberCreations();
     await _seedShop();
     await _seedAnnouncements();
   }
@@ -489,6 +515,162 @@ class SeedService {
           Program.fromJson({...s.program.toJson(), 'authorId': _ids[s.author]}),
     );
     await _b.programs.saveAll(programs);
+  }
+
+  /// Noms anglais et autres appellations (recherche bilingue).
+  Future<void> _translateContent() async {
+    await _b.exercises.saveAll([
+      for (final t in exerciseEn.entries)
+        if (_b.exercises.byId('ex_${t.key}') case final e?)
+          if (e.altName == null)
+            e.copyWith(
+              altName: t.value.$1,
+              aliases: {...e.aliases, ...t.value.$2}.toList(),
+            ),
+    ]);
+    await _b.workouts.saveAll([
+      for (final t in workoutEn.entries)
+        if (_b.workouts.byId('w_${t.key}') case final w?)
+          if (w.altName == null) w.copyWith(altName: t.value),
+    ]);
+    await _b.programs.saveAll([
+      for (final t in programEn.entries)
+        if (_b.programs.byId('p_${t.key}') case final p?)
+          if (p.altName == null) p.copyWith(altName: t.value),
+    ]);
+  }
+
+  /// Exemples de créations de membres, dans chaque état de publication :
+  /// publiée (Ines), en attente de validation (Rami), privée (Ahmed),
+  /// refusée avec un motif (Leila).
+  Future<void> _seedMemberCreations() async {
+    WorkoutItem item(
+      String ex,
+      int sets, {
+      int? reps,
+      int? sec,
+      int rest = 45,
+    }) => WorkoutItem(
+      exerciseId: 'ex_$ex',
+      sets: sets,
+      reps: reps,
+      durationSec: sec,
+      restSec: rest,
+    );
+    final submitted = _day(-6, 18);
+    await _b.workouts.saveAll([
+      Workout(
+        id: 'w_ines_core',
+        name: 'Circuit gainage express',
+        altName: 'Express core circuit',
+        description:
+            'Quinze minutes pour renforcer la sangle abdominale sans matériel, '
+            'idéal en fin de séance ou à la maison.',
+        focus: 'Abdominaux · Gainage',
+        level: Level.beginner,
+        goal: Goal.fitness,
+        coverImage: unsplash('photo-1571019613454-1cb2f99b2d8b'),
+        items: [
+          item('plank', 3, sec: 40),
+          item('mountain', 3, sec: 30),
+          item('russian', 3, reps: 20),
+          item('birddog', 2, reps: 12),
+        ],
+        authorId: 'u_ines',
+        createdAt: _day(-20),
+        publication: Publication(
+          status: ContentStatus.published,
+          submittedAt: _day(-18),
+          reviewedAt: _day(-17),
+          reviewerId: 'u_sarra',
+        ),
+      ),
+      Workout(
+        id: 'w_rami_arms',
+        name: 'Bras d\'acier',
+        altName: 'Arm blaster',
+        description:
+            'Superséries biceps / triceps pour finir une séance du haut du '
+            'corps. Charges modérées, contrôle de la descente.',
+        focus: 'Biceps · Triceps',
+        level: Level.intermediate,
+        goal: Goal.muscleGain,
+        items: [
+          item('bb_curl', 4, reps: 10, rest: 60),
+          item('skull', 4, reps: 10, rest: 60),
+          item('hammer', 3, reps: 12),
+          item('pushdown', 3, reps: 12),
+        ],
+        authorId: 'u_rami',
+        createdAt: _day(-7),
+        publication: Publication(
+          status: ContentStatus.pending,
+          submittedAt: submitted,
+        ),
+      ),
+      Workout(
+        id: 'w_leila_cardio',
+        name: 'Cardio rapide',
+        description: 'Cardio.',
+        level: Level.beginner,
+        goal: Goal.weightLoss,
+        items: [
+          item('jacks', 3, sec: 45, rest: 0),
+          item('burpee', 3, reps: 10),
+        ],
+        authorId: 'u_leila',
+        createdAt: _day(-9),
+        publication: Publication(
+          status: ContentStatus.rejected,
+          submittedAt: _day(-8),
+          reviewedAt: _day(-7),
+          reviewerId: 'u_sarra',
+          note:
+              'Ajoutez une vraie description (échauffement, intensité) et un '
+              'temps de repos entre les séries de jumping jacks.',
+        ),
+      ),
+    ]);
+    await _b.exercises.save(
+      Exercise(
+        id: 'ex_ahmed_diamond',
+        name: 'Pompes diamant',
+        primaryMuscle: Muscle.triceps,
+        secondaryMuscles: const [Muscle.chest],
+        equipment: Equipment.bodyweight,
+        level: Level.intermediate,
+        type: ExerciseType.strength,
+        description:
+            'Pompes mains rapprochées sous la poitrine, pouces et index qui se '
+            'touchent en losange.',
+        steps: const [
+          'Mains en losange sous le sternum.',
+          'Descendre en gardant les coudes près du corps.',
+          'Pousser jusqu\'à bras tendus.',
+        ],
+        authorId: 'u_ahmed',
+        createdAt: _day(-3),
+        publication: Publication.personal,
+      ),
+    );
+    await _b.workouts.save(
+      Workout(
+        id: 'w_ahmed_home',
+        name: 'Mon push maison',
+        description: 'Ma séance du dimanche quand la salle est fermée.',
+        focus: 'Pectoraux · Triceps',
+        level: Level.intermediate,
+        goal: Goal.muscleGain,
+        items: [
+          item('pushup', 4, reps: 15, rest: 60),
+          item('ahmed_diamond', 3, reps: 12, rest: 60),
+          item('bench_dips', 3, reps: 15, rest: 60),
+        ],
+        authorId: 'u_ahmed',
+        createdAt: _day(-3),
+        publication: Publication.personal,
+      ),
+    );
   }
 
   // ----------------------------------------------------------------- Cours

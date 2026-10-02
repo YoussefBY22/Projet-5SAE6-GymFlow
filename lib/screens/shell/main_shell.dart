@@ -409,6 +409,21 @@ class AppDrawer extends StatelessWidget {
                   'Calculateur IMC & calories',
                   () => go(Routes.calculator),
                 ),
+                if (user.canManageContent)
+                  ListenableBuilder(
+                    listenable: b.bus,
+                    builder: (context, _) => _item(
+                      Icons.fact_check_outlined,
+                      'Propositions à valider',
+                      () => go(Routes.review),
+                      trailing: b.library.pendingCount > 0
+                          ? Pill(
+                              '${b.library.pendingCount}',
+                              color: AppColors.gold,
+                            )
+                          : null,
+                    ),
+                  ),
                 if (user.isAdmin) ...[
                   const Divider(),
                   _section('Administration'),
