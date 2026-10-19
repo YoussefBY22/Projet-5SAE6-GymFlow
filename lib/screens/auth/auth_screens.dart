@@ -524,8 +524,22 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     setState(() => _loading = true);
     try {
       final code = await Backend.I.auth.requestPasswordReset(_email.text);
+      // Envoi réel par e-mail (API EmailJS) ; en cas d'échec, le code
+      // s'affiche à l'écran comme avant (démonstration).
+      final emailed =
+          code == null ||
+          await Backend.I.mailer.sendResetCode(_email.text, code);
       if (!mounted) return;
       setState(() => _codeSent = true);
+      if (emailed) {
+        // Même message qu'un compte existe ou non : on ne révèle rien.
+        showSnack(
+          context,
+          'Si un compte existe pour cette adresse, un code vient d\'y être '
+          'envoyé par e-mail (pensez aux courriers indésirables).',
+        );
+        return;
+      }
       // Envoi d'e-mail simulé : la « boîte de réception » s'affiche ici.
       await showDialog<void>(
         context: context,
@@ -537,9 +551,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           ),
           title: const Text('E-mail simulé'),
           content: Text(
-            code == null
-                ? 'Si un compte existe pour cette adresse, un code vient d\'être envoyé.'
-                : 'Objet : votre code GymFlow\n\nVotre code de réinitialisation est :\n\n$code\n\nIl est valable 15 minutes.',
+            'Objet : votre code GymFlow\n\nVotre code de réinitialisation est :\n\n$code\n\nIl est valable 15 minutes.',
           ),
           actions: [
             ElevatedButton(

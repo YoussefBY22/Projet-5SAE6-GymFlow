@@ -18,6 +18,7 @@ import 'announcement_service.dart';
 import 'audit_service.dart';
 import 'auth_service.dart';
 import 'cart_service.dart';
+import 'email_service.dart';
 import 'community_service.dart';
 import 'course_service.dart';
 import 'dashboard_service.dart';
@@ -165,6 +166,7 @@ class Backend {
     wger = WgerApi(this);
     privacy = PrivacyService(this);
     assistant = AiAssistantService(this);
+    mailer = EmailService(this);
     community = CommunityService(this);
     media = MediaStorage();
     this.payment = payment ?? PaymentGateway.fromConfig(httpClient);
@@ -263,6 +265,7 @@ class Backend {
   late final WgerApi wger;
   late final PrivacyService privacy;
   late final AiAssistantService assistant;
+  late final EmailService mailer;
   late final CommunityService community;
   late final MediaStorage media;
   late final PaymentGateway payment;
