@@ -18,6 +18,8 @@ import '../../widgets/filter_bar.dart';
 import '../../widgets/flip.dart';
 import '../../widgets/library_widgets.dart';
 import '../shell/main_shell.dart';
+import 'smartwatch_dialog.dart';
+import 'workout_generator_dialog.dart';
 
 /// Onglet Entraînement (TabBar : Programmes / Workouts / Exercices).
 /// Pour le super admin, le même écran sert d'onglet « Contenu ».
@@ -73,6 +75,12 @@ class _TrainingScreenState extends State<TrainingScreen>
         actions: [
           const ContentLangButton(),
           const ReviewQueueButton(),
+          const SmartwatchAppBarButton(),
+          IconButton(
+            tooltip: 'Générateur intelligent de workout',
+            icon: const Icon(Icons.auto_awesome),
+            onPressed: () => showWorkoutGeneratorModal(context),
+          ),
           if (staff)
             IconButton(
               tooltip: 'Importer depuis wger',

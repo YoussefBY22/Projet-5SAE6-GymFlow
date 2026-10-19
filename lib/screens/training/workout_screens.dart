@@ -232,6 +232,13 @@ class WorkoutDetailScreen extends StatelessWidget {
                               icon: Icons.timer_outlined,
                             ),
                           ),
+                          Expanded(
+                            child: StatTile(
+                              value: '~${(w.estimatedMinutes * (w.goal == Goal.weightLoss ? 9.2 : 7.5)).round()}',
+                              label: 'kcal estim.',
+                              icon: Icons.local_fire_department,
+                            ),
+                          ),
                         ],
                       ),
                     ),

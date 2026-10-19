@@ -36,6 +36,9 @@ import 'reservation_service.dart';
 import 'seed/seed_service.dart';
 import 'training_log_service.dart';
 import 'user_service.dart';
+import 'calorie_service.dart';
+import 'smartwatch_service.dart';
+import 'weather_service.dart';
 import 'wger_api.dart';
 import 'workout_service.dart';
 
@@ -169,6 +172,9 @@ class Backend {
     mailer = EmailService(this);
     community = CommunityService(this);
     media = MediaStorage();
+    smartwatch = SmartwatchService();
+    calorieCalculator = const CalorieService();
+    weather = WeatherService(httpClient: httpClient);
     this.payment = payment ?? PaymentGateway.fromConfig(httpClient);
   }
 
@@ -268,6 +274,9 @@ class Backend {
   late final EmailService mailer;
   late final CommunityService community;
   late final MediaStorage media;
+  late final SmartwatchService smartwatch;
+  late final CalorieService calorieCalculator;
+  late final WeatherService weather;
   late final PaymentGateway payment;
 
   Repository<T> _repo<T>(

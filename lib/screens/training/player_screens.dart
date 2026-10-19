@@ -8,12 +8,15 @@ import '../../core/responsive.dart';
 import '../../core/routes.dart';
 import '../../core/theme.dart';
 import '../../core/validators.dart';
+import '../../models/content.dart';
 import '../../models/exercise.dart';
 import '../../models/session_log.dart';
 import '../../models/workout.dart';
-import '../../models/content.dart';
+import '../../models/enums.dart';
 import '../../services/backend.dart';
+import '../../services/calorie_service.dart';
 import '../../services/platform/platform_services.dart';
+import '../../services/smartwatch_service.dart';
 import '../../services/training_log_service.dart';
 import '../../widgets/animations.dart';
 import '../../widgets/bits.dart';
@@ -21,6 +24,7 @@ import '../../widgets/cards.dart';
 import '../../widgets/common.dart';
 import '../../widgets/media.dart';
 import '../shell/main_shell.dart';
+import 'smartwatch_dialog.dart';
 
 /// Saisie d'une série pendant la séance.
 class _SetEntry {
@@ -88,6 +92,16 @@ class _SessionPlayerScreenState extends State<SessionPlayerScreen> {
         ],
     ];
     _stopwatch.start();
+    if (_items.isNotEmpty) {
+      final (_, firstEx) = _items.first;
+      b.smartwatch.setExerciseContext(
+        isExercising: true,
+        exerciseType: firstEx.type,
+        userWeightKg: me.weightKg ?? 70.0,
+        userAge: me.age ?? 25,
+        userGender: me.gender,
+      );
+    }
     _ticker = Timer.periodic(const Duration(seconds: 1), (_) => _tick());
   }
 
@@ -112,6 +126,17 @@ class _SessionPlayerScreenState extends State<SessionPlayerScreen> {
         if (_restLeft == 0) {
           Haptics.restOver();
           SystemSound.play(SystemSoundType.alert);
+          final me = Backend.I.auth.currentUser;
+          if (me != null && _index < _items.length) {
+            final (_, currentEx) = _items[_index];
+            Backend.I.smartwatch.setExerciseContext(
+              isExercising: true,
+              exerciseType: currentEx.type,
+              userWeightKg: me.weightKg ?? 70.0,
+              userAge: me.age ?? 25,
+              userGender: me.gender,
+            );
+          }
         }
       }
     });
@@ -165,6 +190,17 @@ class _SessionPlayerScreenState extends State<SessionPlayerScreen> {
         if (!isLast && item.restSec > 0) {
           _restTotal = item.restSec;
           _restLeft = item.restSec;
+          final me = Backend.I.auth.currentUser;
+          if (me != null && _index < _items.length) {
+            final (_, currentEx) = _items[_index];
+            Backend.I.smartwatch.setExerciseContext(
+              isExercising: false,
+              exerciseType: currentEx.type,
+              userWeightKg: me.weightKg ?? 70.0,
+              userAge: me.age ?? 25,
+              userGender: me.gender,
+            );
+          }
         }
       }
     });
@@ -179,6 +215,17 @@ class _SessionPlayerScreenState extends State<SessionPlayerScreen> {
   void _goTo(int i) {
     if (i < 0 || i >= _items.length) return;
     FocusScope.of(context).unfocus();
+    final me = Backend.I.auth.currentUser;
+    if (me != null && i < _items.length) {
+      final (_, nextEx) = _items[i];
+      Backend.I.smartwatch.setExerciseContext(
+        isExercising: true,
+        exerciseType: nextEx.type,
+        userWeightKg: me.weightKg ?? 70.0,
+        userAge: me.age ?? 25,
+        userGender: me.gender,
+      );
+    }
     setState(() => _index = i);
   }
 
@@ -229,11 +276,38 @@ class _SessionPlayerScreenState extends State<SessionPlayerScreen> {
       }
     }
     try {
+      final sw = Backend.I.smartwatch;
+      final telem = sw.telemetry.value;
+      final dev = sw.connectedDevice.value;
+      final duration = _stopwatch.elapsed.inSeconds.clamp(1, 24 * 3600);
+      final me = Backend.I.auth.currentUser;
+
+      int? calories = telem?.caloriesInt;
+      int? avgHr = telem?.averageHeartRate;
+      int? maxHr = telem?.maxHeartRate;
+      int? steps = telem?.stepCount;
+      String? deviceName = dev?.name;
+
+      if (calories == null && me != null) {
+        calories = CalorieService.estimateSessionCalories(
+          averageHeartRate: 125,
+          durationSec: duration,
+          weightKg: me.weightKg ?? 70.0,
+          age: me.age ?? 25,
+          gender: me.gender,
+        );
+      }
+
       final result = await Backend.I.trainingLog.finishSession(
         workout: _workout,
         startedAt: _startedAt,
-        durationSec: _stopwatch.elapsed.inSeconds.clamp(1, 24 * 3600),
+        durationSec: duration,
         sets: sets,
+        caloriesBurned: calories,
+        averageHeartRate: avgHr,
+        maxHeartRate: maxHr,
+        stepCount: steps,
+        smartwatchDevice: deviceName,
       );
       _ticker?.cancel();
       if (mounted) {
@@ -276,6 +350,7 @@ class _SessionPlayerScreenState extends State<SessionPlayerScreen> {
           ),
           title: Text(_workout.nameIn(Backend.I.library.contentLang)),
           actions: [
+            const SmartwatchAppBarButton(),
             IconButton(
               key: const Key('pause_button'),
               tooltip: _paused ? 'Reprendre' : 'Pause',
@@ -332,6 +407,7 @@ class _SessionPlayerScreenState extends State<SessionPlayerScreen> {
                 key: ValueKey(_index),
                 padding: const EdgeInsets.fromLTRB(Gap.m, Gap.m, Gap.m, 180),
                 children: [
+                  const _SmartwatchLiveBanner(),
                   Text(
                     'EXERCICE ${_index + 1} / ${_items.length}',
                     style: AppText.label(
@@ -811,6 +887,63 @@ class SessionSummaryScreen extends StatelessWidget {
                     ],
                   ),
                 ),
+                if (s.caloriesBurned != null || s.averageHeartRate != null || (s.stepCount != null && s.stepCount! > 0)) ...[
+                  const SizedBox(height: Gap.m),
+                  GfCard(
+                    color: AppColors.cream,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.watch, color: AppColors.navy, size: 20),
+                            const SizedBox(width: Gap.s),
+                            Expanded(
+                              child: Text(
+                                s.smartwatchDevice ?? 'Données biométriques Smartwatch',
+                                style: AppText.subtitle(size: 14),
+                              ),
+                            ),
+                            if (s.smartwatchDevice != null)
+                              const Pill('BLE Synchronisé', color: AppColors.success),
+                          ],
+                        ),
+                        const SizedBox(height: Gap.m),
+                        Row(
+                          children: [
+                            if (s.caloriesBurned != null)
+                              Expanded(
+                                child: _BigStat(
+                                  value: s.caloriesBurned!.toDouble(),
+                                  label: 'calories (kcal)',
+                                  color: AppColors.red,
+                                  format: (v) => v.round().toString(),
+                                ),
+                              ),
+                            if (s.averageHeartRate != null)
+                              Expanded(
+                                child: _BigStat(
+                                  value: s.averageHeartRate!.toDouble(),
+                                  label: 'FC moyenne',
+                                  color: AppColors.navy,
+                                  format: (v) => '${v.round()} BPM',
+                                ),
+                              ),
+                            if (s.stepCount != null && s.stepCount! > 0)
+                              Expanded(
+                                child: _BigStat(
+                                  value: s.stepCount!.toDouble(),
+                                  label: 'pas podomètre',
+                                  color: AppColors.gold,
+                                  format: (v) => Fmt.number(v.round()),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 if (records.isNotEmpty) ...[
                   const SizedBox(height: Gap.l),
                   Text(
@@ -959,6 +1092,44 @@ class SessionDetailScreen extends StatelessWidget {
             padding: pagePadding(context, maxWidth: 860),
             children: [
               ActivityCard(session: s),
+              if (s.caloriesBurned != null || s.averageHeartRate != null || (s.stepCount != null && s.stepCount! > 0)) ...[
+                const SizedBox(height: Gap.s),
+                GfCard(
+                  color: AppColors.cream,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      if (s.caloriesBurned != null)
+                        Column(
+                          children: [
+                            const Icon(Icons.local_fire_department, color: AppColors.red, size: 22),
+                            const SizedBox(height: 2),
+                            Text('${s.caloriesBurned} kcal', style: AppText.stat(size: 16)),
+                            Text('Dépense estimée', style: AppText.label(size: 11)),
+                          ],
+                        ),
+                      if (s.averageHeartRate != null)
+                        Column(
+                          children: [
+                            const Icon(Icons.favorite, color: AppColors.red, size: 22),
+                            const SizedBox(height: 2),
+                            Text('${s.averageHeartRate} BPM', style: AppText.stat(size: 16)),
+                            Text('FC moyenne', style: AppText.label(size: 11)),
+                          ],
+                        ),
+                      if (s.stepCount != null && s.stepCount! > 0)
+                        Column(
+                          children: [
+                            const Icon(Icons.directions_walk, color: AppColors.success, size: 22),
+                            const SizedBox(height: 2),
+                            Text(Fmt.number(s.stepCount!), style: AppText.stat(size: 16)),
+                            Text('Pas podomètre', style: AppText.label(size: 11)),
+                          ],
+                        ),
+                    ],
+                  ),
+                ),
+              ],
               if (mine) ...[
                 const SizedBox(height: Gap.s),
                 GfCard(
@@ -1111,6 +1282,222 @@ class _ShareChoiceCardState extends State<ShareChoiceCard> {
         duration: kAnim,
         child: KeyedSubtree(key: ValueKey(_decided), child: child),
       ),
+    );
+  }
+}
+
+/// Bannière de télémétrie en temps réel dans le lecteur de séance.
+class _SmartwatchLiveBanner extends StatelessWidget {
+  const _SmartwatchLiveBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    final sw = Backend.I.smartwatch;
+    return ListenableBuilder(
+      listenable: Listenable.merge([sw.connectedDevice, sw.telemetry]),
+      builder: (context, _) {
+        final dev = sw.connectedDevice.value;
+        final telem = sw.telemetry.value;
+
+        if (dev == null) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: Gap.m),
+            child: InkWell(
+              onTap: () => showSmartwatchModal(context),
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: Gap.m,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.outline),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.watch_outlined,
+                      color: AppColors.navy,
+                      size: 20,
+                    ),
+                    const SizedBox(width: Gap.s),
+                    Expanded(
+                      child: Text(
+                        'Connecter une montre Bluetooth pour la FC en direct',
+                        style: AppText.label(color: AppColors.inkSoft, size: 12),
+                      ),
+                    ),
+                    const Icon(
+                      Icons.chevron_right,
+                      size: 18,
+                      color: AppColors.outline,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
+
+        final hr = telem?.heartRate ?? 0;
+        final cal = telem?.caloriesInt ?? 0;
+        final steps = telem?.stepCount ?? 0;
+        final zone = telem?.zone;
+
+        final zoneColor = switch (zone) {
+          HeartRateZone.resting => AppColors.inkSoft,
+          HeartRateZone.fatBurn => AppColors.success,
+          HeartRateZone.aerobic => AppColors.gold,
+          HeartRateZone.anaerobic => Colors.orange,
+          HeartRateZone.maximum || null => AppColors.red,
+        };
+
+        return Padding(
+          padding: const EdgeInsets.only(bottom: Gap.m),
+          child: InkWell(
+            onTap: () => showSmartwatchModal(context),
+            borderRadius: BorderRadius.circular(14),
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: Gap.m,
+                vertical: 10,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.navy,
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x18000000),
+                    blurRadius: 8,
+                    offset: Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  _PulsingHeart(bpm: hr),
+                  const SizedBox(width: Gap.xs),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '$hr',
+                            style: AppText.stat(color: AppColors.white, size: 18),
+                          ),
+                          const SizedBox(width: 3),
+                          Text(
+                            'BPM',
+                            style: AppText.label(color: AppColors.cream, size: 10),
+                          ),
+                        ],
+                      ),
+                      if (zone != null)
+                        Text(
+                          zone.label,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: zoneColor,
+                          ),
+                        ),
+                    ],
+                  ),
+                  const Spacer(),
+                  Container(height: 28, width: 1, color: const Color(0xFF1E3A5F)),
+                  const Spacer(),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.local_fire_department,
+                        color: AppColors.gold,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 4),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '$cal',
+                            style: AppText.stat(color: AppColors.white, size: 16),
+                          ),
+                          Text(
+                            'kcal',
+                            style: AppText.label(color: AppColors.cream, size: 9),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const Spacer(),
+                  Container(height: 28, width: 1, color: const Color(0xFF1E3A5F)),
+                  const Spacer(),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.directions_walk,
+                        color: AppColors.success,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 4),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '$steps',
+                            style: AppText.stat(color: AppColors.white, size: 16),
+                          ),
+                          Text(
+                            'pas',
+                            style: AppText.label(color: AppColors.cream, size: 9),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Cœur battant animé en fonction du rythme cardiaque.
+class _PulsingHeart extends StatefulWidget {
+  const _PulsingHeart({required this.bpm});
+  final int bpm;
+
+  @override
+  State<_PulsingHeart> createState() => _PulsingHeartState();
+}
+
+class _PulsingHeartState extends State<_PulsingHeart>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 700),
+  )..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ScaleTransition(
+      scale: Tween(begin: 0.85, end: 1.15).animate(_ctrl),
+      child: const Icon(Icons.favorite, color: AppColors.red, size: 20),
     );
   }
 }
