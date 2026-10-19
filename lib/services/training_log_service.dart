@@ -28,6 +28,11 @@ class TrainingLogService {
     required int durationSec,
     required List<SetLog> sets,
     String note = '',
+    int? caloriesBurned,
+    int? averageHeartRate,
+    int? maxHeartRate,
+    int? stepCount,
+    String? smartwatchDevice,
   }) async {
     final me = _b.requireUser();
     if (sets.isEmpty) {
@@ -50,6 +55,11 @@ class TrainingLogService {
       exerciseCount: sets.map((s) => s.exerciseId).toSet().length,
       prCount: records.length,
       note: note.trim(),
+      caloriesBurned: caloriesBurned,
+      averageHeartRate: averageHeartRate,
+      maxHeartRate: maxHeartRate,
+      stepCount: stepCount,
+      smartwatchDevice: smartwatchDevice,
     );
     await _b.sessions.save(log);
     _b.bus.emit();

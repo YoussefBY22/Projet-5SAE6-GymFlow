@@ -56,6 +56,11 @@ class SessionLog {
     this.note = '',
     this.shared = false,
     this.sharedAt,
+    this.caloriesBurned,
+    this.averageHeartRate,
+    this.maxHeartRate,
+    this.stepCount,
+    this.smartwatchDevice,
   });
 
   final String id;
@@ -78,6 +83,13 @@ class SessionLog {
   final bool shared;
   final DateTime? sharedAt;
 
+  /// Métriques issues de la smartwatch Bluetooth (facultatives).
+  final int? caloriesBurned;
+  final int? averageHeartRate;
+  final int? maxHeartRate;
+  final int? stepCount;
+  final String? smartwatchDevice;
+
   double get totalVolume => sets.fold(0, (s, x) => s + x.volume);
   int get totalSets => sets.length;
   int get totalReps => sets.fold(0, (s, x) => s + x.reps);
@@ -88,6 +100,11 @@ class SessionLog {
     int? prCount,
     bool? shared,
     DateTime? sharedAt,
+    int? caloriesBurned,
+    int? averageHeartRate,
+    int? maxHeartRate,
+    int? stepCount,
+    String? smartwatchDevice,
   }) => SessionLog(
     id: id,
     userId: userId,
@@ -102,6 +119,11 @@ class SessionLog {
     note: note,
     shared: shared ?? this.shared,
     sharedAt: shared == false ? null : (sharedAt ?? this.sharedAt),
+    caloriesBurned: caloriesBurned ?? this.caloriesBurned,
+    averageHeartRate: averageHeartRate ?? this.averageHeartRate,
+    maxHeartRate: maxHeartRate ?? this.maxHeartRate,
+    stepCount: stepCount ?? this.stepCount,
+    smartwatchDevice: smartwatchDevice ?? this.smartwatchDevice,
   );
 
   Json toJson() => {
@@ -118,6 +140,11 @@ class SessionLog {
     'note': note,
     'shared': shared,
     'sharedAt': dateToJson(sharedAt),
+    'caloriesBurned': caloriesBurned,
+    'averageHeartRate': averageHeartRate,
+    'maxHeartRate': maxHeartRate,
+    'stepCount': stepCount,
+    'smartwatchDevice': smartwatchDevice,
   };
 
   factory SessionLog.fromJson(Json j) => SessionLog(
@@ -134,6 +161,11 @@ class SessionLog {
     note: j['note'] as String? ?? '',
     shared: j['shared'] as bool? ?? false,
     sharedAt: dateFromJson(j['sharedAt']),
+    caloriesBurned: toIntOrNull(j['caloriesBurned']),
+    averageHeartRate: toIntOrNull(j['averageHeartRate']),
+    maxHeartRate: toIntOrNull(j['maxHeartRate']),
+    stepCount: toIntOrNull(j['stepCount']),
+    smartwatchDevice: j['smartwatchDevice'] as String?,
   );
 }
 

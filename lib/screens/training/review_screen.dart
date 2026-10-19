@@ -11,9 +11,13 @@ import '../../widgets/animations.dart';
 import '../../widgets/common.dart';
 import '../../widgets/pickers.dart';
 
+// --- IMPORTS IA ---
+import 'package:gymflow/services/ai/cloud_ai_service.dart';
+import 'package:gymflow/services/ai/local_ai_service.dart';
+
 /// File de validation (coachs et admin) : contenus proposés par les
 /// abonnés, à accepter (publiés pour tous) ou refuser avec un motif.
-class ReviewScreen extends StatelessWidget {
+class ReviewScreen extends StatefulWidget {
   const ReviewScreen({super.key});
 
   static String routeOf(ContentKind k) => switch (k) {
@@ -22,15 +26,200 @@ class ReviewScreen extends StatelessWidget {
     ContentKind.program => Routes.program,
   };
 
+  @override
+  State<ReviewScreen> createState() => _ReviewScreenState();
+}
+
+class _ReviewScreenState extends State<ReviewScreen> {
+  // --- VARIABLES IA ---
+  final CloudAIService _cloudAI = CloudAIService();
+  final LocalAIService _localAI = LocalAIService();
+  
+  // État pour le dialogue de refus avec IA
+  String? _aiGeneratedReason;
+  bool _isGeneratingReason = false;
+
+  // État pour l'analyse locale
+  String? _localScanResult;
+
+  @override
+  void dispose() {
+    _localAI.dispose();
+    super.dispose();
+  }
+
+  // --- MÉTHODE 1 : API Cloud (Générer un motif de refus) ---
+  Future<void> _generateReasonWithAI(String itemName) async {
+    setState(() {
+      _isGeneratingReason = true;
+      _aiGeneratedReason = "Rédaction du motif par l'IA...";
+    });
+
+    // Prompt envoyé à Gemini
+    final prompt = """
+    Tu es un coach sportif bienveillant. Tu dois refuser la publication de l'élément suivant : "$itemName".
+    Rédige un motif de refus en français (2 phrases maximum). 
+    Sois poli, explique que la sécurité ou la qualité n'est pas suffisante, et donne un conseil pour s'améliorer.
+    """;
+
+    try {
+      final reason = await _cloudAI.generateText(prompt);
+      if (mounted) {
+        setState(() {
+          _aiGeneratedReason = reason;
+          _isGeneratingReason = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _aiGeneratedReason = "Erreur IA : impossible de générer le motif.";
+          _isGeneratingReason = false;
+        });
+      }
+    }
+  }
+
+  // --- MÉTHODE 2 : Modèle Local (Analyse de texte) ---
+  Future<void> _analyzeTextWithLocalAI(String textToAnalyze) async {
+    final result = await _localAI.analyzeSentiment(textToAnalyze);
+    setState(() {
+      _localScanResult = result;
+    });
+  }
+
   Future<void> _reject(BuildContext context, LibraryItem x) async {
-    final reason = await askText(
-      context,
-      title: 'Refuser « ${x.name} »',
-      label: 'Motif communiqué à l\'auteur',
-      hint: 'Ex. ajoutez une étape, précisez le repos…',
-      validator: Validators.text(field: 'Le motif', min: 5, max: 300),
+    // On réinitialise l'IA avant d'ouvrir le dialogue
+    _aiGeneratedReason = null;
+    _localScanResult = null;
+
+    final reason = await showDialog<String>(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              title: Text('Refuser « ${x.name} »'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // --- CARTE 1 : IA Cloud (Générer motif) ---
+                    Card(
+                      color: Colors.blue.shade50,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(Icons.cloud, color: Colors.blue, size: 20),
+                                const SizedBox(width: 8),
+                                const Text("Coach IA (API Cloud)", style: TextStyle(fontWeight: FontWeight.bold)),
+                                const Spacer(),
+                                TextButton(
+                                  onPressed: _isGeneratingReason 
+                                    ? null 
+                                    : () async {
+                                        await _generateReasonWithAI(x.name);
+                                        setStateDialog(() {});
+                                      },
+                                  child: const Text("Générer"),
+                                ),
+                              ],
+                            ),
+                            if (_aiGeneratedReason != null)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8.0),
+                                child: Text(
+                                  _aiGeneratedReason!,
+                                  style: const TextStyle(fontStyle: FontStyle.italic),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // --- CARTE 2 : Modèle Local (Analyse de texte) ---
+                    Card(
+                      color: Colors.green.shade50,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(Icons.phone_android, color: Colors.green, size: 20),
+                                const SizedBox(width: 8),
+                                const Text("Modèle Local (Analyse)", style: TextStyle(fontWeight: FontWeight.bold)),
+                                const Spacer(),
+                                TextButton(
+                                  onPressed: () async {
+                                    await _analyzeTextWithLocalAI(_aiGeneratedReason ?? "");
+                                    setStateDialog(() {});
+                                  },
+                                  child: const Text("Analyser"),
+                                ),
+                              ],
+                            ),
+                            if (_localScanResult != null)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8.0),
+                                child: Text(
+                                  _localScanResult!,
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // --- CHAMP DE SAISIE DU MOTIF ---
+                    const Text("Motif communiqué à l'auteur :"),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      initialValue: _aiGeneratedReason, // Pré-rempli si l'IA a généré
+                      maxLines: 3,
+                      decoration: const InputDecoration(
+                        hintText: 'Ex. ajoutez une étape, précisez le repos…',
+                        border: OutlineInputBorder(),
+                      ),
+                      onChanged: (value) {
+                        // On garde une trace de ce que l'utilisateur tape
+                        _aiGeneratedReason = value; 
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("Annuler"),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context, _aiGeneratedReason);
+                  },
+                  child: const Text("Envoyer le refus"),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
-    if (reason == null || !context.mounted) return;
+
+    if (reason == null || reason.isEmpty || !context.mounted) return;
+    
+    // Appel à votre logique métier existante (INCHANGÉE)
     await runAction(
       context,
       () => Backend.I.library.reject(x.kind, x.id, reason),
@@ -88,6 +277,7 @@ class ReviewScreen extends StatelessWidget {
   }
 }
 
+// --- LE WIDGET _ReviewCard RESTE TOTALEMENT INCHANGÉ ---
 class _ReviewCard extends StatelessWidget {
   const _ReviewCard({required this.item, required this.onReject});
   final LibraryItem item;
