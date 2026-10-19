@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
+import '../../core/config.dart';
+
 class CloudAIService {
-  // ⚠️ REMPLACEZ PAR VOTRE CLÉ API (Google AI Studio)
-  static const String _apiKey = 'AQ.Ab8RN6LLwizW_Z0eazjTqW24MNcjIJ7PdDXZXpfZQQ9Di9nyNA';
+  // Clé passée au lancement via secrets.json (jamais écrite dans le code).
+  static const String _apiKey = AppConfig.geminiApiKey;
 
   Future<String> generateText(String prompt) async {
     // On utilise le modèle recommandé par Google dans ses messages d'erreur récents
