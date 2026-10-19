@@ -1,4 +1,5 @@
 import 'package:google_fonts/google_fonts.dart';
+import 'package:http/http.dart' as http;
 import 'package:gymflow/repositories/data_store.dart';
 import 'package:gymflow/services/backend.dart';
 import 'package:gymflow/services/payment/payment_gateway.dart';
@@ -11,7 +12,11 @@ final testNow = DateTime(2026, 9, 30, 10);
 
 /// Crée un backend en mémoire avec le jeu de démonstration et une horloge
 /// contrôlée. Les itérations PBKDF2 sont réduites pour la rapidité.
-Future<Backend> makeBackend({DateTime? now, bool seed = true}) async {
+Future<Backend> makeBackend({
+  DateTime? now,
+  bool seed = true,
+  http.Client? httpClient,
+}) async {
   GoogleFonts.config.allowRuntimeFetching = false;
   SharedPreferences.setMockInitialValues({});
   await initializeDateFormatting('fr_FR');
@@ -22,6 +27,7 @@ Future<Backend> makeBackend({DateTime? now, bool seed = true}) async {
     notifier: RecordingNotifier(),
     calendar: NoopCalendar(),
     clock: () => current,
+    httpClient: httpClient,
     passwordIterations: 60,
     payment: SimulatedPaymentGateway(latency: Duration.zero),
     seed: seed,

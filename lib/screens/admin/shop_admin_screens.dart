@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../../core/errors.dart';
 import '../../core/responsive.dart';
 import '../../core/formatters.dart';
 import '../../core/routes.dart';
 import '../../core/theme.dart';
 import '../../core/validators.dart';
 import '../../models/enums.dart';
+import '../../models/nutrition.dart';
 import '../../models/shop.dart';
 import '../../services/backend.dart';
 import '../../widgets/animations.dart';
@@ -243,6 +245,33 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   bool _saving = false;
   Product? _existing;
 
+  // Fiche produit intelligente : Open Food Facts + IA.
+  final _barcode = TextEditingController();
+  final _brand = TextEditingController();
+  final _nameEn = TextEditingController();
+  final _summary = TextEditingController();
+  final _allergens = TextEditingController();
+  final _nutri = {
+    for (final k in _nutriFields.keys) k: TextEditingController(),
+  };
+  String? _nutriScore;
+  String? _nutritionSource;
+  bool _offLoading = false;
+  bool _draftLoading = false;
+  bool _summaryLoading = false;
+  int _imports = 0;
+
+  /// Champs nutritionnels saisis (clé → libellé, valeur maximale).
+  static const _nutriFields = {
+    'proteins': ('Protéines (g/100 g)', 100.0),
+    'carbs': ('Glucides (g/100 g)', 100.0),
+    'sugars': ('dont sucres (g/100 g)', 100.0),
+    'fat': ('Lipides (g/100 g)', 100.0),
+    'kcal': ('Énergie (kcal/100 g)', 900.0),
+    'serving': ('Portion (g)', 2000.0),
+    'netWeight': ('Poids net (g)', 50000.0),
+  };
+
   @override
   void initState() {
     super.initState();
@@ -260,15 +289,151 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       _images.addAll(p.images);
       _active = p.active;
       _featured = p.featured;
+      _barcode.text = p.barcode ?? '';
+      _brand.text = p.brand ?? '';
+      _nameEn.text = p.nameEn ?? '';
+      _summary.text = p.aiSummary ?? '';
+      final n = p.nutrition;
+      if (n != null) _fillNutrition(n);
     }
   }
 
   @override
   void dispose() {
-    for (final c in [_name, _description, _price, _promo, _stock]) {
+    for (final c in [
+      _name,
+      _description,
+      _price,
+      _promo,
+      _stock,
+      _barcode,
+      _brand,
+      _nameEn,
+      _summary,
+      _allergens,
+      ..._nutri.values,
+    ]) {
       c.dispose();
     }
     super.dispose();
+  }
+
+  void _fillNutrition(Nutrition n) {
+    String f(double? v) => v == null
+        ? ''
+        : (v == v.roundToDouble()
+              ? '${v.toInt()}'
+              : v.toStringAsFixed(1).replaceAll('.', ','));
+    _nutri['proteins']!.text = f(n.proteins);
+    _nutri['carbs']!.text = f(n.carbs);
+    _nutri['sugars']!.text = f(n.sugars);
+    _nutri['fat']!.text = f(n.fat);
+    _nutri['kcal']!.text = f(n.kcal);
+    _nutri['serving']!.text = f(n.servingG);
+    _nutri['netWeight']!.text = f(n.netWeightG);
+    _nutriScore = n.nutriScore;
+    _allergens.text = n.allergens.join(', ');
+    _nutritionSource = n.source;
+  }
+
+  /// Nutrition telle que saisie dans le formulaire.
+  Nutrition _nutrition() {
+    double? v(String k) => Validators.parseDecimal(_nutri[k]!.text);
+    return Nutrition(
+      proteins: v('proteins'),
+      carbs: v('carbs'),
+      sugars: v('sugars'),
+      fat: v('fat'),
+      kcal: v('kcal'),
+      servingG: v('serving'),
+      netWeightG: v('netWeight'),
+      nutriScore: _nutriScore,
+      allergens: _allergens.text
+          .split(',')
+          .map((a) => a.trim())
+          .where((a) => a.isNotEmpty)
+          .toList(),
+      source: _nutritionSource,
+    );
+  }
+
+  /// Remplit la fiche depuis Open Food Facts ; l'admin relit avant
+  /// d'enregistrer.
+  Future<void> _importOff() async {
+    setState(() => _offLoading = true);
+    try {
+      final off = await Backend.I.openFoodFacts.fetch(_barcode.text);
+      if (!mounted) return;
+      setState(() {
+        _barcode.text = off.barcode;
+        if (off.name != null) _name.text = off.name!;
+        if (off.brand != null) _brand.text = off.brand!;
+        if (off.imageUrl != null && !_images.contains(off.imageUrl)) {
+          _images.insert(0, off.imageUrl!);
+        }
+        _fillNutrition(off.nutrition);
+        _summary.clear();
+        _imports++;
+      });
+      showSnack(
+        context,
+        off.complete
+            ? 'Fiche importée d\'Open Food Facts : relisez-la puis enregistrez.'
+            : 'Fiche importée, valeurs manquantes : ${off.missing.join(', ')}. '
+                  'Complétez-les à la main.',
+      );
+    } catch (e) {
+      if (mounted) showSnack(context, friendlyError(e), error: true);
+    } finally {
+      if (mounted) setState(() => _offLoading = false);
+    }
+  }
+
+  Future<void> _draftWithAi() async {
+    setState(() => _draftLoading = true);
+    try {
+      final d = await Backend.I.productAi.draftListing(
+        name: _name.text,
+        category: _category,
+        price: Validators.parseDecimal(_price.text),
+        brand: _brand.text,
+        nutrition: _nutrition(),
+      );
+      if (!mounted) return;
+      setState(() {
+        _description.text = d.description;
+        _nameEn.text = d.nameEn;
+      });
+      showSnack(
+        context,
+        'Texte proposé par l\'IA : relisez-le et modifiez-le.',
+      );
+    } catch (e) {
+      if (mounted) showSnack(context, friendlyError(e), error: true);
+    } finally {
+      if (mounted) setState(() => _draftLoading = false);
+    }
+  }
+
+  Future<void> _summarizeWithAi() async {
+    setState(() => _summaryLoading = true);
+    try {
+      final s = await Backend.I.productAi.nutritionSummary(
+        name: _name.text,
+        category: _category,
+        price:
+            Validators.parseDecimal(_promo.text) ??
+            Validators.parseDecimal(_price.text),
+        brand: _brand.text,
+        nutrition: _nutrition(),
+      );
+      if (!mounted) return;
+      setState(() => _summary.text = s);
+    } catch (e) {
+      if (mounted) showSnack(context, friendlyError(e), error: true);
+    } finally {
+      if (mounted) setState(() => _summaryLoading = false);
+    }
   }
 
   Future<void> _addImage() async {
@@ -322,12 +487,135 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         images: _images,
         active: _active,
         featured: _featured,
+        barcode: _barcode.text,
+        brand: _brand.text,
+        nameEn: _nameEn.text,
+        nutrition: _nutrition(),
+        aiSummary: _summary.text,
       ),
       success: 'Produit enregistré.',
     );
     if (!mounted) return;
     setState(() => _saving = false);
     if (ok) Navigator.pop(context);
+  }
+
+  /// Valeurs nutritionnelles (modifiables à la main) et résumé IA.
+  Widget _nutritionSection() {
+    final hasData =
+        _nutri.values.any((c) => c.text.isNotEmpty) || _summary.text.isNotEmpty;
+    return GfCard(
+      padding: EdgeInsets.zero,
+      child: ExpansionTile(
+        // Nouvelle clé seulement après un import, pour ouvrir la section
+        // sans perdre le focus pendant la saisie.
+        key: ValueKey('nutrition_$_imports'),
+        initiallyExpanded: hasData,
+        leading: const Icon(Icons.restaurant_menu, color: AppColors.navy),
+        title: Text('Nutrition', style: AppText.subtitle(size: 15)),
+        subtitle: Text(
+          _nutritionSource == null
+              ? 'Facultatif : compléments, barres, boissons'
+              : 'Source : $_nutritionSource',
+          style: AppText.label(size: 12),
+        ),
+        childrenPadding: const EdgeInsets.fromLTRB(Gap.s, 0, Gap.s, Gap.s),
+        children: [
+          LayoutBuilder(
+            builder: (context, c) {
+              final w = c.maxWidth >= 520
+                  ? (c.maxWidth - 2 * Gap.s) / 3
+                  : (c.maxWidth - Gap.s) / 2;
+              return Wrap(
+                spacing: Gap.s,
+                runSpacing: Gap.s,
+                children: [
+                  for (final e in _nutriFields.entries)
+                    SizedBox(
+                      width: w,
+                      child: TextFormField(
+                        controller: _nutri[e.key],
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        decoration: InputDecoration(labelText: e.value.$1),
+                        validator: Validators.decimalRange(
+                          field: 'La valeur',
+                          min: 0,
+                          max: e.value.$2,
+                          optional: true,
+                        ),
+                      ),
+                    ),
+                  SizedBox(
+                    width: w,
+                    child: DropdownButtonFormField<String?>(
+                      initialValue: _nutriScore,
+                      decoration: const InputDecoration(
+                        labelText: 'Nutri-Score',
+                      ),
+                      items: [
+                        const DropdownMenuItem(
+                          value: null,
+                          child: Text('Inconnu'),
+                        ),
+                        for (final s in ['a', 'b', 'c', 'd', 'e'])
+                          DropdownMenuItem(
+                            value: s,
+                            child: Text(s.toUpperCase()),
+                          ),
+                        const DropdownMenuItem(
+                          value: 'not-applicable',
+                          child: Text('Non applicable'),
+                        ),
+                      ],
+                      onChanged: (v) => setState(() => _nutriScore = v),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: Gap.s),
+          TextFormField(
+            controller: _allergens,
+            decoration: const InputDecoration(
+              labelText: 'Allergènes (séparés par des virgules)',
+            ),
+            validator: Validators.text(
+              field: 'Les allergènes',
+              max: 200,
+              optional: true,
+            ),
+          ),
+          const SizedBox(height: Gap.m),
+          TextFormField(
+            key: const Key('ai_summary_field'),
+            controller: _summary,
+            maxLines: 3,
+            decoration: const InputDecoration(
+              labelText: 'Résumé pour le sportif (affiché aux abonnés)',
+              helperText: 'Généré par l\'IA puis relu ; modifiable.',
+            ),
+            validator: Validators.text(
+              field: 'Le résumé',
+              max: 450,
+              optional: true,
+            ),
+          ),
+          if (Backend.I.productAi.enabled) ...[
+            const SizedBox(height: Gap.s),
+            _AiButton(
+              key: const Key('ai_summary'),
+              label: 'Générer le résumé avec l\'IA',
+              icon: Icons.auto_awesome,
+              loading: _summaryLoading,
+              onPressed: _summarizeWithAi,
+            ),
+          ],
+        ],
+      ),
+    );
   }
 
   @override
@@ -432,6 +720,45 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                 ),
               ),
               const SizedBox(height: Gap.m),
+              GfCard(
+                color: AppColors.cream,
+                padding: const EdgeInsets.all(Gap.s),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    TextFormField(
+                      key: const Key('barcode_field'),
+                      controller: _barcode,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Code-barres (facultatif)',
+                        prefixIcon: Icon(Icons.qr_code_2),
+                      ),
+                      validator: (v) {
+                        final t = (v ?? '').replaceAll(RegExp(r'\s'), '');
+                        return t.isEmpty || RegExp(r'^\d{8,14}$').hasMatch(t)
+                            ? null
+                            : '8 à 14 chiffres.';
+                      },
+                    ),
+                    const SizedBox(height: Gap.s),
+                    _AiButton(
+                      key: const Key('off_import'),
+                      label: 'Remplir depuis Open Food Facts',
+                      icon: Icons.cloud_download_outlined,
+                      loading: _offLoading,
+                      onPressed: _importOff,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Nom, image, marque et nutrition depuis la base ouverte '
+                      'Open Food Facts. Relisez avant d\'enregistrer.',
+                      style: AppText.label(size: 12),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: Gap.m),
               TextFormField(
                 controller: _name,
                 decoration: const InputDecoration(labelText: 'Nom du produit'),
@@ -440,13 +767,53 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
               const SizedBox(height: Gap.m),
               TextFormField(
                 controller: _description,
-                maxLines: 3,
+                maxLines: 4,
                 decoration: const InputDecoration(labelText: 'Description'),
                 validator: Validators.text(
                   field: 'La description',
                   min: 10,
                   max: 600,
                 ),
+              ),
+              if (Backend.I.productAi.enabled) ...[
+                const SizedBox(height: Gap.s),
+                _AiButton(
+                  key: const Key('ai_draft'),
+                  label: 'Rédiger avec l\'IA',
+                  icon: Icons.auto_awesome,
+                  loading: _draftLoading,
+                  onPressed: _draftWithAi,
+                ),
+              ],
+              const SizedBox(height: Gap.m),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _brand,
+                      decoration: const InputDecoration(labelText: 'Marque'),
+                      validator: Validators.text(
+                        field: 'La marque',
+                        max: 40,
+                        optional: true,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: Gap.s),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _nameEn,
+                      decoration: const InputDecoration(
+                        labelText: 'Nom en anglais (recherche)',
+                      ),
+                      validator: Validators.text(
+                        field: 'Le nom anglais',
+                        max: 80,
+                        optional: true,
+                      ),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: Gap.m),
               EnumDropdown<ProductCategory>(
@@ -517,6 +884,8 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                   ),
                 ],
               ),
+              const SizedBox(height: Gap.m),
+              _nutritionSection(),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
                 value: _active,
@@ -543,6 +912,35 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       ),
     );
   }
+}
+
+/// Bouton secondaire avec indicateur de chargement (import, IA).
+class _AiButton extends StatelessWidget {
+  const _AiButton({
+    super.key,
+    required this.label,
+    required this.icon,
+    required this.loading,
+    required this.onPressed,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool loading;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) => OutlinedButton.icon(
+    onPressed: loading ? null : onPressed,
+    icon: loading
+        ? const SizedBox(
+            width: 18,
+            height: 18,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          )
+        : Icon(icon),
+    label: Text(loading ? 'Patientez…' : label),
+  );
 }
 
 /// Commandes à traiter (super admin).

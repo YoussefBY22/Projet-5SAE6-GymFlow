@@ -7,6 +7,7 @@ import '../../models/course.dart';
 import '../../models/enums.dart';
 import '../../models/exercise.dart';
 import '../../models/misc.dart';
+import '../../models/nutrition.dart';
 import '../../models/privacy.dart';
 import '../../models/session_log.dart';
 import '../../models/shop.dart';
@@ -106,6 +107,7 @@ class SeedService {
   /// noms anglais des contenus de démonstration et exemples de créations
   /// des membres.
   Future<void> upgrade() async {
+    await _upgradeNutrition();
     if (await _b.store.getMeta(_i18nKey) == _i18nVersion) return;
     if (_b.users.count > 0) {
       _now = _b.now();
@@ -117,6 +119,61 @@ class SeedService {
       }
     }
     await _b.store.setMeta(_i18nKey, _i18nVersion);
+  }
+
+  static const _nutritionKey = 'shop_nutrition';
+  static const _nutritionVersion = '1';
+
+  /// Valeurs nutritionnelles des produits de démonstration (saisies par la
+  /// salle, cohérentes avec leurs descriptions), pour la carte Nutrition.
+  static const demoNutrition = {
+    'pr_whey': Nutrition(
+      proteins: 80,
+      carbs: 6,
+      sugars: 4,
+      fat: 6,
+      kcal: 390,
+      servingG: 30,
+      netWeightG: 2000,
+      nutriScore: 'not-applicable',
+      allergens: ['Lait'],
+    ),
+    'pr_isolate': Nutrition(
+      proteins: 90,
+      carbs: 2,
+      sugars: 1.5,
+      fat: 1,
+      kcal: 370,
+      servingG: 30,
+      netWeightG: 900,
+      nutriScore: 'not-applicable',
+      allergens: ['Lait'],
+    ),
+    'pr_bar': Nutrition(
+      proteins: 33,
+      carbs: 30,
+      sugars: 5,
+      fat: 15,
+      kcal: 380,
+      servingG: 60,
+      netWeightG: 720,
+      allergens: ['Lait', 'Arachides', 'Soja'],
+    ),
+  };
+
+  /// Ajoute la nutrition de démonstration aux produits qui n'en ont pas
+  /// (base neuve ou application déjà installée).
+  Future<void> _upgradeNutrition() async {
+    if (await _b.store.getMeta(_nutritionKey) == _nutritionVersion) return;
+    for (final e in demoNutrition.entries) {
+      final p = _b.products.byId(e.key);
+      if (p != null && p.nutrition == null) {
+        await _b.products.save(
+          Product.fromJson({...p.toJson(), 'nutrition': e.value.toJson()}),
+        );
+      }
+    }
+    await _b.store.setMeta(_nutritionKey, _nutritionVersion);
   }
 
   DateTime _day(int offset, [int hour = 0, int minute = 0]) =>

@@ -23,13 +23,16 @@ import 'community_service.dart';
 import 'course_service.dart';
 import 'dashboard_service.dart';
 import 'exercise_service.dart';
+import 'gemini_client.dart';
 import 'library_service.dart';
 import 'media_storage.dart';
 import 'notification_service.dart';
+import 'open_food_facts_api.dart';
 import 'order_service.dart';
 import 'payment/payment_gateway.dart';
 import 'privacy_service.dart';
 import 'platform/platform_services.dart';
+import 'product_ai_service.dart';
 import 'product_service.dart';
 import 'progress_service.dart';
 import 'reservation_service.dart';
@@ -168,7 +171,10 @@ class Backend {
     announcements = AnnouncementService(this);
     wger = WgerApi(this);
     privacy = PrivacyService(this);
+    gemini = GeminiClient(httpClient);
     assistant = AiAssistantService(this);
+    openFoodFacts = OpenFoodFactsApi(this);
+    productAi = ProductAiService(this);
     mailer = EmailService(this);
     community = CommunityService(this);
     media = MediaStorage();
@@ -270,7 +276,12 @@ class Backend {
   late final AnnouncementService announcements;
   late final WgerApi wger;
   late final PrivacyService privacy;
+
+  /// Client Gemini commun (remplaçable dans les tests, sans réseau).
+  late GeminiClient gemini;
   late final AiAssistantService assistant;
+  late final OpenFoodFactsApi openFoodFacts;
+  late final ProductAiService productAi;
   late final EmailService mailer;
   late final CommunityService community;
   late final MediaStorage media;

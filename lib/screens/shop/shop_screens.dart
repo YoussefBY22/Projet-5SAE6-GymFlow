@@ -17,6 +17,7 @@ import '../../widgets/bits.dart';
 import '../../widgets/cards.dart';
 import '../../widgets/common.dart';
 import '../../widgets/filter_bar.dart';
+import '../../widgets/nutrition_card.dart';
 import '../shell/main_shell.dart';
 
 /// Achat direct depuis la fiche produit (sans passer par le panier).
@@ -296,6 +297,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           ),
                     const SizedBox(height: Gap.m),
                     Text(p.description, style: AppText.body()),
+                    if (showNutritionCard(p)) ...[
+                      const SizedBox(height: Gap.m),
+                      NutritionCard(product: p),
+                    ],
                     const SizedBox(height: Gap.l),
                     if (p.inStock) ...[
                       Row(

@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import '../core/config.dart';
 import '../core/formatters.dart';
 import '../core/search.dart';
@@ -23,7 +21,7 @@ class AiAssistantService {
   AiAssistantService(this._b);
   final Backend _b;
 
-  bool get enabled => AppConfig.geminiApiKey.isNotEmpty;
+  bool get enabled => _b.gemini.enabled;
 
   /// Règles et fonctionnement de l'application (base de connaissances fixe).
   static const _faq = '''
@@ -136,52 +134,7 @@ class AiAssistantService {
         ],
       },
     ];
-    final body = jsonEncode({
-      'systemInstruction': {
-        'parts': [
-          {'text': system},
-        ],
-      },
-      'contents': contents,
-      'generationConfig': {'temperature': 0.4, 'maxOutputTokens': 400},
-    });
-    // Modèle léger et rapide ; second modèle en secours si le premier échoue.
-    for (final model in AppConfig.geminiModels) {
-      try {
-        final res = await _b.httpClient
-            .post(
-              Uri.parse(
-                'https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent',
-              ),
-              headers: {
-                'Content-Type': 'application/json',
-                'x-goog-api-key': AppConfig.geminiApiKey,
-              },
-              body: body,
-            )
-            .timeout(const Duration(seconds: 25));
-        if (res.statusCode == 429) {
-          return 'Le quota gratuit de l\'assistant est atteint pour le moment. '
-              'Réessayez dans quelques minutes.';
-        }
-        if (res.statusCode != 200) continue;
-        final j =
-            jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
-        final parts =
-            (((j['candidates'] as List?)?.first as Map?)?['content']
-                    as Map?)?['parts']
-                as List?;
-        final text = parts
-            ?.map((p) => (p as Map)['text'] ?? '')
-            .join()
-            .toString()
-            .trim();
-        if (text != null && text.isNotEmpty) return text;
-      } catch (_) {
-        // On essaie le modèle suivant.
-      }
-    }
-    return 'Je n\'arrive pas à joindre l\'assistant (connexion ou service '
-        'indisponible). Réessayez dans un instant.';
+    final reply = await _b.gemini.generate(system: system, contents: contents);
+    return reply.text ?? reply.error!;
   }
 }

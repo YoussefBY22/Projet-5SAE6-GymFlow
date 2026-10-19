@@ -86,3 +86,12 @@ Cycle suivi pour chaque module : produit → UI/UX → développement → QA (fo
 - [x] Photo de couverture depuis le téléphone pour workouts et programmes
 - [x] CGU : clause sur les créations des membres (version 2026-10-b)
 - [ ] Traduction complète de l'interface en anglais (hors périmètre, voir DECISIONS.md)
+
+## Boutique : fiche produit intelligente (API Open Food Facts + IA Gemini)
+- [x] Formulaire produit (admin) : champ « Code-barres » et « Remplir depuis Open Food Facts » (nom, image, marque, valeurs pour 100 g, portion, poids net, Nutri-Score, allergènes), erreurs claires, saisie manuelle toujours possible
+- [x] « Rédiger avec l'IA » : description en français et nom anglais (recherche bilingue), à relire avant d'enregistrer
+- [x] Calculs faits par l'application : protéines par portion, prix du gramme de protéine (TND/g, prix promo pris en compte)
+- [x] « Résumé pour le sportif » rédigé par l'IA dans le formulaire, enregistré avec le produit (aucun appel à l'affichage) ; « données insuffisantes » sans appel si les valeurs manquent
+- [x] Carte « Nutrition » sur la fiche produit (abonné), source affichée ; nutrition de démonstration sur 3 produits
+- [x] Client Gemini commun au chatbot et à la boutique (`gemini_client.dart`), réponses JSON validées
+- [x] Tests sans réseau (`test/smart_product_test.dart`) : lecture Open Food Facts, erreurs, calculs, validation du JSON, droits admin, compatibilité des anciens produits, chatbot

@@ -1,5 +1,6 @@
 import 'enums.dart';
 import 'json.dart';
+import 'nutrition.dart';
 
 class Product {
   const Product({
@@ -14,6 +15,11 @@ class Product {
     this.images = const [],
     this.active = true,
     this.featured = false,
+    this.barcode,
+    this.brand,
+    this.nameEn,
+    this.nutrition,
+    this.aiSummary,
   });
 
   final String id;
@@ -30,7 +36,23 @@ class Product {
   final bool featured;
   final DateTime createdAt;
 
+  /// Code-barres EAN (import Open Food Facts).
+  final String? barcode;
+  final String? brand;
+
+  /// Nom anglais, utilisé par la recherche bilingue.
+  final String? nameEn;
+  final Nutrition? nutrition;
+
+  /// « Résumé pour le sportif » rédigé par l'IA, relu par l'admin puis
+  /// enregistré (aucun appel à l'IA lors de l'affichage).
+  final String? aiSummary;
+
   bool get inStock => stock > 0;
+
+  /// Prix du gramme de protéine au prix de vente actuel (calcul du code).
+  double? get pricePerProteinGram =>
+      nutrition?.pricePerProteinGram(effectivePrice);
   bool get onPromo => promoPrice != null && promoPrice! < price;
   double get effectivePrice => onPromo ? promoPrice! : price;
   int get discountPercent =>
@@ -59,6 +81,11 @@ class Product {
     active: active ?? this.active,
     featured: featured ?? this.featured,
     createdAt: createdAt,
+    barcode: barcode,
+    brand: brand,
+    nameEn: nameEn,
+    nutrition: nutrition,
+    aiSummary: aiSummary,
   );
 
   Json toJson() => {
@@ -73,8 +100,15 @@ class Product {
     'active': active,
     'featured': featured,
     'createdAt': dateToJson(createdAt),
+    'barcode': barcode,
+    'brand': brand,
+    'nameEn': nameEn,
+    'nutrition': nutrition?.toJson(),
+    'aiSummary': aiSummary,
   };
 
+  /// Les champs ajoutés après coup (code-barres, nutrition, résumé IA) sont
+  /// facultatifs : les produits déjà enregistrés se chargent sans migration.
   factory Product.fromJson(Json j) => Product(
     id: j['id'] as String,
     name: j['name'] as String,
@@ -91,6 +125,13 @@ class Product {
     active: j['active'] as bool? ?? true,
     featured: j['featured'] as bool? ?? false,
     createdAt: dateOr(j['createdAt'], DateTime(2026)),
+    barcode: j['barcode'] as String?,
+    brand: j['brand'] as String?,
+    nameEn: j['nameEn'] as String?,
+    nutrition: j['nutrition'] == null
+        ? null
+        : Nutrition.fromJson(Map<String, dynamic>.from(j['nutrition'] as Map)),
+    aiSummary: j['aiSummary'] as String?,
   );
 }
 

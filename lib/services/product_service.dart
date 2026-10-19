@@ -1,6 +1,7 @@
 import '../core/errors.dart';
 import '../core/search.dart';
 import '../models/enums.dart';
+import '../models/nutrition.dart';
 import '../models/prefs.dart';
 import '../models/shop.dart';
 import '../repositories/repository.dart';
@@ -21,7 +22,7 @@ class ProductService {
           (category == null || p.category == category) &&
           (q.isEmpty ||
               ExerciseService.normalize(
-                '${p.name} ${p.category.label}',
+                '${p.name} ${p.nameEn ?? ''} ${p.category.label}',
               ).contains(q)),
     )..sort((a, b) {
       if (a.inStock != b.inStock) return a.inStock ? -1 : 1;
@@ -54,7 +55,8 @@ class ProductService {
       if (f.has('promo', 'only') && !p.onPromo) return false;
       return Search.matches(
         v,
-        '${p.name} ${p.category.label} ${p.description}',
+        '${p.name} ${p.nameEn ?? ''} ${p.brand ?? ''} '
+        '${p.category.label} ${p.description}',
       );
     }).toList();
   }
@@ -75,11 +77,34 @@ class ProductService {
     required List<String> images,
     bool active = true,
     bool featured = false,
+    String? barcode,
+    String? brand,
+    String? nameEn,
+    Nutrition? nutrition,
+    String? aiSummary,
   }) async {
     _b.requireRole(Backend.adminOnly);
     if (name.trim().length < 3) {
       throw const ValidationException('Nom : 3 caractères minimum.');
     }
+    String? opt(String? v, int max, String field) {
+      final t = v?.trim() ?? '';
+      if (t.length > max) {
+        throw ValidationException('$field : $max caractères maximum.');
+      }
+      return t.isEmpty ? null : t;
+    }
+
+    final code = opt(barcode, 14, 'Code-barres');
+    if (code != null && !RegExp(r'^\d{8,14}$').hasMatch(code)) {
+      throw const ValidationException('Code-barres : 8 à 14 chiffres.');
+    }
+    final extras = (
+      brand: opt(brand, 40, 'Marque'),
+      nameEn: opt(nameEn, 80, 'Nom anglais'),
+      aiSummary: opt(aiSummary, 450, 'Résumé'),
+      nutrition: nutrition == null || nutrition.isEmpty ? null : nutrition,
+    );
     if (price <= 0 || price > 5000) {
       throw const ValidationException('Prix : entre 0,1 et 5 000 TND.');
     }
@@ -91,37 +116,27 @@ class ProductService {
     if (stock < 0 || stock > 10000) {
       throw const ValidationException('Stock : entre 0 et 10 000.');
     }
-    final Product p;
-    if (id == null) {
-      p = Product(
-        id: IdGen.next('pr_'),
-        name: name.trim(),
-        description: description.trim(),
-        category: category,
-        price: price,
-        promoPrice: promoPrice,
-        stock: stock,
-        images: images,
-        active: active,
-        featured: featured,
-        createdAt: _b.now(),
-      );
-    } else {
-      final existing =
-          _b.products.byId(id) ?? (throw const NotFoundException());
-      p = existing.copyWith(
-        name: name.trim(),
-        description: description.trim(),
-        category: category,
-        price: price,
-        promoPrice: promoPrice,
-        clearPromo: promoPrice == null,
-        stock: stock,
-        images: images,
-        active: active,
-        featured: featured,
-      );
-    }
+    final existing = id == null
+        ? null
+        : (_b.products.byId(id) ?? (throw const NotFoundException()));
+    final p = Product(
+      id: existing?.id ?? IdGen.next('pr_'),
+      name: name.trim(),
+      description: description.trim(),
+      category: category,
+      price: price,
+      promoPrice: promoPrice,
+      stock: stock,
+      images: images,
+      active: active,
+      featured: featured,
+      createdAt: existing?.createdAt ?? _b.now(),
+      barcode: code,
+      brand: extras.brand,
+      nameEn: extras.nameEn,
+      nutrition: extras.nutrition,
+      aiSummary: extras.aiSummary,
+    );
     await _b.products.save(p);
     await _b.audit.log(
       id == null ? 'Création de produit' : 'Modification de produit',
