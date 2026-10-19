@@ -13,6 +13,7 @@ import '../models/user.dart';
 import '../models/workout.dart';
 import '../repositories/data_store.dart';
 import '../repositories/repository.dart';
+import 'ai_assistant_service.dart';
 import 'announcement_service.dart';
 import 'audit_service.dart';
 import 'auth_service.dart';
@@ -163,6 +164,7 @@ class Backend {
     announcements = AnnouncementService(this);
     wger = WgerApi(this);
     privacy = PrivacyService(this);
+    assistant = AiAssistantService(this);
     community = CommunityService(this);
     media = MediaStorage();
     this.payment = payment ?? PaymentGateway.fromConfig(httpClient);
@@ -260,6 +262,7 @@ class Backend {
   late final AnnouncementService announcements;
   late final WgerApi wger;
   late final PrivacyService privacy;
+  late final AiAssistantService assistant;
   late final CommunityService community;
   late final MediaStorage media;
   late final PaymentGateway payment;

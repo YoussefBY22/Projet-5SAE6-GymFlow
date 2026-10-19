@@ -5,6 +5,7 @@ import '../../core/routes.dart';
 import '../../core/theme.dart';
 import '../../models/enums.dart';
 import '../../services/backend.dart';
+import '../../widgets/ai_chat_bubble.dart';
 import '../../widgets/bits.dart';
 import '../../widgets/common.dart';
 import '../admin/admin_screens.dart';
@@ -99,7 +100,7 @@ class _MainShellState extends State<MainShell> {
                           data: MediaQuery.of(
                             context,
                           ).copyWith(size: Size(c.maxWidth, c.maxHeight)),
-                          child: stack,
+                          child: _withAssistant(stack),
                         ),
                       ),
                     ),
@@ -110,7 +111,7 @@ class _MainShellState extends State<MainShell> {
             return Scaffold(
               key: _scaffoldKey,
               drawer: const AppDrawer(),
-              body: stack,
+              body: _withAssistant(stack),
               bottomNavigationBar: BottomNavigationBar(
                 currentIndex: i,
                 onTap: (v) => MainShell.tab.value = v,
@@ -129,6 +130,17 @@ class _MainShellState extends State<MainShell> {
       },
     );
   }
+
+  /// Bulle de l'assistant IA, au-dessus des boutons d'action des onglets
+  /// (affichée seulement si la clé de l'API est configurée).
+  static Widget _withAssistant(Widget child) => !Backend.I.assistant.enabled
+      ? child
+      : Stack(
+          children: [
+            child,
+            const Positioned(right: 18, bottom: 92, child: AiChatBubble()),
+          ],
+        );
 
   static const _memberTabs = [
     _Tab('Accueil', Icons.home_outlined, Icons.home, MemberHomeScreen()),

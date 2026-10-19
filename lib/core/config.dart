@@ -23,6 +23,16 @@ class AppConfig {
   /// Seule une clé de TEST est acceptée (refus des clés live).
   static bool get stripeEnabled => stripeTestSecretKey.startsWith('sk_test_');
 
+  /// Assistant IA (API externe Google Gemini) : clé passée au lancement
+  /// via secrets.json, jamais écrite dans le code.
+  static const String geminiApiKey = String.fromEnvironment('GEMINI_API_KEY');
+
+  /// Modèle rapide d'abord, second modèle en secours.
+  static const List<String> geminiModels = [
+    'gemini-flash-lite-latest',
+    'gemini-3.5-flash-lite',
+  ];
+
   static const String wgerBaseUrl = 'https://wger.de/api/v2';
 
   /// Limites des fichiers uploadés.
