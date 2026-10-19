@@ -12,16 +12,17 @@ Application Flutter d'une salle de sport (Super Admin / Coach / Abonné), style 
 | Élément | Emplacement |
 |---|---|
 | Projet | `C:\Users\youss\Desktop\Projet Mobile Flutter\gymflow` |
-| Dépôt GitHub (public) | https://github.com/YoussefBY22/ProjetDevMobile-5SAE6-FAMY |
+| Dépôt GitHub (semble passé en privé le 02/10/2026) | https://github.com/YoussefBY22/ProjetDevMobile-5SAE6-FAMY |
 | Code | branche **`GymFlow-V1`** (seule branche de travail) |
-| `main` | ne contient pas le code ; ne rien y pousser |
-| Version web compilée | dossier `docs/` de `GymFlow-V1` (servi par GitHub Pages : *Settings → Pages → Deploy from a branch → GymFlow-V1 / docs*) |
-| Version web en ligne | https://youssefby22.github.io/ProjetDevMobile-5SAE6-FAMY/ |
+| `main` | ne contient pas le code ; ne rien y pousser. Contient encore le commit vide `4fd7d1c` que Youssef veut supprimer : **décision en attente** (voir § 9) |
+| Version web compilée | dossier `docs/` de `GymFlow-V1` (compilée pour une éventuelle publication future ; **aucun déploiement en ligne actif**) |
+| Version web | **en local uniquement** : `flutter run -d chrome --release` (voir § 7) |
 | Téléphone de test | vivo V2332, Android 16, identifiant adb `10HE8DF73N0025Y` |
 | Flutter | `C:\Users\youss\flutter` (3.44.3, Dart 3.12.2), dans le PATH |
 | adb | `%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe` (hors PATH ; `flutter install` suffit) |
 
-Historique de `GymFlow-V1` (du plus récent au plus ancien) :
+Historique de `GymFlow-V1` (du plus récent au plus ancien, tout est poussé jusqu'à `5912ace`) :
+- `5912ace` Version web compilée dans `docs/` et fiche de reprise à jour
 - `5e6e0fc` Présentation verticale identique avant et après la connexion (l'ancienne présentation horizontale à 3 pages est supprimée)
 - `65b6ade` Fiche de reprise
 - `c9ba764` Bibliothèque collaborative, recherche bilingue, filtres mémorisés, favoris animés
@@ -33,6 +34,7 @@ Historique de `GymFlow-V1` (du plus récent au plus ancien) :
 - **Pousser seulement sur demande explicite** de Youssef, et seulement sur `GymFlow-V1`. Commits locaux autorisés.
 - **Sur GitHub, ne faire que ce qui est demandé explicitement** : ne jamais créer de branche, de commit « explicatif » (ex. commit vide) ni de publication de sa propre initiative.
 - Ne pas remettre de code sur `main`.
+- **« Un lien » = toujours un lien LOCAL** (app lancée sur le PC, ex. `flutter run -d chrome`). **Aucun hébergement ni déploiement en ligne** sans demande explicite de Youssef : le déploiement est en pause.
 - Messages, textes de l'app et documentation en français.
 - Avant de livrer : `dart format lib test`, `flutter analyze` (0 problème), `flutter test` (tout vert).
 - Sur ce PC, l'outil Bash est cassé : utiliser PowerShell.
@@ -106,7 +108,7 @@ dart format lib test
 flutter analyze
 flutter test
 ```
-Republier la version web en ligne (dossier `docs/`, puis commit et push sur `GymFlow-V1`) :
+Recompiler la version web dans `docs/` (seulement si Youssef le demande ; aucune publication en ligne sans demande explicite) :
 ```
 flutter build web --release --base-href /ProjetDevMobile-5SAE6-FAMY/ --output docs
 ni docs\.nojekyll -Force
@@ -127,6 +129,9 @@ git push origin GymFlow-V1
 - Médias envoyés par les membres stockés en fichiers locaux de l'appareil.
 
 ## 9. Reste à faire / pistes
+- **Branche `main`** : Youssef veut supprimer son commit vide `4fd7d1c`. Une branche ne peut pas être vide : il faut supprimer la branche `main`, ce que GitHub refuse tant qu'elle est la branche par défaut. Étapes possibles (à faire **seulement sur sa demande**) : *Settings → General → Default branch* → `GymFlow-V1`, puis `git push origin --delete main`. Autre option : y mettre le code de `GymFlow-V1`. Attendre sa décision.
+- **Déploiement en ligne : en pause** jusqu'à demande explicite. La branche `gh-pages` a été supprimée à sa demande ; GitHub Pages n'est plus configuré (le lien github.io renvoie 404). Si un jour il le demande : *Settings → Pages → Deploy from a branch → GymFlow-V1 / docs* (dépôt public, ou GitHub Pro via le Student Pack si le dépôt reste privé).
+- **Téléphone** : la dernière version installée est `c9ba764` (avant la présentation unifiée) ; à mettre à jour sur demande (`flutter build apk --release` puis `flutter install --release`).
 - **Audit de sécurité complet** dès que le professeur aura validé la base de données (liste détaillée : `SECURITE_CONFIDENTIALITE.md`, § 9).
 - Traduction complète de l'interface en anglais (`flutter gen-l10n`), si besoin.
 - Relecture juridique des textes (`lib/core/legal.dart`) avant toute commercialisation.
