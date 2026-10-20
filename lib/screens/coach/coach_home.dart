@@ -6,9 +6,9 @@ import '../../core/routes.dart';
 import '../../core/theme.dart';
 import '../../services/backend.dart';
 import '../../widgets/animations.dart';
-import '../../widgets/bits.dart';
 import '../../widgets/cards.dart';
 import '../../widgets/common.dart';
+import '../../widgets/sentiment_widgets.dart';
 import '../shell/main_shell.dart';
 
 /// Dashboard coach : prochains cours, inscrits, présence, notes,
@@ -163,6 +163,8 @@ class CoachHomeScreen extends StatelessWidget {
                   ),
                 ],
               ),
+              const SectionHeader('Score de satisfaction IA'),
+              const SatisfactionPanel(),
               const SectionHeader('Dernières notes'),
               ..._latestRatings(b, me.id),
               const SectionHeader('Fil du club'),
@@ -195,30 +197,7 @@ class CoachHomeScreen extends StatelessWidget {
       for (final r in rated.take(3))
         Padding(
           padding: const EdgeInsets.only(bottom: Gap.s),
-          child: GfCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    GfAvatar(b.users.byId(r.userId), radius: 16),
-                    const SizedBox(width: Gap.s),
-                    Expanded(
-                      child: Text(
-                        b.courses.byId(r.courseId)?.title ?? '',
-                        style: AppText.subtitle(size: 13),
-                      ),
-                    ),
-                    RatingStars(value: r.rating!.toDouble(), size: 14),
-                  ],
-                ),
-                if (r.comment != null && r.comment!.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Text('« ${r.comment} »', style: AppText.body(size: 13)),
-                ],
-              ],
-            ),
-          ),
+          child: ReviewTile(r, title: b.courses.byId(r.courseId)?.title ?? ''),
         ),
     ];
   }

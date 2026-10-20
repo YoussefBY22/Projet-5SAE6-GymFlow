@@ -15,6 +15,7 @@ import '../../widgets/charts.dart';
 import '../../widgets/common.dart';
 import '../../widgets/filter_bar.dart';
 import '../../widgets/pickers.dart';
+import '../../widgets/sentiment_widgets.dart';
 import '../coach/coach_home.dart';
 import '../shell/main_shell.dart';
 
@@ -169,6 +170,8 @@ class AdminDashboardScreen extends StatelessWidget {
                   color: AppColors.success,
                 ),
               ),
+              const SectionHeader('Score de satisfaction IA'),
+              const SatisfactionPanel(showCoaches: true),
               const SectionHeader('Top cours'),
               _RankList(items: topCourses, unit: 'réservations'),
               const SectionHeader('Top produits'),

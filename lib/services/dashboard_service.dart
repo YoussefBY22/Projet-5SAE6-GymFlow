@@ -1,5 +1,7 @@
 import '../models/course.dart';
 import '../models/enums.dart';
+import '../models/sentiment.dart';
+import '../models/user.dart';
 import 'backend.dart';
 import 'progress_service.dart';
 
@@ -219,4 +221,84 @@ class DashboardService {
       workouts: _b.workouts.all.where((w) => w.authorId == me.id).length,
     );
   }
+
+  // ------------------------------------------------- Satisfaction (IA)
+
+  /// Avis analysés visibles par le staff connecté : un coach ne voit que
+  /// ses cours, l'admin tous les cours.
+  Iterable<Reservation> _analyzedReviews() {
+    final me = _b.requireRole(Backend.staff);
+    final courseIds = _b.courses.all
+        .where((c) => me.isAdmin || c.coachId == me.id)
+        .map((c) => c.id)
+        .toSet();
+    return _b.reservations.all.where(
+      (r) => r.sentiment != null && courseIds.contains(r.courseId),
+    );
+  }
+
+  SatisfactionStat _stat(Iterable<Reservation> reviews) {
+    var pos = 0, neu = 0, neg = 0;
+    for (final r in reviews) {
+      switch (r.sentiment!.tone) {
+        case SentimentTone.positive:
+          pos++;
+        case SentimentTone.neutral:
+          neu++;
+        case SentimentTone.negative:
+          neg++;
+      }
+    }
+    return SatisfactionStat(positive: pos, neutral: neu, negative: neg);
+  }
+
+  /// Score global (coach : ses cours ; admin : tout le club).
+  SatisfactionStat satisfaction() => _stat(_analyzedReviews());
+
+  /// Score par cours ayant au moins un avis analysé, du plus commenté au
+  /// moins commenté. Tous les cours notés sont inclus, quelle que soit
+  /// la date de leurs avis ([limit] facultatif).
+  List<(Course, SatisfactionStat)> satisfactionByCourse({int? limit}) {
+    final byCourse = <String, List<Reservation>>{};
+    for (final r in _analyzedReviews()) {
+      (byCourse[r.courseId] ??= []).add(r);
+    }
+    final list = [
+      for (final e in byCourse.entries)
+        if (_b.courses.byId(e.key) case final c?) (c, _stat(e.value)),
+    ]..sort((a, b) => b.$2.total.compareTo(a.$2.total));
+    return limit == null ? list : list.take(limit).toList();
+  }
+
+  /// Score par coach (administrateur uniquement).
+  List<(AppUser, SatisfactionStat)> satisfactionByCoach() {
+    _b.requireRole(Backend.adminOnly);
+    final byCoach = <String, List<Reservation>>{};
+    for (final r in _analyzedReviews()) {
+      final c = _b.courses.byId(r.courseId);
+      if (c != null) (byCoach[c.coachId] ??= []).add(r);
+    }
+    return [
+      for (final e in byCoach.entries)
+        if (_b.users.byId(e.key) case final u?) (u, _stat(e.value)),
+    ]..sort((a, b) => b.$2.rate.compareTo(a.$2.rate));
+  }
+}
+
+/// Répartition des avis analysés et pourcentage d'avis positifs.
+class SatisfactionStat {
+  const SatisfactionStat({
+    required this.positive,
+    required this.neutral,
+    required this.negative,
+  });
+
+  final int positive;
+  final int neutral;
+  final int negative;
+
+  int get total => positive + neutral + negative;
+
+  /// Part des avis positifs (0 à 1) ; 0 s'il n'y a aucun avis.
+  double get rate => total == 0 ? 0 : positive / total;
 }
