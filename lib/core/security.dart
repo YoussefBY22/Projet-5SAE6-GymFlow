@@ -69,6 +69,37 @@ class PasswordHasher {
     return Uint8List.fromList(out.toBytes().sublist(0, keyLength));
   }
 
+  /// Même empreinte que [hash], mais rend la main à la boucle d'événements
+  /// toutes les [yieldEvery] itérations : sur le web (un seul fil), l'écran
+  /// reste affiché et animé pendant le calcul au lieu de geler la page.
+  Future<String> hashAsync(
+    String password,
+    String salt, {
+    int? rounds,
+    int yieldEvery = 1000,
+  }) async {
+    final hmac = Hmac(sha256, utf8.encode(password));
+    final saltBytes = base64Decode(salt);
+    final n = rounds ?? iterations;
+    final out = BytesBuilder();
+    var block = 1;
+    while (out.length < _keyLength) {
+      final blockIndex = Uint8List(4)..buffer.asByteData().setUint32(0, block);
+      var u = hmac.convert([...saltBytes, ...blockIndex]).bytes;
+      final t = Uint8List.fromList(u);
+      for (var i = 1; i < n; i++) {
+        if (i % yieldEvery == 0) await Future<void>.delayed(Duration.zero);
+        u = hmac.convert(u).bytes;
+        for (var j = 0; j < t.length; j++) {
+          t[j] ^= u[j];
+        }
+      }
+      out.add(t);
+      block++;
+    }
+    return base64Encode(out.toBytes().sublist(0, _keyLength));
+  }
+
   /// Comparaison en temps constant (évite les attaques temporelles).
   static bool constantTimeEquals(String a, String b) {
     if (a.length != b.length) return false;

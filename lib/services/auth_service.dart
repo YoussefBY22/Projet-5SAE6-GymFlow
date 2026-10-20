@@ -76,6 +76,35 @@ class AuthService extends ChangeNotifier {
     await _b.credentials.save(cred);
   }
 
+  /// Mots de passe du jeu de démonstration (réservé au `SeedService`).
+  ///
+  /// Ces mots de passe sont publics (écran de connexion, README) : les
+  /// comptes qui partagent le même mot de passe partagent donc un même sel
+  /// et une même empreinte, ce qui ne révèle rien de plus. On calcule ainsi
+  /// 3 empreintes au lieu d'une par compte, sans bloquer l'affichage
+  /// ([PasswordHasher.hashAsync]). Les comptes créés par inscription
+  /// gardent un sel propre ([setPassword]).
+  Future<void> setDemoPasswords(Map<String, String> passwordByUserId) async {
+    final byPassword = <String, (String, String)>{};
+    final creds = <Credential>[];
+    for (final e in passwordByUserId.entries) {
+      final (salt, hash) = byPassword[e.value] ??= await () async {
+        final salt = hasher.newSalt();
+        return (salt, await hasher.hashAsync(e.value, salt));
+      }();
+      creds.add(
+        Credential(
+          userId: e.key,
+          hash: hash,
+          salt: salt,
+          iterations: hasher.iterations,
+          sessionDigest: _b.credentials.byId(e.key)?.sessionDigest,
+        ),
+      );
+    }
+    await _b.credentials.saveAll(creds);
+  }
+
   AppUser? _findByEmail(String email) {
     final e = email.trim().toLowerCase();
     for (final u in _b.users.all) {
