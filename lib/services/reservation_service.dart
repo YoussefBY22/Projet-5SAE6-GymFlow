@@ -1,6 +1,8 @@
+import '../core/booking_code.dart';
 import '../core/config.dart';
 import '../core/errors.dart';
 import '../core/formatters.dart';
+import '../core/ticket_qr.dart';
 import '../models/course.dart';
 import '../models/enums.dart';
 import '../models/user.dart';
@@ -88,6 +90,7 @@ class ReservationService {
       userId: me.id,
       status: full ? ReservationStatus.waitlisted : ReservationStatus.confirmed,
       createdAt: now,
+      bookingCode: newBookingCode(),
     );
     await _b.reservations.save(r);
     if (full) {
@@ -101,6 +104,9 @@ class ReservationService {
       );
     } else {
       await _confirmSideEffects(r, c);
+      // Email de confirmation en arrière-plan : la réservation n'attend
+      // jamais EmailJS et n'échoue jamais à cause de lui.
+      _b.email.sendInBackground(r.id);
     }
     _b.bus.emit();
     return r;
@@ -155,8 +161,12 @@ class ReservationService {
     var free = c.capacity - _b.courseService.confirmedCount(courseId);
     for (final next in _waitlist(courseId)) {
       if (free <= 0) break;
-      final promoted = next.copyWith(status: ReservationStatus.confirmed);
+      final promoted = next.copyWith(
+        status: ReservationStatus.confirmed,
+        bookingCode: next.bookingCode ?? newBookingCode(),
+      );
       await _b.reservations.save(promoted);
+      _b.email.sendInBackground(promoted.id);
       await _b.notifications.scheduleCourseReminders(promoted, c);
       await _b.notifications.notify(
         next.userId,
@@ -213,9 +223,50 @@ class ReservationService {
         'La présence se marque à partir de 15 min avant le cours.',
       );
     }
-    await _b.reservations.save(r.copyWith(attended: attended));
-    _b.bus.emit();
+    await applyAttendance(r, attended);
   }
+
+  /// Enregistrement commun de la présence (pointage manuel et validation
+  /// par code). Les contrôles de droits et de fenêtre horaire sont faits
+  /// par l'appelant ([markAttendance], `CheckInService.validate`).
+  Future<Reservation> applyAttendance(
+    Reservation r,
+    bool attended, {
+    DateTime? checkedInAt,
+    String? checkedInBy,
+  }) async {
+    final saved = await _b.reservations.save(
+      r.copyWith(
+        attended: attended,
+        checkedInAt: checkedInAt,
+        checkedInBy: checkedInBy,
+      ),
+    );
+    _b.bus.emit();
+    return saved;
+  }
+
+  /// Texte encodé dans le QR du ticket (écran « Mon ticket » et email) :
+  /// code, cours, date, coach et salle, sans donnée sur l'abonné.
+  String? ticketQrText(Reservation r) {
+    final code = r.bookingCode;
+    final c = _b.courses.byId(r.courseId);
+    if (code == null || c == null) return null;
+    return TicketQr.text(
+      code: code,
+      courseTitle: c.title,
+      start: c.startAt,
+      end: c.endAt,
+      coachName: _b.users.byId(c.coachId)?.fullName ?? 'GymFlow',
+      room: c.room,
+    );
+  }
+
+  /// Nouveau code de ticket, unique parmi toutes les réservations.
+  String newBookingCode() => BookingCode.generate({
+    for (final r in _b.reservations.all)
+      if (r.bookingCode != null) r.bookingCode!,
+  });
 
   /// Note (1 à 5 étoiles) après un cours terminé.
   Future<void> rate(String reservationId, int stars, {String? comment}) async {
@@ -238,11 +289,28 @@ class ReservationService {
     if (stars < 1 || stars > 5) {
       throw const ValidationException('Note : de 1 à 5 étoiles.');
     }
+    final text = comment?.trim() ?? r.comment ?? '';
+    final changed = text != (r.comment?.trim() ?? '');
     await _b.reservations.save(
-      r.copyWith(rating: stars, comment: comment?.trim()),
+      r.copyWith(
+        rating: stars,
+        comment: comment?.trim(),
+        clearSentiment: changed || text.isEmpty,
+      ),
     );
+    // Analyse du ton en arrière-plan : l'avis est déjà enregistré, la
+    // réponse de l'IA (jusqu'à 10 s) ne retarde jamais l'envoi.
+    if (text.isNotEmpty && (changed || r.sentiment == null)) {
+      lastAnalysis = _b.sentiment
+          .analyzeReview(r.id)
+          .then<void>((_) {}, onError: (_) {});
+    }
     _b.bus.emit();
   }
+
+  /// Dernière analyse de sentiment lancée par [rate] (attendue dans les
+  /// tests ; l'interface, elle, se met à jour via le bus de données).
+  Future<void>? lastAnalysis;
 
   /// Prochain cours confirmé de l'abonné (accueil).
   (Reservation, Course)? nextBooking(String userId) {

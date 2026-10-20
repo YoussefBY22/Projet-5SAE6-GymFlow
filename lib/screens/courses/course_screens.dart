@@ -17,6 +17,8 @@ import '../../widgets/cards.dart';
 import '../../widgets/common.dart';
 import '../../widgets/filter_bar.dart';
 import '../../widgets/pickers.dart';
+import '../../widgets/sentiment_widgets.dart';
+import 'ticket_screen.dart';
 import '../shell/main_shell.dart';
 import '../training/workout_screens.dart' show coverAppBar;
 
@@ -273,10 +275,48 @@ class _CourseList extends StatelessWidget {
       top: Gap.s,
       spacing: Gap.s,
       itemCount: courses.length,
-      itemBuilder: (_, i) => FadeSlideIn(
+      itemBuilder: (context, i) => FadeSlideIn(
         index: i,
-        child: CourseCard(course: courses[i]),
+        child: view == CourseView.myBookings
+            ? _BookingWithTicket(course: courses[i])
+            : CourseCard(course: courses[i]),
       ),
+    );
+  }
+}
+
+/// Carte d'un cours réservé avec l'accès direct au ticket QR.
+class _BookingWithTicket extends StatelessWidget {
+  const _BookingWithTicket({required this.course});
+  final Course course;
+
+  @override
+  Widget build(BuildContext context) {
+    final b = Backend.I;
+    final me = b.auth.currentUser;
+    final r = me == null
+        ? null
+        : b.reservationService.activeFor(course.id, me.id);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        CourseCard(course: course),
+        if (r != null && r.status == ReservationStatus.confirmed)
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              key: ValueKey('ticket_${course.id}'),
+              onPressed: () =>
+                  Navigator.pushNamed(context, Routes.ticket, arguments: r.id),
+              icon: const Icon(Icons.qr_code_2),
+              label: Text(
+                r.checkedInAt != null
+                    ? 'Mon ticket · présence validée ✅'
+                    : 'Mon ticket',
+              ),
+            ),
+          ),
+      ],
     );
   }
 }
@@ -300,49 +340,43 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
     if (mounted) setState(() => _busy = false);
   }
 
+  /// Réservation, puis message du résultat de l'email de confirmation
+  /// (envoyé en arrière-plan : la réservation ne l'attend pas).
+  Future<void> _book(String courseId, bool full) async {
+    final b = Backend.I;
+    Reservation? r;
+    setState(() => _busy = true);
+    final ok = await runAction(
+      context,
+      () async =>
+          r = await b.reservationService.book(courseId, joinWaitlist: full),
+      success: full
+          ? 'Inscrit en liste d\'attente.'
+          : 'Place réservée ! Rappels programmés.',
+    );
+    if (mounted) setState(() => _busy = false);
+    final booked = r;
+    if (!ok || booked == null) return;
+    final delivery = await b.email.pendingFor(booked.id);
+    if (delivery != null && mounted) {
+      showSnack(
+        context,
+        emailMessage(delivery),
+        error: delivery.status != EmailStatus.sent,
+      );
+    }
+  }
+
   Future<void> _rate(Reservation r) async {
-    var stars = r.rating ?? 5;
-    final comment = TextEditingController(text: r.comment ?? '');
-    final ok = await showDialog<bool>(
+    final res = await showDialog<(int, String)>(
       context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setLocal) => AlertDialog(
-          title: const Text('Noter ce cours'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              RatingStars(
-                value: stars.toDouble(),
-                size: 34,
-                onChanged: (v) => setLocal(() => stars = v),
-              ),
-              const SizedBox(height: Gap.m),
-              TextField(
-                controller: comment,
-                maxLength: 200,
-                decoration: const InputDecoration(
-                  labelText: 'Commentaire (facultatif)',
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Annuler'),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(minimumSize: const Size(96, 44)),
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Envoyer'),
-            ),
-          ],
-        ),
+      builder: (_) => _RateDialog(
+        initialStars: r.rating ?? 5,
+        initialComment: r.comment ?? '',
       ),
     );
-    final text = comment.text;
-    comment.dispose();
-    if (ok != true || !mounted) return;
+    if (res == null || !mounted) return;
+    final (stars, text) = res;
     await _act(
       () => Backend.I.reservationService.rate(r.id, stars, comment: text),
       'Merci pour votre note !',
@@ -361,6 +395,25 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
       () => Backend.I.courseService.cancel(c.id, reason),
       'Cours annulé, inscrits prévenus.',
     );
+  }
+
+  /// Avis commentés du cours avec leur ton (coach du cours et admin).
+  List<Widget> _reviews(Backend b, String courseId) {
+    final reviews = b.reservations.where(
+      (r) =>
+          r.courseId == courseId &&
+          r.rating != null &&
+          (r.comment?.trim().isNotEmpty ?? false),
+    )..sort((a, c) => c.createdAt.compareTo(a.createdAt));
+    if (reviews.isEmpty) return const [];
+    return [
+      SectionHeader('Avis des participants (${reviews.length})'),
+      for (final r in reviews)
+        Padding(
+          padding: const EdgeInsets.only(bottom: Gap.s),
+          child: ReviewTile(r),
+        ),
+    ];
   }
 
   @override
@@ -414,12 +467,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                   icon: full ? Icons.hourglass_top : Icons.event_available,
                   color: full ? AppColors.navy : AppColors.red,
                   loading: _busy,
-                  onPressed: () => _act(
-                    () => b.reservationService.book(c.id, joinWaitlist: full),
-                    full
-                        ? 'Inscrit en liste d\'attente.'
-                        : 'Place réservée ! Rappels programmés.',
-                  ),
+                  onPressed: () => _book(c.id, full),
                 );
               }
             } else {
@@ -443,6 +491,19 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                     ),
                   ),
                   const SizedBox(height: Gap.s),
+                  if (active.status == ReservationStatus.confirmed) ...[
+                    ElevatedButton.icon(
+                      key: const Key('open_ticket'),
+                      onPressed: () => Navigator.pushNamed(
+                        context,
+                        Routes.ticket,
+                        arguments: active.id,
+                      ),
+                      icon: const Icon(Icons.qr_code_2),
+                      label: const Text('Mon ticket'),
+                    ),
+                    const SizedBox(height: Gap.s),
+                  ],
                   if (active.status == ReservationStatus.confirmed)
                     OutlinedButton.icon(
                       onPressed: () async {
@@ -517,16 +578,32 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                   )
                 : GfCard(
                     color: AppColors.cream,
-                    child: Row(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Votre note', style: AppText.subtitle(size: 14)),
-                        const Spacer(),
-                        RatingStars(value: latest.rating!.toDouble()),
-                        IconButton(
-                          tooltip: 'Modifier',
-                          icon: const Icon(Icons.edit),
-                          onPressed: () => _rate(latest),
+                        Row(
+                          children: [
+                            Text(
+                              'Votre note',
+                              style: AppText.subtitle(size: 14),
+                            ),
+                            const Spacer(),
+                            RatingStars(value: latest.rating!.toDouble()),
+                            IconButton(
+                              tooltip: 'Modifier',
+                              icon: const Icon(Icons.edit),
+                              onPressed: () => _rate(latest),
+                            ),
+                          ],
                         ),
+                        if (latest.comment?.trim().isNotEmpty ?? false) ...[
+                          Text(
+                            '« ${latest.comment!.trim()} »',
+                            style: AppText.body(size: 13),
+                          ),
+                          const SizedBox(height: Gap.xs),
+                          ReviewSentiment(latest),
+                        ],
                       ],
                     ),
                   );
@@ -702,6 +779,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                         label: Text('Inscrits et présences ($confirmed)'),
                       ),
                     ],
+                    if (canManage) ..._reviews(b, c.id),
                     const SizedBox(height: Gap.xl),
                   ],
                 ),
@@ -1075,7 +1153,20 @@ class AttendanceScreen extends StatelessWidget {
             c.startAt != null &&
             !b.now().isBefore(c.startAt!.subtract(const Duration(minutes: 15)));
         return Scaffold(
-          appBar: AppBar(title: Text('Inscrits · ${c.title}')),
+          appBar: AppBar(
+            title: Text('Inscrits · ${c.title}'),
+            actions: [
+              IconButton(
+                tooltip: 'Valider par code',
+                icon: const Icon(Icons.qr_code_scanner),
+                onPressed: () => Navigator.pushNamed(
+                  context,
+                  Routes.checkIn,
+                  arguments: c.id,
+                ),
+              ),
+            ],
+          ),
           body: list.isEmpty
               ? const EmptyState(
                   icon: Icons.group_off,
@@ -1085,6 +1176,17 @@ class AttendanceScreen extends StatelessWidget {
               : ListView(
                   padding: pagePadding(context, maxWidth: 900, bottom: Gap.m),
                   children: [
+                    ElevatedButton.icon(
+                      key: const Key('open_checkin'),
+                      onPressed: () => Navigator.pushNamed(
+                        context,
+                        Routes.checkIn,
+                        arguments: c.id,
+                      ),
+                      icon: const Icon(Icons.qr_code_scanner),
+                      label: const Text('Valider par code (ticket QR)'),
+                    ),
+                    const SizedBox(height: Gap.s),
                     if (!canMark)
                       const GfCard(
                         color: AppColors.cream,
@@ -1282,4 +1384,61 @@ class _NotificationTile extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Fenêtre de notation. Elle possède son champ de texte : le contrôleur
+/// n'est libéré qu'à la fermeture complète (après l'animation de sortie).
+class _RateDialog extends StatefulWidget {
+  const _RateDialog({required this.initialStars, required this.initialComment});
+
+  final int initialStars;
+  final String initialComment;
+
+  @override
+  State<_RateDialog> createState() => _RateDialogState();
+}
+
+class _RateDialogState extends State<_RateDialog> {
+  late int _stars = widget.initialStars;
+  late final _comment = TextEditingController(text: widget.initialComment);
+
+  @override
+  void dispose() {
+    _comment.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    title: const Text('Noter ce cours'),
+    content: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        RatingStars(
+          value: _stars.toDouble(),
+          size: 34,
+          onChanged: (v) => setState(() => _stars = v),
+        ),
+        const SizedBox(height: Gap.m),
+        TextField(
+          controller: _comment,
+          maxLength: 200,
+          decoration: const InputDecoration(
+            labelText: 'Commentaire (facultatif)',
+          ),
+        ),
+      ],
+    ),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.pop(context),
+        child: const Text('Annuler'),
+      ),
+      ElevatedButton(
+        style: ElevatedButton.styleFrom(minimumSize: const Size(96, 44)),
+        onPressed: () => Navigator.pop(context, (_stars, _comment.text)),
+        child: const Text('Envoyer'),
+      ),
+    ],
+  );
 }

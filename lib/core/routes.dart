@@ -7,6 +7,8 @@ import '../screens/admin/shop_admin_screens.dart';
 import '../screens/auth/auth_screens.dart';
 import '../screens/auth/intro_tour.dart';
 import '../screens/community/community_screens.dart';
+import '../screens/courses/checkin_screen.dart';
+import '../screens/courses/ticket_screen.dart';
 import '../screens/privacy/privacy_screens.dart';
 import '../screens/auth/splash_onboarding.dart';
 import '../screens/courses/course_screens.dart';
@@ -49,6 +51,8 @@ class Routes {
   static const courseDetail = '/courses/detail';
   static const courseForm = '/courses/form';
   static const attendance = '/courses/attendance';
+  static const ticket = '/courses/ticket';
+  static const checkIn = '/courses/checkin';
   static const notifications = '/notifications';
 
   static const product = '/shop/product';
@@ -126,6 +130,15 @@ class Routes {
     courseDetail: _RouteDef((a) => CourseDetailScreen(courseId: a! as String)),
     courseForm: _RouteDef(
       (a) => CourseFormScreen(courseId: a as String?),
+      roles: _staff,
+    ),
+    // Ticket : l'écran vérifie que la réservation appartient à l'abonné.
+    ticket: _RouteDef(
+      (a) => TicketScreen(reservationId: a! as String),
+      roles: _member,
+    ),
+    checkIn: _RouteDef(
+      (a) => CheckInScreen(courseId: a as String?),
       roles: _staff,
     ),
     attendance: _RouteDef(

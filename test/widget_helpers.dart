@@ -4,6 +4,7 @@ import 'package:gymflow/app.dart';
 import 'package:gymflow/core/routes.dart';
 import 'package:gymflow/services/backend.dart';
 import 'package:gymflow/widgets/common.dart';
+import 'package:http/http.dart' as http;
 
 import 'helpers.dart';
 
@@ -13,12 +14,13 @@ Future<Backend> pumpApp(
   WidgetTester tester, {
   String route = Routes.login,
   String? loginEmail,
+  http.Client? httpClient,
 }) async {
   NetImage.networkEnabled = false;
   tester.view.physicalSize = const Size(1080, 2340);
   tester.view.devicePixelRatio = 3;
   addTearDown(tester.view.reset);
-  final b = await makeBackend();
+  final b = await makeBackend(httpClient: httpClient);
   if (loginEmail != null) await loginAs(b, loginEmail);
   await tester.pumpWidget(GymFlowApp(initialRoute: route));
   await settle(tester);

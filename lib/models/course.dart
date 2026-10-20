@@ -1,5 +1,6 @@
 import 'enums.dart';
 import 'json.dart';
+import 'sentiment.dart';
 
 /// Cours collectif. Le statut est calculé à partir de la date :
 /// sans date → « À planifier », date future → « Programmé »,
@@ -136,6 +137,57 @@ class Course {
   );
 }
 
+/// Statut de l'email de confirmation d'une réservation.
+enum EmailStatus {
+  sent('Email envoyé'),
+  failed('Email non envoyé'),
+  notConfigured('Email non configuré');
+
+  const EmailStatus(this.label);
+  final String label;
+}
+
+/// Dernier envoi de l'email de confirmation (EmailJS). Aucune clé n'y
+/// figure : seulement l'adresse réellement utilisée et une raison lisible.
+class EmailDelivery {
+  const EmailDelivery({
+    required this.status,
+    required this.attemptedAt,
+    this.sentAt,
+    this.to,
+    this.error,
+  });
+
+  final EmailStatus status;
+
+  /// Dernière tentative (sert à limiter les renvois).
+  final DateTime attemptedAt;
+  final DateTime? sentAt;
+
+  /// Adresse réellement utilisée (destinataire de démo le cas échéant).
+  final String? to;
+  final String? error;
+
+  Json toJson() => {
+    'status': status.name,
+    'attemptedAt': dateToJson(attemptedAt),
+    'sentAt': dateToJson(sentAt),
+    'to': to,
+    'error': error,
+  };
+
+  static EmailDelivery? fromJson(Object? v) {
+    if (v is! Map) return null;
+    return EmailDelivery(
+      status: enumFrom(EmailStatus.values, v['status'], EmailStatus.failed),
+      attemptedAt: dateOr(v['attemptedAt'], DateTime(2026)),
+      sentAt: dateFromJson(v['sentAt']),
+      to: v['to'] as String?,
+      error: v['error'] as String?,
+    );
+  }
+}
+
 /// Réservation d'un abonné sur un cours.
 class Reservation {
   const Reservation({
@@ -147,6 +199,11 @@ class Reservation {
     this.attended,
     this.rating,
     this.comment,
+    this.sentiment,
+    this.bookingCode,
+    this.email,
+    this.checkedInAt,
+    this.checkedInBy,
   });
 
   final String id;
@@ -162,6 +219,21 @@ class Reservation {
   final int? rating;
   final String? comment;
 
+  /// Ton du commentaire, analysé une seule fois à l'envoi
+  /// (`null` = pas de commentaire, analyse en cours ou ancien avis).
+  final SentimentResult? sentiment;
+
+  /// Code du ticket QR (`GF-XXXX-XXXX`), invalide une fois la réservation
+  /// annulée.
+  final String? bookingCode;
+
+  /// Email de confirmation (EmailJS) ; `null` = jamais tenté.
+  final EmailDelivery? email;
+
+  /// Présence validée par code / QR : heure et validateur.
+  final DateTime? checkedInAt;
+  final String? checkedInBy;
+
   bool get isActive => status != ReservationStatus.cancelled;
 
   Reservation copyWith({
@@ -169,6 +241,12 @@ class Reservation {
     bool? attended,
     int? rating,
     String? comment,
+    SentimentResult? sentiment,
+    bool clearSentiment = false,
+    String? bookingCode,
+    EmailDelivery? email,
+    DateTime? checkedInAt,
+    String? checkedInBy,
   }) => Reservation(
     id: id,
     courseId: courseId,
@@ -178,6 +256,11 @@ class Reservation {
     attended: attended ?? this.attended,
     rating: rating ?? this.rating,
     comment: comment ?? this.comment,
+    sentiment: clearSentiment ? null : (sentiment ?? this.sentiment),
+    bookingCode: bookingCode ?? this.bookingCode,
+    email: email ?? this.email,
+    checkedInAt: checkedInAt ?? this.checkedInAt,
+    checkedInBy: checkedInBy ?? this.checkedInBy,
   );
 
   Json toJson() => {
@@ -189,6 +272,11 @@ class Reservation {
     'attended': attended,
     'rating': rating,
     'comment': comment,
+    'sentiment': sentiment?.toJson(),
+    'bookingCode': bookingCode,
+    'email': email?.toJson(),
+    'checkedInAt': dateToJson(checkedInAt),
+    'checkedInBy': checkedInBy,
   };
 
   factory Reservation.fromJson(Json j) => Reservation(
@@ -204,5 +292,10 @@ class Reservation {
     attended: j['attended'] as bool?,
     rating: toIntOrNull(j['rating']),
     comment: j['comment'] as String?,
+    sentiment: SentimentResult.fromJson(j['sentiment']),
+    bookingCode: j['bookingCode'] as String?,
+    email: EmailDelivery.fromJson(j['email']),
+    checkedInAt: dateFromJson(j['checkedInAt']),
+    checkedInBy: j['checkedInBy'] as String?,
   );
 }

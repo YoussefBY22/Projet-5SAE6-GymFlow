@@ -17,9 +17,11 @@ import 'announcement_service.dart';
 import 'audit_service.dart';
 import 'auth_service.dart';
 import 'cart_service.dart';
+import 'checkin_service.dart';
 import 'community_service.dart';
 import 'course_service.dart';
 import 'dashboard_service.dart';
+import 'email_service.dart';
 import 'exercise_service.dart';
 import 'library_service.dart';
 import 'media_storage.dart';
@@ -32,6 +34,7 @@ import 'product_service.dart';
 import 'progress_service.dart';
 import 'reservation_service.dart';
 import 'seed/seed_service.dart';
+import 'sentiment_service.dart';
 import 'training_log_service.dart';
 import 'user_service.dart';
 import 'wger_api.dart';
@@ -59,6 +62,12 @@ class Backend {
     required this.clock,
     required this.passwordIterations,
     PaymentGateway? payment,
+    String? geminiApiKey,
+    String? hfToken,
+    String? emailJsServiceId,
+    String? emailJsTemplateId,
+    String? emailJsPublicKey,
+    String? emailJsDemoRecipient,
   }) {
     users = _repo(
       Collections.users,
@@ -164,6 +173,19 @@ class Backend {
     wger = WgerApi(this);
     privacy = PrivacyService(this);
     community = CommunityService(this);
+    sentiment = SentimentService(
+      this,
+      geminiApiKey: geminiApiKey,
+      hfToken: hfToken,
+    );
+    email = EmailService(
+      this,
+      serviceId: emailJsServiceId,
+      templateId: emailJsTemplateId,
+      publicKey: emailJsPublicKey,
+      demoRecipient: emailJsDemoRecipient,
+    );
+    checkIn = CheckInService(this);
     media = MediaStorage();
     this.payment = payment ?? PaymentGateway.fromConfig(httpClient);
   }
@@ -189,6 +211,12 @@ class Backend {
     http.Client? httpClient,
     DateTime Function()? clock,
     PaymentGateway? payment,
+    String? geminiApiKey,
+    String? hfToken,
+    String? emailJsServiceId,
+    String? emailJsTemplateId,
+    String? emailJsPublicKey,
+    String? emailJsDemoRecipient,
     bool seed = true,
     int passwordIterations = PasswordHasher.defaultIterations,
   }) async {
@@ -201,6 +229,12 @@ class Backend {
       clock: clock ?? DateTime.now,
       passwordIterations: passwordIterations,
       payment: payment,
+      geminiApiKey: geminiApiKey,
+      hfToken: hfToken,
+      emailJsServiceId: emailJsServiceId,
+      emailJsTemplateId: emailJsTemplateId,
+      emailJsPublicKey: emailJsPublicKey,
+      emailJsDemoRecipient: emailJsDemoRecipient,
     );
     _instance = b;
     await store.open();
@@ -261,6 +295,9 @@ class Backend {
   late final WgerApi wger;
   late final PrivacyService privacy;
   late final CommunityService community;
+  late final SentimentService sentiment;
+  late final EmailService email;
+  late final CheckInService checkIn;
   late final MediaStorage media;
   late final PaymentGateway payment;
 

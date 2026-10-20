@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import '../../core/booking_code.dart';
 import '../../core/legal.dart';
 
 import '../../models/content.dart';
@@ -13,6 +14,7 @@ import '../../models/shop.dart';
 import '../../models/user.dart';
 import '../../models/workout.dart';
 import '../backend.dart';
+import '../sentiment_service.dart';
 import 'seed_exercises.dart';
 import 'seed_translations.dart';
 import 'seed_workouts.dart';
@@ -101,22 +103,152 @@ class SeedService {
 
   static const _i18nKey = 'content_i18n';
   static const _i18nVersion = '1';
+  static const _sentimentKey = 'review_sentiment';
+  static const _sentimentVersion = '1';
 
   /// Mise à niveau d'une base déjà remplie (application déjà installée) :
-  /// noms anglais des contenus de démonstration et exemples de créations
-  /// des membres.
+  /// noms anglais des contenus de démonstration, exemples de créations
+  /// des membres et ton des avis déjà publiés.
   Future<void> upgrade() async {
-    if (await _b.store.getMeta(_i18nKey) == _i18nVersion) return;
-    if (_b.users.count > 0) {
-      _now = _b.now();
-      _today = DateTime(_now.year, _now.month, _now.day);
-      await _translateContent();
-      if (_b.users.byId('u_ines') != null &&
-          _b.workouts.byId('w_ines_core') == null) {
-        await _seedMemberCreations();
+    if (await _b.store.getMeta(_i18nKey) != _i18nVersion) {
+      if (_b.users.count > 0) {
+        _now = _b.now();
+        _today = DateTime(_now.year, _now.month, _now.day);
+        await _translateContent();
+        if (_b.users.byId('u_ines') != null &&
+            _b.workouts.byId('w_ines_core') == null) {
+          await _seedMemberCreations();
+        }
       }
+      await _b.store.setMeta(_i18nKey, _i18nVersion);
     }
-    await _b.store.setMeta(_i18nKey, _i18nVersion);
+    if (await _b.store.getMeta(_sentimentKey) != _sentimentVersion) {
+      await _analyzeExistingReviews();
+      await _b.store.setMeta(_sentimentKey, _sentimentVersion);
+    }
+    if (await _b.store.getMeta(_codesKey) != _codesVersion) {
+      await _assignBookingCodes();
+      await _b.store.setMeta(_codesKey, _codesVersion);
+    }
+    await refreshDemoCourse();
+  }
+
+  static const _codesKey = 'booking_codes';
+  static const _codesVersion = '1';
+
+  /// Réservations créées avant les tickets : un code chacune, 100 % local.
+  Future<void> _assignBookingCodes() async {
+    final taken = {
+      for (final r in _b.reservations.all)
+        if (r.bookingCode != null) r.bookingCode!,
+    };
+    final todo = <Reservation>[];
+    for (final r in _b.reservations.all) {
+      if (r.bookingCode != null) continue;
+      final code = BookingCode.generate(taken);
+      taken.add(code);
+      todo.add(r.copyWith(bookingCode: code));
+    }
+    if (todo.isNotEmpty) await _b.reservations.saveAll(todo);
+  }
+
+  // ------------------------------------------------- Cours de démo du jour
+
+  static const demoCourseId = 'c_today';
+  static const demoCourseTitle = 'Pilates express (démo)';
+
+  /// Début du cours de démo : 20 min après [now], arrondi au quart
+  /// d'heure supérieur (la fenêtre de validation, -30 min, est donc
+  /// ouverte dès le lancement).
+  static DateTime demoStart(DateTime now) {
+    final t = now.add(const Duration(minutes: 20));
+    final hour = DateTime(t.year, t.month, t.day, t.hour);
+    final q = ((t.minute + 14) ~/ 15) * 15;
+    return hour.add(Duration(minutes: q));
+  }
+
+  /// Base conservée (Android) : si le cours de démo n'est plus valable
+  /// (autre jour, ou terminé depuis plus de 30 min), il est replacé
+  /// aujourd'hui et ses réservations remises à zéro (Ines confirmée).
+  /// Local, sans réseau ; rien n'est fait si le cours est encore valable.
+  Future<void> refreshDemoCourse() async {
+    final amira = _b.users.byId('u_amira');
+    final ines = _b.users.byId('u_ines');
+    if (amira == null || ines == null) return;
+    final now = _b.now();
+    final existing = _b.courses.byId(demoCourseId);
+    final start = existing?.startAt;
+    if (existing != null &&
+        start != null &&
+        !existing.cancelled &&
+        start.year == now.year &&
+        start.month == now.month &&
+        start.day == now.day &&
+        now.isBefore(existing.endAt!.add(const Duration(minutes: 30)))) {
+      return;
+    }
+    final course =
+        (existing ??
+                Course(
+                  id: demoCourseId,
+                  title: demoCourseTitle,
+                  description:
+                      'Séance de démonstration : réservation, ticket QR et '
+                      'validation de présence par code.',
+                  category: CourseCategory.pilates,
+                  level: Level.beginner,
+                  coachId: amira.id,
+                  room: 'Studio Zen',
+                  capacity: 12,
+                  durationMin: 60,
+                  createdAt: now,
+                ))
+            .copyWith(startAt: demoStart(now), cancelled: false);
+    await _b.courses.save(course);
+    final taken = {
+      for (final r in _b.reservations.all)
+        if (r.bookingCode != null) r.bookingCode!,
+    };
+    final mine = _b.reservations.where((r) => r.courseId == demoCourseId);
+    final reset = [
+      for (final r in mine)
+        Reservation(
+          id: r.id,
+          courseId: r.courseId,
+          userId: r.userId,
+          status: ReservationStatus.confirmed,
+          createdAt: r.createdAt,
+          bookingCode: r.bookingCode ?? BookingCode.generate(taken),
+        ),
+    ];
+    if (!reset.any((r) => r.userId == ines.id)) {
+      reset.add(
+        Reservation(
+          id: 'r_demo_ines',
+          courseId: demoCourseId,
+          userId: ines.id,
+          status: ReservationStatus.confirmed,
+          createdAt: now,
+          bookingCode: BookingCode.generate(taken),
+        ),
+      );
+    }
+    await _b.reservations.saveAll(reset);
+  }
+
+  /// Avis enregistrés avant l'analyse de sentiment : ton calculé par
+  /// mots-clés, sans appel réseau au démarrage. Les nouveaux avis, eux,
+  /// passent par l'IA.
+  Future<void> _analyzeExistingReviews() async {
+    final now = _b.now();
+    final todo = [
+      for (final r in _b.reservations.all)
+        if (r.sentiment == null && (r.comment?.trim().isNotEmpty ?? false))
+          r.copyWith(
+            sentiment: LocalSentimentAnalyzer.analyze(r.comment!, now),
+          ),
+    ];
+    if (todo.isNotEmpty) await _b.reservations.saveAll(todo);
   }
 
   DateTime _day(int offset, [int hour = 0, int minute = 0]) =>
@@ -365,8 +497,10 @@ class SeedService {
     );
     for (final e in users.entries) {
       _ids[e.key] = e.value.$1.id;
-      await _b.auth.setPassword(e.value.$1.id, e.value.$2);
     }
+    await _b.auth.setDemoPasswords({
+      for (final e in users.values) e.$1.id: e.$2,
+    });
     await _b.auditRepo.save(
       AuditEntry(
         id: 'a_seed_walid',
@@ -952,6 +1086,22 @@ class SeedService {
         _day(11, 19),
         hiit,
       ),
+      // Démo du jour (soutenance) : commence ~20 min après le lancement.
+      c(
+        'today',
+        demoCourseTitle,
+        'Séance de démonstration : réservation, ticket QR et validation '
+            'de présence par code.',
+        CourseCategory.pilates,
+        Level.beginner,
+        'amira',
+        'Studio Zen',
+        12,
+        60,
+        demoStart(_now),
+        pilates,
+        createdDaysAgo: 1,
+      ),
       // À planifier (coach affecté, sans date)
       c(
         'p1',
@@ -999,6 +1149,7 @@ class SeedService {
     await _b.courses.saveAll(courses);
 
     var n = 0;
+    final codes = <String>{};
     Future<void> book(
       String courseKey,
       String userKey, {
@@ -1019,7 +1170,12 @@ class SeedService {
         attended: attended,
         rating: rating,
         comment: comment,
+        bookingCode: BookingCode.generate(codes),
+        sentiment: comment == null
+            ? null
+            : LocalSentimentAnalyzer.analyze(comment, _now),
       );
+      codes.add(r.bookingCode!);
       await _b.reservations.save(r);
       if (status == ReservationStatus.confirmed &&
           course.statusAt(_now) == CourseStatus.scheduled) {
@@ -1066,7 +1222,13 @@ class SeedService {
     await book('d4', 'rami', attended: true, rating: 5);
     await book('d5', 'leila', attended: true, rating: 5);
     await book('d5', 'salma', attended: true, rating: 4);
-    await book('d5', 'omar', attended: true, rating: 3);
+    await book(
+      'd5',
+      'omar',
+      attended: true,
+      rating: 3,
+      comment: 'Cours correct mais un peu décevant, trop de monde.',
+    );
     await book('d6', 'rami', attended: true, rating: 4);
     await book('d6', 'ines', attended: true, rating: 5);
     await book('d6', 'hedi', attended: true, rating: 4);
@@ -1074,6 +1236,8 @@ class SeedService {
     // Cours programmés : réservations confirmées.
     await book('s1', 'leila');
     await book('s1', 'ines');
+    await book('today', 'ines', daysBefore: 1);
+    await book('today', 'leila', daysBefore: 1);
     await book('s2', 'rami');
     await book('s2', 'salma');
     // Spinning Sunrise : complet (6/6) + liste d'attente.
