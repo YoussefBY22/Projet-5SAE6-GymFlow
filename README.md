@@ -66,7 +66,7 @@ flutter run -d <id_appareil>
 Sur ordinateur (navigateur, données de démonstration en mémoire, remises à zéro à chaque rechargement) :
 
 ```bash
-flutter run -d chrome
+flutter run -d chrome --release --web-port 8080
 ```
 
 APK de débogage (fichier `build/app/outputs/flutter-apk/app-debug.apk`, installable à la main) :
@@ -82,6 +82,53 @@ Pour utiliser Stripe Checkout en mode test : copier `secrets.example.json` en `s
 ```bash
 flutter run -d <id_appareil> --dart-define-from-file=secrets.json
 ```
+
+### Analyse de sentiment des avis (IA, facultatif)
+Les avis commentés reçoivent un ton (😊 / 😐 / 😞). Fournisseurs, dans cet ordre, chacun facultatif dans `secrets.json` :
+
+| Clé | Rôle |
+|---|---|
+| `GEMINI_API_KEY` | **Google Gemini**, fournisseur principal (gratuit, clé créée sur Google AI Studio) |
+| `GEMINI_MODEL` | Modèle Gemini, facultatif ; par défaut `gemini-3.7-flash` |
+| `GEMINI_FALLBACK_MODEL` | Modèle Gemini de secours, facultatif ; par défaut `gemini-flash-latest` |
+| `HF_TOKEN` | **Hugging Face** `tabularisai/multilingual-sentiment-analysis`, secours (jeton *fine-grained* limité à « Inference Providers » ; nécessite des crédits, sinon HTTP 402) |
+
+Gemini : sur 429 (quota), 503 (surcharge) ou délai dépassé, un nouvel essai est fait après une courte pause, puis le modèle de secours est essayé. Si aucun fournisseur ne répond, l'analyse se fait **localement** par mots-clés (français et anglais) et le badge indique « local ». Un appui ou un survol sur le badge affiche la raison (ex. « Gemini (gemini-3.7-flash) : quota dépassé (429) »), aussi en `--release` et jamais avec les clés. Le bouton **« Réanalyser avec l'IA »** relance l'analyse (pour l'auteur de l'avis, le coach du cours et l'admin). Démo sur le PC :
+
+```bash
+flutter run -d chrome --release --web-port 8080 --dart-define-from-file=secrets.json
+```
+
+⚠️ Ne **jamais** compiler la version web publique (`docs/`) avec `secrets.json` : les clés seraient lisibles dans `main.dart.js`.
+
+### Email de confirmation et ticket QR (aucune clé nécessaire)
+À chaque place confirmée (réservation directe ou promotion depuis la liste d'attente), un **email de confirmation** est envoyé en arrière-plan via **FormSubmit**. Ce service est gratuit et ne demande **aucune clé** : sa configuration est commitée dans `lib/core/email_config.dart`. L'email fonctionne donc aussi **sans `secrets.json`**, par exemple sur le PC d'un collègue.
+
+- **Destinataire fixe** : tous les emails partent à `zouaoui.farah@esprit.tn`, puisque les comptes `@gymflow.tn` sont fictifs. Le message contient :
+  - le sujet « ✅ Réservation confirmée – <cours> » ;
+  - l'abonné, le cours, la date en français, le coach, la salle et le code de réservation ;
+  - le lien de l'image QR (`api.qrserver.com`, avec le texte lisible du ticket).
+- Aucun email n'est envoyé pour une simple inscription en liste d'attente, ni pour les réservations du jeu de démo.
+- **Le web doit tourner sur le port 8080** : FormSubmit est activé pour l'origine `http://localhost:8080`. Sur un autre port, ou sur GitHub Pages, le ticket affiche « FormSubmit : origine non activée (…) » au lieu d'envoyer. Pour activer une nouvelle origine, voir DECISIONS.md.
+
+```bash
+# Avec secrets.json (IA, Stripe…)
+flutter run -d chrome --release --web-port 8080 --dart-define-from-file=secrets.json
+# Sans secrets.json (collègue) : l'email fonctionne quand même
+flutter run -d chrome --release --web-port 8080
+```
+Dans VS Code, `.vscode/launch.json` propose ces deux lancements (« GymFlow web (port 8080…) »).
+
+- **Android** : l'application envoie l'en-tête `Referer: http://localhost:8080/`, l'origine activée, puisqu'un client Dart n'en envoie aucun. Rien à configurer.
+- **EmailJS, en option** : si `EMAILJS_SERVICE_ID`, `EMAILJS_TEMPLATE_ID` et `EMAILJS_PUBLIC_KEY` sont présentes dans `secrets.json`, EmailJS est utilisé à la place de FormSubmit (avec `EMAILJS_DEMO_RECIPIENT` facultatif). Sur Android, EmailJS exige l'option *Account → Security → « Allow EmailJS API for non-browser applications »*.
+- Le **ticket** (« Mon ticket », depuis *Cours → Mes réservations* ou la fiche du cours) affiche le QR généré par `api.qrserver.com`, le statut de l'email et le bouton « Renvoyer l'email ». S'il ne charge pas (hors ligne), le code s'affiche en grand. Le coach valide la présence dans *Inscrits → « Valider par code (ticket QR) »*, en saisissant le code ou en collant le texte du QR.
+
+### Démo de la soutenance : cours du jour
+Le jeu de démo contient **« Pilates express (démo) »**, coaché par **Amira**, qui commence **20 min après le lancement de l'application** (arrondi au quart d'heure supérieur) et dure 60 min, avec **Ines** confirmée. La fenêtre de validation par code (de 30 min avant le début à 30 min après la fin) est donc ouverte dès le démarrage, quel que soit le jour.
+
+- **Web** : les données sont recréées à chaque chargement de la page, donc le cours est toujours à la bonne heure.
+- **Android** : la base est conservée. À chaque démarrage, si ce cours est passé (autre jour, ou terminé depuis plus de 30 min), il est **replacé aujourd'hui** et ses réservations sont remises à zéro (Ines confirmée, présence non validée). Tout se fait localement, sans réseau.
+- Un **cours à venir** est aussi prêt : « Yoga Vinyasa » (Amira), demain à 18h00, avec Ines confirmée.
 
 ## 5. Dépannage USB
 | Problème | Solution |

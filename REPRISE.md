@@ -93,7 +93,7 @@ cd "C:\Users\youss\Desktop\Projet Mobile Flutter\gymflow"
 ```
 Lancer la version web sur le PC :
 ```
-flutter run -d chrome --release
+flutter run -d chrome --release --web-port 8080
 ```
 Mettre à jour l'application sur le téléphone (USB, débogage USB activé, écran déverrouillé) :
 ```

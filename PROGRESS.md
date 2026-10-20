@@ -86,3 +86,63 @@ Cycle suivi pour chaque module : produit → UI/UX → développement → QA (fo
 - [x] Photo de couverture depuis le téléphone pour workouts et programmes
 - [x] CGU : clause sur les créations des membres (version 2026-10-b)
 - [ ] Traduction complète de l'interface en anglais (hors périmètre, voir DECISIONS.md)
+
+## V1.2 : analyse de sentiment des avis (Cours & Événements)
+- [x] `SentimentService` (via `Backend.I`, `requireUser`) : modèle Hugging Face `tabularisai/multilingual-sentiment-analysis`, délai de 10 s, réponses `[…]` et `[[…]]`
+- [x] Jeton `HF_TOKEN` lu dans `secrets.json` comme la clé Stripe ; `secrets.example.json` complété
+- [x] Secours local par mots-clés FR/EN (négations, expressions, émojis) : sans jeton, sans réseau, délai dépassé, erreur HTTP, 503, réponse illisible
+- [x] Ton enregistré avec l'avis (label, score, source `ia`/`local`), aucun nouvel appel tant que le commentaire ne change pas ; envoi de l'avis jamais bloqué
+- [x] Compatibilité des anciennes données sans migration (stockage JSON) ; avis déjà publiés analysés localement à la mise à niveau
+- [x] Badges 😊 / 😐 / 😞 : avis de l'abonné juste après l'envoi, avis du cours (coach/admin), dernières notes du coach
+- [x] « Score de satisfaction IA » : coach (ses cours) et admin (par cours et par coach) avec histogramme
+- [x] Avis « Very Negative » signalés automatiquement (audit + notification des admins)
+- [x] Correction : contrôleur du champ de la fenêtre de notation libéré trop tôt
+- [x] `flutter analyze` : 0 problème ; `flutter test` : 167 tests verts (137 existants + 30 nouveaux : client HTTP simulé, secours, données, satisfaction, badges, parcours)
+
+## V1.3 : Gemini en fournisseur IA principal
+- [x] Constat : Hugging Face renvoie 402 (compte sans crédits), le badge restait « local »
+- [x] Modèles listés (`v1beta/models`) et testés ; défaut `gemini-3.7-flash`, remplaçable par `GEMINI_MODEL`
+- [x] `GEMINI_API_KEY` / `GEMINI_MODEL` lus dans `secrets.json` comme `HF_TOKEN` ; `secrets.example.json` et README à jour
+- [x] Ordre Gemini → Hugging Face → local ; repli sur erreur HTTP, délai de 10 s, 404, 503, JSON invalide ; jamais d'exception
+- [x] Requête Gemini : température 0, réponse JSON avec schéma, consigne système, avis traité comme une donnée (anti-injection)
+- [x] Fournisseur (`gemini` / `huggingface`) enregistré avec le résultat ; le badge reste « IA »
+- [x] Traces de repli en mode debug uniquement, sans aucune clé ; 404 signalé clairement
+- [x] Tests : 10 nouveaux (Gemini OK, 429/500 → HF, 429 + 402 → local, 404, JSON invalide, délai, sans clé, fournisseur enregistré) ; `flutter analyze` 0 problème, 177 tests verts
+
+## Correctif : démarrage web en mode debug
+- [x] Diagnostic : fil JS bloqué par le hachage PBKDF2 des comptes de démo (antérieur au module sentiment), aucun appel réseau en cause
+- [x] Empreinte partagée par mot de passe de démo public (3 calculs au lieu de 13) + PBKDF2 asynchrone qui ne gèle plus la page ; inscriptions inchangées
+- [x] `test/startup_test.dart` : init sans aucun appel HTTP (clés IA présentes), mise à niveau des avis locale, connexion des comptes de démo, empreinte asynchrone = synchrone
+- [x] `flutter analyze` : 0 problème ; `flutter test` : 182 tests verts
+
+## Correctifs : score de satisfaction et fiabilité de l'IA
+- [x] Carte « Score de satisfaction IA » recalculée en direct (écoute du bus de données ; le widget `const` n'était jamais reconstruit), admin et coach, + bouton « Actualiser »
+- [x] Tous les cours notés listés (plus de limite à 8 ; le graphique montre les 8 plus commentés)
+- [x] Gemini : nouvel essai sur 429 / 503 / délai, puis modèle de secours `GEMINI_FALLBACK_MODEL` (défaut `gemini-flash-latest`), puis Hugging Face, puis local
+- [x] Raison du repli enregistrée avec l'avis et affichée dans l'infobulle du badge (release comprise, sans clé)
+- [x] Bouton « Réanalyser avec l'IA » (auteur, coach du cours, admin ; contrôlé dans le service)
+- [x] Tests : score mis à jour pendant l'affichage (admin et coach), cours anciens et nombreux inclus, nouvel essai puis succès, bascule sur le modèle de secours, raison du repli, droits de la réanalyse ; `flutter analyze` 0 problème, 195 tests verts
+
+## V1.4 : réservation par email (EmailJS) et ticket QR (QR Code Server)
+- [x] Code de réservation `GF-XXXX-XXXX` (`Random.secure()`, sans caractère ambigu, unique), attribué aux anciennes réservations au démarrage sans réseau ; invalide si annulée
+- [x] `EmailService` (`Backend.I.email`) : EmailJS REST en arrière-plan, délai de 10 s, 1 nouvel essai sur réseau ou 5xx, destinataire de démo, statut enregistré sans clé, renvoi limité à 1/min (dans le service)
+- [x] Email à la confirmation et à la promotion depuis la liste d'attente ; aucun pour la liste d'attente ni le jeu de démo
+- [x] Écran « Mon ticket » : QR via api.qrserver.com (vérifié sur le web, CanvasKit), code en secours, détails du cours, statut de l'email, « Renvoyer l'email », « ✅ Présence validée », mise en page ordinateur
+- [x] Message après la réservation : « 📧 Email de confirmation envoyé à … » ou « Email non envoyé : raison »
+- [x] `CheckInService` : validation par code (coach du cours ou admin, fenêtre -30/+30 min, déjà validé, annulée, liste d'attente, audit) ; écran « Valider par code » avec point d'extension pour un futur scanner ; pointage manuel inchangé
+- [x] Cours de démo du jour (Amira, +20 min, Ines confirmée), recalé localement sur Android
+- [x] Documentation : README, `secrets.example.json`, DECISIONS, SECURITE_CONFIDENTIALITE (sous-traitants EmailJS et QR Code Server)
+- [x] Tests : 37 nouveaux (EmailJS simulé, codes, validation, ticket, parcours) ; `flutter analyze` 0 problème ; 232 tests verts
+
+## Correctif : contenu du QR et email
+- [x] QR = texte lisible (réservation, cours, date, coach, salle ; sans donnée de l'abonné), 300×300, encodé UTF-8 ; décodage réel vérifié (application et email)
+- [x] Validation coach : code seul ou texte complet collé (extraction par regex insensible à la casse)
+- [x] Email sans modifier le modèle : `booking_code` = texte du QR encodé pour l'URL ; `qr_data` et `booking_code_text` envoyés pour un futur modèle (voir DECISIONS.md)
+- [x] Tests : contenu du QR, extraction du code, paramètres EmailJS et URL finale
+
+## Email : FormSubmit par défaut (sans clé)
+- [x] Comparatif réel FormSubmit / Web3Forms / Formspree (CORS, clé, client Android) ; FormSubmit retenu et activé pour http://localhost:8080
+- [x] `EmailService` : même interface ; FormSubmit par défaut (configuration commitée `lib/core/email_config.dart`), EmailJS en option si ses clés sont présentes
+- [x] Contenu : sujet « ✅ Réservation confirmée – <cours> », abonné, cours, date, coach, salle, code, lien de l'image QR
+- [x] Android : en-têtes Origin/Referer de l’origine activée ; web : port fixe 8080 (README, `.vscode/launch.json`), raison claire si l’origine n’est pas activée
+- [x] Tests sans aucun vrai réseau (client par défaut simulé) ; tests FormSubmit : contenu, en-têtes, origine non activée, 5xx, réponse illisible, EmailJS en option

@@ -62,6 +62,16 @@ Ce partage des rôles est la première protection contre une mise en cause : l'�
 
 À noter : une séance partagée affiche le nom et la photo de son auteur dans le fil, même si son profil complet est masqué. C'est voulu (on publie une séance comme on publie un post) et c'est expliqué au moment du partage. On ne peut pas ouvrir le profil d'un membre qui ne l'a pas rendu visible.
 
+## 4 bis. Services externes du module Cours & Événements (sous-traitants ultérieurs)
+| Service | Données transmises | Usage | Recommandation pour la production |
+|---|---|---|---|
+| **FormSubmit** (`formsubmit.co`, envoi d'emails, **fournisseur par défaut**) | Nom de l'abonné, titre, date et salle du cours, nom du coach, code de réservation, lien de l'image QR (texte du ticket). Le destinataire est **fixe** : l'adresse de démo activée, jamais l'adresse de l'abonné. | Email de confirmation d'une place confirmée | Service gratuit sans contrat ni garantie : **acceptable pour la démo uniquement**. À inscrire dans la liste des sous-traitants ultérieurs. En production, passer par un serveur d'envoi propre à la salle (avec DPA). L'adresse de destination est visible dans le code commité : préférer l'alias aléatoire proposé par FormSubmit. |
+| **EmailJS** (envoi d'emails, **option** si ses clés sont dans `secrets.json`) | Nom et adresse email de l'abonné (ou l'adresse de démo `EMAILJS_DEMO_RECIPIENT`), titre et date du cours, nom du coach, code de réservation | Email de confirmation d'une place confirmée, avec le QR du ticket | À inscrire dans la liste des sous-traitants ultérieurs et le DPA. Restreindre les domaines autorisés dans EmailJS. À terme, passer par un serveur d'envoi propre à la salle. |
+| **api.qrserver.com** (QR Code Server) | Le **code de réservation** seul (aucun nom, aucun email), dans l'URL de l'image | Affichage du QR dans « Mon ticket » | Le code sert de jeton de présence, et un tiers le voit passer. **En production, générer le QR localement dans l'application** (aucune donnée envoyée). Le code reste affiché en clair en secours. |
+
+- Aucune clé n'est enregistrée avec les données : la réservation garde seulement le statut de l'email, la date, l'adresse réellement utilisée et une raison d'échec lisible. Les clés EmailJS sont retirées des messages d'erreur, et c'est testé. FormSubmit n'utilise aucune clé.
+- Le code de réservation (`GF-XXXX-XXXX`, tiré avec `Random.secure()`, 31⁸ ≈ 8,5 × 10¹¹ possibilités) ne révèle rien de l'abonné. Il devient invalide si la réservation est annulée, et la validation se fait uniquement côté service (coach du cours ou admin, fenêtre horaire, journal d'audit).
+
 ## 5. Mesures de sécurité en place (côté application)
 
 **Contrôle d'accès dans les services, pas seulement dans l'interface.** Chaque méthode vérifie la session et le rôle (`requireUser`, `requireRole`) :
