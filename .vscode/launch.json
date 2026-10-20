@@ -1,0 +1,36 @@
+{
+  // Le web doit tourner sur le port 8080 : l'email de confirmation
+  // (FormSubmit) est activé pour l'origine http://localhost:8080.
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "GymFlow web (port 8080, sans secrets)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "deviceId": "chrome",
+      "flutterMode": "release",
+      "args": ["--web-port", "8080"]
+    },
+    {
+      "name": "GymFlow web (port 8080, avec secrets.json)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "deviceId": "chrome",
+      "flutterMode": "release",
+      "args": [
+        "--web-port",
+        "8080",
+        "--dart-define-from-file=secrets.json"
+      ]
+    },
+    {
+      "name": "GymFlow Android (avec secrets.json)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "args": ["--dart-define-from-file=secrets.json"]
+    }
+  ]
+}
